@@ -1,0 +1,38 @@
+# Core Numerical & Data Science
+numpy>=1.26.0
+pandas>=2.1.0
+scipy>=1.11.0
+
+# Geospatial & Remote Sensing Formats
+netCDF4>=1.6.5
+xarray>=2023.12.0
+h5py>=3.10.0
+
+# Computer Vision & Image Processing
+Pillow>=10.0.0
+opencv-python-headless>=4.8.0
+
+# Deep Learning & Machine Learning
+torch>=2.2.0
+torchvision>=0.17.0
+scikit-learn>=1.4.0
+xgboost>=2.0.0
+
+# Geospatial Analysis & Distance Calculations
+geopy>=2.4.0
+
+# Web API & Serving
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.7.0
+
+# Reporting & Visualization
+reportlab>=4.1.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Utilities
+pyyaml>=6.0.1
+requests>=2.31.0
+tqdm>=4.66.0
+python-dotenv>=1.0.1
