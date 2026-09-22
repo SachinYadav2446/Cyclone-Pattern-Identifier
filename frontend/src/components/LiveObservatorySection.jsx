@@ -18,57 +18,56 @@ import {
   Gauge, 
   Navigation, 
   AlertTriangle,
-  Clock,
-  X
+  Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const channels = [
   {
     id: 'ir1',
-    name: 'Thermal Infrared-1 (TIR-1)',
+    name: 'Thermal Infrared 1 (TIR-1)',
     shortName: 'TIR-1 (10.8 µm)',
-    band: 'Channel 02 · Clean Window',
-    wavelength: '10.8 µm Window',
+    band: 'Channel 4 · Longwave IR',
+    wavelength: '10.8 µm',
     resolution: '4.0 km Spatial GSD',
     cadence: '30-minute rapid downlink',
-    role: 'Eyewall Deep Convection & Cloud-Top Brightness',
-    description: 'Measures radiative temperature of cloud tops. Severe eyewall convection bursts appear as ultra-cold, high-radiance bright signatures down to -80°C.',
+    role: 'Primary 24/7 Dvorak Cloud-Top Thermometry',
+    description: 'Measures longwave emission from convective storm clouds 24/7. Evaluates temperature contrast between the warm eye and freezing cloud shield.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ir1.jpg',
     fallbackUrl: '/images/TIR1_cyclone.png',
   },
   {
     id: 'vis',
-    name: 'Visible Channel (VIS)',
-    shortName: 'VIS (0.65 µm)',
-    band: 'Channel 01 · Solar Reflectance',
-    wavelength: '0.65 µm Albedo',
-    resolution: '1.0 km High-Resolution',
-    cadence: 'Daylight operational scan',
-    role: 'Sub-Kilometer Eye Structural Georeferencing',
-    description: 'High-resolution albedo reflecting sunlight off upper tropospheric cirrus and spiral rainband striations. Enables pinpoint CenterNet eye fix.',
+    name: 'Visible Radiance (VIS)',
+    shortName: 'Visible (0.65 µm)',
+    band: 'Channel 1 · Optical Reflectance',
+    wavelength: '0.65 µm',
+    resolution: '1.0 km High-Resolution GSD',
+    cadence: 'Daytime Solar Pass',
+    role: 'High-Res Eyewall Structure & Stadium Effect',
+    description: 'High-resolution daytime optical reflection channel revealing eyewall mesovortices, cloud shadow heights, and low-level circulation centers.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_vis.jpg',
-    fallbackUrl: '/images/VIS_cyclone.png',
+    fallbackUrl: '/images/visible_cyclone_image.png',
   },
   {
     id: 'wv',
     name: 'Water Vapor (WV)',
-    shortName: 'WV (6.8 µm)',
-    band: 'Channel 03 · Mid-Troposphere',
-    wavelength: '6.8 µm Moisture',
+    shortName: 'Water Vapor (6.8 µm)',
+    band: 'Channel 3 · Mid-Tropospheric',
+    wavelength: '6.8 µm',
     resolution: '8.0 km Spatial GSD',
     cadence: '30-minute rapid downlink',
-    role: 'Upper-Level Dry Slot & Steering Flow Mapping',
-    description: 'Visualizes mid-to-upper tropospheric moisture transport (300-600 hPa). Crucial for detecting dry air intrusions that disrupt cyclone core intensification.',
+    role: 'Synoptic Steering & Moisture Conveyor',
+    description: 'Captures upper-air moisture flow (300 to 600 hPa). Traces dry air intrusions that weaken vortex symmetry and maps subtropical jet steering.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_wv.jpg',
-    fallbackUrl: '/images/WV_cyclone.png',
+    fallbackUrl: '/images/WV_image.png',
   },
   {
     id: 'ctbt',
-    name: 'Cloud-Top Brightness Temp (CTBT)',
+    name: 'Cloud Top Temperature (CTBT)',
     shortName: 'CTBT (12.0 µm)',
-    band: 'Channel 04 · Dirty Window',
-    wavelength: '12.0 µm Split Window',
+    band: 'Channel 5 · Color-Coded Split Window',
+    wavelength: '12.0 µm',
     resolution: '4.0 km Spatial GSD',
     cadence: '30-minute rapid downlink',
     role: 'Calibrated Deep Convective Cooling',
@@ -89,7 +88,7 @@ const gisTrackSteps = [
   { label: '+ 48h (LANDFALL)', xPercent: 57.6, yPercent: 33.5, lat: 21.80, lon: 81.80, windKts: 65, pressureHpa: 980, category: 'Weakening Post-Landfall', riRisk: 15, target: 'Inland Dissipation (Odisha/WB)' },
 ];
 
-export default function GISConsoleModal({ isOpen, onClose }) {
+export default function LiveObservatorySection() {
   const [selectedChannelId, setSelectedChannelId] = useState('ir1');
   const [viewMode, setViewMode] = useState('single'); // 'single' | 'quad'
   const [isAiScanActive, setIsAiScanActive] = useState(true);
@@ -108,28 +107,17 @@ export default function GISConsoleModal({ isOpen, onClose }) {
 
   const containerRef = useRef(null);
 
-  // Keyboard shortcut to close console on Escape
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
   // Automatic timeline playback for GIS storm tracking
   useEffect(() => {
-    if (!isOpen || !isPlayingGis) return;
+    if (!isPlayingGis) return;
     const interval = setInterval(() => {
       setGisStep((prev) => (prev + 1) % gisTrackSteps.length);
     }, 2200);
     return () => clearInterval(interval);
-  }, [isOpen, isPlayingGis]);
+  }, [isPlayingGis]);
 
-  // Initialize military UTC time string
+  // Initialize UTC time string
   useEffect(() => {
-    if (!isOpen) return;
     const updateUtc = () => {
       const now = new Date();
       const hours = String(now.getUTCHours()).padStart(2, '0');
@@ -140,7 +128,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
     updateUtc();
     const interval = setInterval(updateUtc, 60000);
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, []);
 
   // Fetch real-time AI inference from Python FastAPI backend
   const fetchLiveAnalysis = async (refresh = false) => {
@@ -161,10 +149,8 @@ export default function GISConsoleModal({ isOpen, onClose }) {
   };
 
   useEffect(() => {
-    if (isOpen) {
-      fetchLiveAnalysis(false);
-    }
-  }, [isOpen]);
+    fetchLiveAnalysis(false);
+  }, []);
 
   // Manual refresh trigger: pulls newest satellite pass & triggers fresh AI analysis
   const handleRefresh = async () => {
@@ -196,75 +182,38 @@ export default function GISConsoleModal({ isOpen, onClose }) {
     setHoverCoords({ lat, lon, xPercent: (x * 100).toFixed(1), yPercent: (y * 100).toFixed(1) });
   };
 
-  if (!isOpen) return null;
-
   const activeChannel = channels.find((c) => c.id === selectedChannelId) || channels[0];
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#060709] text-zinc-100 flex flex-col overflow-y-auto font-mono">
+    <section 
+      id="live-observatory" 
+      className="relative py-20 border-b border-zinc-800/80 bg-[#07080a] text-zinc-100 overflow-hidden"
+    >
       {/* Precision background radar & grid lines */}
-      <div className="fixed inset-0 bg-grid-pattern opacity-15 pointer-events-none" />
-      <div className="fixed -top-32 -left-32 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* 1. TOP MISSION CONTROL APP BAR */}
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-md px-4 sm:px-6 py-3 flex items-center justify-between">
-        {/* Brand & Platform Identifier */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-7 h-7 rounded border border-zinc-700 bg-zinc-900">
-            <div 
-              className="w-3 h-3 rounded-full border border-emerald-400 border-t-transparent animate-spin" 
-              style={{ animationDuration: '3s' }} 
-            />
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-white tracking-wider">
-                DEEPCYCLONE · GIS COMMAND CENTER
-              </span>
-              <span className="text-[10px] px-2 py-0.5 bg-emerald-950/80 border border-emerald-700 text-emerald-400 font-bold">
-                OPERATIONAL
-              </span>
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-300 mb-2.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <Radio className="w-3.5 h-3.5 text-emerald-400" />
+              <span>LIVE GEOSTATIONARY &amp; GIS COMMAND CONSOLE · INSAT-3D ASIA SECTOR</span>
             </div>
-            <div className="text-[10px] text-zinc-400 flex items-center gap-2">
-              <span>INSAT-3D / 3DR ASIA SECTOR</span>
-              <span>·</span>
-              <span className="text-zinc-500">74.0°E GEOSTATIONARY DOWNLINK</span>
-            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">
+              Live Satellite &amp; GIS Command Console.
+            </h2>
+            <p className="mt-1.5 text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed font-sans">
+              Real-time multi-spectral downlink synchronized with automated GIS storm trajectory prediction, cone of uncertainty, wind radii, and 48-hour landfall simulation.
+            </p>
           </div>
-        </div>
 
-        {/* Center Live Telemetry Clock */}
-        <div className="hidden md:flex items-center gap-4 text-xs">
-          <div className="flex items-center gap-2 px-3 py-1 rounded bg-zinc-900 border border-zinc-800">
-            <Clock className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-zinc-300 font-bold">{lastSyncTime || 'LIVE SYNC'}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-zinc-400 text-[11px]">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>PYTHON AI: {isBackendConnected ? 'CONNECTED' : 'STANDBY'}</span>
-          </div>
-        </div>
-
-        {/* Right Action: Close / Back to Showcase */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onClose}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded bg-white text-zinc-950 font-bold hover:bg-zinc-200 transition-all text-xs shadow"
-          >
-            <X className="w-4 h-4 text-zinc-900" />
-            <span>RETURN TO SHOWCASE</span>
-            <span className="text-[9px] text-zinc-600 px-1 py-0.2 bg-zinc-200 rounded">ESC</span>
-          </button>
-        </div>
-      </header>
-
-      {/* 2. MAIN WORKSTATION CONTENT */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10 space-y-6">
-        {/* Workstation Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 bg-zinc-950/90 border border-zinc-800">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+          {/* Action Toolbar */}
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
             {/* View Mode Toggle */}
-            <div className="flex items-center p-0.5 bg-zinc-900 border border-zinc-800">
+            <div className="flex items-center p-0.5 bg-zinc-950 border border-zinc-800">
               <button
                 onClick={() => setViewMode('single')}
                 className={`flex items-center gap-1 px-2.5 py-1 text-[11px] transition-colors ${
@@ -315,23 +264,23 @@ export default function GISConsoleModal({ isOpen, onClose }) {
               <Crosshair className={`w-3.5 h-3.5 ${isAiScanActive ? 'text-emerald-400 animate-spin' : 'text-zinc-400'}`} style={{ animationDuration: '10s' }} />
               <span>{isAiScanActive ? 'AI SCANNER ACTIVE' : 'AI SCANNER OFF'}</span>
             </button>
-          </div>
 
-          {/* Sync Latest Pass Button */}
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white transition-all text-[11px] shadow-xs active:scale-95"
-            title="Poll latest satellite pass from server"
-          >
-            <RefreshCw className={`w-3 h-3 text-zinc-300 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-            <span>SYNC OPERATIONAL PASS</span>
-          </button>
+            {/* Sync Latest Pass Button */}
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white transition-all text-[11px] shadow-xs active:scale-95"
+              title="Poll latest satellite pass from server"
+            >
+              <RefreshCw className={`w-3 h-3 text-zinc-300 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+              <span>SYNC PASS</span>
+            </button>
+          </div>
         </div>
 
-        {/* Channel Selection Bar (Single View) */}
+        {/* 4-Channel Selection Bar (When in Single View) */}
         {viewMode === 'single' && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5 font-mono">
             {channels.map((ch) => {
               const isSelected = selectedChannelId === ch.id;
               return (
@@ -352,7 +301,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                   <div className="text-[10px] text-zinc-500 mt-0.5 truncate">{ch.band}</div>
 
                   {isSelected && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-400" />
+                    <div className="absolute -bottom-[1px] inset-x-0 h-0.5 bg-gradient-to-r from-emerald-400 via-white to-emerald-400" />
                   )}
                 </button>
               );
@@ -360,17 +309,22 @@ export default function GISConsoleModal({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* WORKSTATION DUAL COLUMNS */}
+        {/* ==================================================================== */}
+        {/* VIEW 1: SINGLE CHANNEL DETAILED OBSERVATORY WITH LIVE AI SCANNER     */}
+        {/* ==================================================================== */}
         {viewMode === 'single' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Main Interactive Map & Satellite Viewport (8 Cols) */}
-            <div className="lg:col-span-8 bg-[#090b10] border border-zinc-800 shadow-2xl overflow-hidden flex flex-col">
-              {/* Header Bar */}
-              <div className="p-3 bg-[#0c0e14] border-b border-zinc-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="font-bold text-white tracking-wide">{activeChannel.name}</span>
-                  <span className="text-[10px] text-zinc-500 hidden sm:inline">({activeChannel.band})</span>
+            {/* Main Satellite Imagery Bay (8 Cols) */}
+            <div className="lg:col-span-8 bg-[#090b10] border border-zinc-800 relative overflow-hidden shadow-2xl group">
+              {/* Telemetry Header Strip */}
+              <div className="p-3 bg-[#0c0e14] border-b border-zinc-800/80 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px]">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    LIVE SATELLITE TELEMETRY
+                  </span>
+                  <span className="text-zinc-600">|</span>
+                  <span className="text-zinc-300 font-medium">{activeChannel.name}</span>
                 </div>
 
                 <div className="flex items-center gap-3 text-zinc-400 text-[10px]">
@@ -384,14 +338,14 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Viewport Box */}
+              {/* Interactive Viewport */}
               <div 
                 ref={containerRef}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={() => setHoverCoords(null)}
                 className="relative aspect-[16/11] bg-black overflow-hidden flex items-center justify-center cursor-crosshair select-none"
               >
-                {/* Live Satellite Image */}
+                {/* Live Satellite Image (direct from IMD / MoES) */}
                 <img
                   src={
                     failedImages[activeChannel.id]
@@ -417,7 +371,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 {isGisOverlayActive && (
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
                     <defs>
-                      <linearGradient id="gisConeGradientModal" x1="0%" y1="100%" x2="0%" y2="0%">
+                      <linearGradient id="gisConeGradient" x1="0%" y1="100%" x2="0%" y2="0%">
                         <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
                         <stop offset="100%" stopColor="#ef4444" stopOpacity="0.15" />
                       </linearGradient>
@@ -431,7 +385,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                         ${(gisTrackSteps[7].xPercent + 6.5) * 10},${(gisTrackSteps[7].yPercent + 2.5) * 10}
                       `}
                       viewBox="0 0 1000 1000"
-                      fill="url(#gisConeGradientModal)"
+                      fill="url(#gisConeGradient)"
                       stroke="rgba(255, 255, 255, 0.4)"
                       strokeWidth="1.5"
                       strokeDasharray="4 4"
@@ -541,7 +495,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                     {/* Pulsing Scan Beam */}
                     <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-pulse top-1/2 -translate-y-1/2" />
 
-                    {/* Real Detected Systems from Python AI Engine */}
+                    {/* Render Real Detected Systems from Python AI Engine if available */}
                     {liveAnalysis?.systems_detected && liveAnalysis.systems_detected.length > 0 ? (
                       liveAnalysis.systems_detected.map((sys) => (
                         <div 
@@ -567,7 +521,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                         </div>
                       ))
                     ) : (
-                      /* Default Basin Reticles */
+                      /* Default Basin Grid Reticles when no severe system is detected */
                       <>
                         <div className="absolute top-[46%] left-[67%] border border-emerald-400/80 w-24 h-24 flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
                           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -600,7 +554,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 )}
               </div>
 
-              {/* Interactive Timeline Scrubber */}
+              {/* Interactive Timeline Scrubber (Synchronized GIS Storm Trajectory) */}
               <div className="p-3 bg-[#0a0c10] border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs">
                 <div className="flex items-center gap-2.5">
                   <button
@@ -664,7 +618,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 </span>
               </div>
 
-              {/* GIS Active Storm Telemetry HUD */}
+              {/* GIS Active Storm Telemetry HUD (Synchronized with Timeline Scrubber) */}
               <div className="p-4 bg-[#0a0c10] border border-zinc-800 shadow-sm space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
                   <div className="flex items-center gap-2">
@@ -771,7 +725,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                   <div className="flex justify-between">
                     <span className="text-zinc-500">ARABIAN SEA:</span>
                     <span className="text-zinc-300 truncate max-w-[180px]">
-                      {liveAnalysis?.arabian_sea_status || 'Stable Clear-Sky Marine Area'}
+                      {liveAnalysis?.arabian_sea_status || 'Monitored Convective Mass'}
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-zinc-800 pt-1.5">
@@ -781,11 +735,41 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                     </span>
                   </div>
                 </div>
+
+                <div className="text-[10px] text-zinc-500 leading-normal flex items-start gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
+                  <span>DeepCyclone autonomously processes each incoming 30-min pass to detect nascent cyclonic circulations before official warnings.</span>
+                </div>
+              </div>
+
+              {/* 4-Band Multi-Spectral Tensor Blueprint */}
+              <div className="p-4 bg-[#0a0c10] border border-zinc-800 space-y-2">
+                <div className="text-[10px] text-zinc-500 uppercase">TENSOR INPUT SHAPE (4, 512, 512)</div>
+                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                    <span className="text-zinc-500 block">CH-1: VIS</span>
+                    <span className="text-zinc-200 font-bold">0.65 µm Reflect</span>
+                  </div>
+                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                    <span className="text-zinc-500 block">CH-2: TIR-1</span>
+                    <span className="text-zinc-200 font-bold">10.8 µm Clean Window</span>
+                  </div>
+                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                    <span className="text-zinc-500 block">CH-3: WV</span>
+                    <span className="text-zinc-200 font-bold">6.8 µm Upper Vapor</span>
+                  </div>
+                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                    <span className="text-zinc-500 block">CH-4: CTBT</span>
+                    <span className="text-zinc-200 font-bold">12.0 µm Convection</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         ) : (
-          /* VIEW 2: 4-CHANNEL QUAD MATRIX */
+          /* ==================================================================== */
+          /* VIEW 2: 4-CHANNEL QUAD MATRIX (SIMULTANEOUS 4-BAND SYNCHRONIZATION)   */
+          /* ==================================================================== */
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {channels.map((ch) => (
@@ -826,7 +810,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </section>
   );
 }

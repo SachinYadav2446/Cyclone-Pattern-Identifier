@@ -161,7 +161,7 @@ export default function HeroSection({ onOpenConsole }) {
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <button
                 onClick={onOpenConsole}
-                className="flex items-center gap-2 px-5 py-2.5 rounded bg-white text-zinc-950 font-medium text-xs hover:bg-zinc-200 transition-all font-mono shadow"
+                className="flex items-center gap-2 px-5 py-2.5 rounded bg-white text-zinc-950 font-medium text-xs hover:bg-zinc-200 transition-all font-mono shadow cursor-pointer active:scale-95"
               >
                 <span>Launch GIS Command Center</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
