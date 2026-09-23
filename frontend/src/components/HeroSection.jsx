@@ -117,11 +117,9 @@ const stormPresets = {
   },
 };
 
-export default function HeroSection({ onOpenConsole }) {
-  const storm = stormPresets.michael;
+function LiveClock() {
   const [utcTime, setUtcTime] = useState('');
 
-  // Live military UTC clock
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -131,6 +129,12 @@ export default function HeroSection({ onOpenConsole }) {
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  return <span className="text-zinc-300 font-bold">{utcTime || '11:42:00 UTC'}</span>;
+}
+
+export default function HeroSection({ onOpenConsole }) {
+  const storm = stormPresets.michael;
 
   return (
     <section className="relative overflow-hidden pt-8 pb-20 border-b border-zinc-850 bg-[#09090b]">
@@ -213,18 +217,23 @@ export default function HeroSection({ onOpenConsole }) {
                 
                 <div className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
                   <Clock className="w-3 h-3 text-zinc-500" />
-                  <span className="text-zinc-300 font-bold">{utcTime || '11:42:00 UTC'}</span>
+                  <LiveClock />
                 </div>
               </div>
 
               {/* Display Viewport: Real Geostationary Infrared Intensification Sequence */}
               <div className="relative h-72 sm:h-80 w-full bg-[#070709] flex items-center justify-center overflow-hidden">
-                {/* Real Satellite Imagery Loop */}
-                <img
-                  src={storm.satelliteGif}
-                  alt={`${storm.name} Geostationary Infrared Loop`}
-                  className="absolute inset-0 w-full h-full object-cover object-center select-none"
-                />
+                {/* Real Satellite Imagery Loop with High-Efficiency WebP and GIF Fallback */}
+                <picture className="absolute inset-0 w-full h-full select-none">
+                  <source srcSet="/gifs/michael_intensification_web.webp" type="image/webp" />
+                  <img
+                    src="/gifs/michael_intensification_web.gif"
+                    alt={`${storm.name} Geostationary Infrared Loop`}
+                    loading="eager"
+                    decoding="async"
+                    className="w-full h-full object-cover object-center select-none"
+                  />
+                </picture>
                 {/* Subtle contrast grading overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 

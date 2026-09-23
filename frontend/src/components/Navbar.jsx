@@ -12,33 +12,38 @@ const navItems = [
 export default function Navbar({ onOpenConsole }) {
   const [activeSection, setActiveSection] = useState('');
 
-  // Scrollspy: dynamically highlight active section based on scroll position
+  // Scrollspy: dynamically highlight active section based on scroll position (throttled with rAF)
   useEffect(() => {
     const sectionIds = navItems.map((item) => item.id);
+    let ticking = false;
 
-    const handleScroll = () => {
+    const updateActiveSection = () => {
       const scrollPosition = window.scrollY + 180; // Offset for sticky navbar height
 
-      // Check sections from bottom to top
-      for (let i = sectionIds.length - 1; i >= 0; i--) {
-        const el = document.getElementById(sectionIds[i]);
-        if (el) {
-          const top = el.offsetTop;
-          if (scrollPosition >= top) {
-            setActiveSection(sectionIds[i]);
-            return;
+      let newActive = '';
+      if (window.scrollY >= 300) {
+        for (let i = sectionIds.length - 1; i >= 0; i--) {
+          const el = document.getElementById(sectionIds[i]);
+          if (el && scrollPosition >= el.offsetTop) {
+            newActive = sectionIds[i];
+            break;
           }
         }
       }
 
-      // If near top (Hero section), no inner section is active
-      if (window.scrollY < 300) {
-        setActiveSection('');
+      setActiveSection((prev) => (prev !== newActive ? newActive : prev));
+      ticking = false;
+    };
+
+    const handleScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(updateActiveSection);
       }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial evaluation
+    updateActiveSection(); // Initial evaluation
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);

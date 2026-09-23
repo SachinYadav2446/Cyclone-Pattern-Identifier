@@ -105,16 +105,24 @@ export default function PipelineSection() {
   const [activeStepId, setActiveStepId] = useState(1);
   const containerRef = useRef(null);
 
-  // Scroll spy: update activeStepId smoothly as user scrolls through the 4 pinned milestones
+  // Scroll spy: update activeStepId smoothly as user scrolls through the 4 pinned milestones (throttled with rAF)
   useEffect(() => {
-    const handleScroll = () => {
-      if (!containerRef.current) return;
+    let ticking = false;
+
+    const updateStep = () => {
+      if (!containerRef.current) {
+        ticking = false;
+        return;
+      }
       const rect = containerRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
       
       // Total scroll distance while pinned
       const totalScrollable = rect.height - windowHeight;
-      if (totalScrollable <= 0) return;
+      if (totalScrollable <= 0) {
+        ticking = false;
+        return;
+      }
       
       const currentScroll = -rect.top;
       const rawProgress = Math.max(0, Math.min(1, currentScroll / totalScrollable));
@@ -131,10 +139,20 @@ export default function PipelineSection() {
         step = 1;
       }
       
-      setActiveStepId(step);
+      setActiveStepId((prev) => (prev !== step ? step : prev));
+      ticking = false;
+    };
+
+    const handleScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(updateStep);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    updateStep();
+
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 

@@ -52,34 +52,52 @@ export default function DoctorModeSection() {
   const [hoverGradient, setHoverGradient] = useState(87.4);
 
   const containerRef = useRef(null);
+  const rectRef = useRef(null);
+  const rafRef = useRef(null);
   const audit = layerAuditData[activeLayer];
 
-  const handleMouseMove = (e) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-    const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-
-    const scaleX = 600 / rect.width;
-    const scaleY = 400 / rect.height;
-    const simX = x * scaleX;
-    const simY = y * scaleY;
-    const dist = Math.sqrt((simX - 300) ** 2 + (simY - 200) ** 2);
-
-    let temp = 300;
-    if (dist < 18) {
-      temp = 285.2 - dist * 0.4;
-    } else if (dist >= 18 && dist < 65) {
-      temp = 195.4 + (dist - 18) * 0.45;
-    } else if (dist >= 65 && dist < 140) {
-      temp = 225.0 + (dist - 65) * 0.5;
-    } else {
-      temp = Math.min(302.0, 260.0 + (dist - 140) * 0.4);
+  const handleMouseEnter = () => {
+    if (containerRef.current) {
+      rectRef.current = containerRef.current.getBoundingClientRect();
     }
+  };
 
-    setHoverCoord({ x: Math.round(simX), y: Math.round(simY) });
-    setHoverTemp(Number(temp.toFixed(1)));
-    setHoverGradient(Number((Math.abs(temp - 198.0)).toFixed(1)));
+  const handleMouseMove = (e) => {
+    if (rafRef.current) return;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      if (!containerRef.current) return;
+      if (!rectRef.current) {
+        rectRef.current = containerRef.current.getBoundingClientRect();
+      }
+      const rect = rectRef.current;
+      const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+      const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+
+      const scaleX = 600 / rect.width;
+      const scaleY = 400 / rect.height;
+      const simX = x * scaleX;
+      const simY = y * scaleY;
+      const dist = Math.sqrt((simX - 300) ** 2 + (simY - 200) ** 2);
+
+      let temp = 300;
+      if (dist < 18) {
+        temp = 285.2 - dist * 0.4;
+      } else if (dist >= 18 && dist < 65) {
+        temp = 195.4 + (dist - 18) * 0.45;
+      } else if (dist >= 65 && dist < 140) {
+        temp = 225.0 + (dist - 65) * 0.5;
+      } else {
+        temp = Math.min(302.0, 260.0 + (dist - 140) * 0.4);
+      }
+
+      setHoverCoord({ x: Math.round(simX), y: Math.round(simY) });
+      setHoverTemp(Number(temp.toFixed(1)));
+      setHoverGradient(Number((Math.abs(temp - 198.0)).toFixed(1)));
+    });
   };
 
   return (
@@ -116,16 +134,25 @@ export default function DoctorModeSection() {
           <div className="lg:col-span-8 flex flex-col">
             <div
               ref={containerRef}
+              onMouseEnter={handleMouseEnter}
               onMouseMove={handleMouseMove}
               className="relative border border-zinc-800 overflow-hidden bg-black aspect-[16/10] select-none cursor-crosshair shadow-2xl group"
             >
               {/* Layer 1: Satellite Video Stream */}
               <div className="absolute inset-0 bg-[#060608] flex items-center justify-center overflow-hidden">
-                <img
-                  src={activeView === 'raw' ? '/gifs/ophelia_visible_raw.gif' : '/gifs/ophelia_infrared_gradcam.gif'}
-                  alt="Cyclone Satellite Imagery"
-                  className="w-full h-full object-cover select-none filter contrast-125"
-                />
+                <picture className="w-full h-full select-none">
+                  <source
+                    srcSet={activeView === 'raw' ? '/gifs/ophelia_visible_raw.webp' : '/gifs/ophelia_infrared_gradcam.webp'}
+                    type="image/webp"
+                  />
+                  <img
+                    src={activeView === 'raw' ? '/gifs/ophelia_visible_raw.gif' : '/gifs/ophelia_infrared_gradcam.gif'}
+                    alt="Cyclone Satellite Imagery"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover select-none filter contrast-125"
+                  />
+                </picture>
 
                 {/* Video Playback & Satellite Metadata Badge */}
                 <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">

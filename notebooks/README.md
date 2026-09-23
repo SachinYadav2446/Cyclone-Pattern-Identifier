@@ -1,11 +1,4 @@
 # DeepCyclone Research & Training Notebooks
 
-### 🚀 Primary End-to-End Master Notebook
-- **`DeepCyclone_Master_Pipeline.ipynb`**: Complete, unified end-to-end notebook for research, model training, and viva presentation. Covers raw data ingestion (NOAA IBTrACS), multi-spectral Planck calibration (`TIR1`, `TIR2`, `WV`, `VIS`), CenterNet eye localization, ConvNeXt intensity estimation with physics-informed loss, XGBoost Rapid Intensification (RI), Grad-CAM "Doctor Mode" explainability, and ONNX serialization for live deployment. Compatible with Google Colab (T4 GPU), Kaggle (P100), and local workstations.
-
----
-
-### Legacy Experimental Step Notebooks
-- `01_ibtracs_data_pipeline.ipynb`: Ground truth track data cleaning and IMD category mapping.
-- `02_satellite_preprocessing_pipeline.ipynb`: Standalone satellite physics calibration tests.
-
+### 🚀 Active Notebook: Phase 1 — Step 1.1
+- **`01_ibtracs_data_pipeline.ipynb`**: Complete, self-contained ground truth data pipeline. Automatically ingests official NOAA IBTrACS North Indian Ocean records, harmonizes wind observations across 1990–2024 (11,800+ fixes across 330+ cyclonic systems), maps official IMD categories, flags 24-hour Rapid Intensification (RI) events, creates temporal train/val/test splits, and renders distribution visualizations. Compatible with Google Colab (with zero manual uploads needed) and local workstations.
