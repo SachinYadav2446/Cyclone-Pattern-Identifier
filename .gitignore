@@ -32,6 +32,7 @@ ENV/
 # Data and Models
 ai_engine/data/raw_ibtracs/*
 !ai_engine/data/raw_ibtracs/.gitkeep
+!ai_engine/data/raw_ibtracs/*.gz
 ai_engine/data/processed/*
 !ai_engine/data/processed/.gitkeep
 ai_engine/data/satellite_crops/*
