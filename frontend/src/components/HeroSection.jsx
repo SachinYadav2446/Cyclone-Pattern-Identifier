@@ -3,6 +3,7 @@ import {
   Compass, Wind, ArrowUpRight, Gauge, AlertTriangle, Play, 
   Sparkles, Navigation, Clock, Activity, RefreshCw, Satellite, Radio 
 } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 
 const stormPresets = {
   michael: {
@@ -179,7 +180,7 @@ export default function HeroSection({ onOpenConsole }) {
   const fetchLiveTelemetry = useCallback(async (refresh = false) => {
     try {
       setIsScanning(true);
-      const url = `http://127.0.0.1:8000/api/v1/live/latest-analysis${refresh ? '?refresh=true' : ''}`;
+      const url = `${API_BASE_URL}/api/v1/live/latest-analysis${refresh ? '?refresh=true' : ''}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
         const data = await res.json();

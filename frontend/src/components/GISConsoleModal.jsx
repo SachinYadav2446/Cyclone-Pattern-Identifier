@@ -22,6 +22,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE_URL } from '../config/api';
 
 const channels = [
   {
@@ -145,7 +146,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
   // Fetch real-time AI inference from Python FastAPI backend
   const fetchLiveAnalysis = async (refresh = false) => {
     try {
-      const endpoint = `http://127.0.0.1:8000/api/v1/live/latest-analysis${refresh ? '?refresh=true' : ''}`;
+      const endpoint = `${API_BASE_URL}/api/v1/live/latest-analysis${refresh ? '?refresh=true' : ''}`;
       const res = await fetch(endpoint, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
         const data = await res.json();
