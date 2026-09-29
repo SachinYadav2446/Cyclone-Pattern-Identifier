@@ -46,5 +46,8 @@ def trigger_live_scan(background_tasks: BackgroundTasks):
     result = vortex_analyzer.analyze_latest_pass(force_refresh=True)
     return {"message": "Live satellite scan triggered successfully", "result": result}
 
+import os
+
 if __name__ == "__main__":
-    uvicorn.run("ai_engine.server:app", host="127.0.0.1", port=8000, reload=False)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("ai_engine.server:app", host="0.0.0.0", port=port, reload=False)
