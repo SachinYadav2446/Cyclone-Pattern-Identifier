@@ -6,6 +6,7 @@ const navItems = [
   { id: 'pipeline', label: 'PIPELINE' },
   { id: 'models', label: 'MODELS' },
   { id: 'doctor-mode', label: 'XAI AUDIT', badge: 'GRAD-CAM' },
+  { id: 'disaster-matrix', label: 'DISASTER MATRIX', badge: 'SURGE' },
   { id: 'benchmarks', label: 'BENCHMARKS' },
 ];
 

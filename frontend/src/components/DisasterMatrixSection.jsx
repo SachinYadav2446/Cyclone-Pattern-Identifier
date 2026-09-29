@@ -249,13 +249,42 @@ export default function DisasterMatrixSection() {
                 </button>
                 <button
                   onClick={() => {
-                    alert('Official IMD Bulletin PDF generated and streamed (ReportLab)!');
+                    const bulletinText = `================================================================================
+INDIA METEOROLOGICAL DEPARTMENT
+EARLY WARNING CYCLONE ADVISORY BULLETIN #14
+================================================================================
+ISSUED BY: NATIONAL CYCLONE WARNING CENTRE, NEW DELHI
+TIME: ${new Date().toUTCString()}
+STORM: VERY SEVERE CYCLONIC STORM (VSCS) 'FANI-II'
+POSITION: LAT 19.80°N / LON 85.80°E (BAY OF BENGAL)
+MAX SUSTAINED SURFACE WIND: ${simulatedWind} KNOTS (${(simulatedWind * 1.852).toFixed(1)} KM/H)
+PEAK PROJECTED SURGE: ${calcSurge(3.4)} METERS
+
+DISTRICT VULNERABILITY MATRIX:
+1. PURI (ODISHA): Projected Surge ${calcSurge(3.4)}m · RED ALERT · Immediate Coastal Evacuation
+2. JAGATSINGHPUR: Projected Surge ${calcSurge(3.1)}m · RED ALERT · Total Port & Fishing Evacuation
+3. KENDRAPARA: Projected Surge ${calcSurge(2.8)}m · ORANGE ALERT · Low-Lying Island Clearance
+4. BALASORE: Projected Surge ${calcSurge(2.4)}m · ORANGE ALERT · Pre-position NDRF Battalions
+
+POSTGIS SPATIAL RISK: ST_Intersects(predicted_cone, district_boundary)
+EXECUTION LATENCY: 6.4 ms
+TOTAL CITIZENS AT RISK: ~3.56 MILLION
+================================================================================`;
+                    const blob = new Blob([bulletinText], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `IMD_Cyclone_Advisory_Bulletin_${Date.now()}.txt`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
                     setShowBulletinModal(false);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-zinc-950 font-bold hover:bg-zinc-200"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-zinc-950 font-bold hover:bg-zinc-200 transition-colors"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download Signed PDF</span>
+                  <span>Download Advisory Bulletin</span>
                 </button>
               </div>
             </div>

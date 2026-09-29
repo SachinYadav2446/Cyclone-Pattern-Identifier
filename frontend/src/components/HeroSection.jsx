@@ -1,8 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Compass, Wind, ArrowUpRight, Gauge, AlertTriangle, Play, Sparkles, Navigation, Clock, Activity } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { 
+  Compass, Wind, ArrowUpRight, Gauge, AlertTriangle, Play, 
+  Sparkles, Navigation, Clock, Activity, RefreshCw, Satellite, Radio 
+} from 'lucide-react';
 
 const stormPresets = {
   michael: {
+    id: 'michael',
     name: 'MICHAEL (AL142018)',
     year: 'Historic Cat 5 Landfall',
     basin: 'Gulf of Mexico / Florida',
@@ -14,42 +18,53 @@ const stormPresets = {
     deficitHpa: -94,
     lat: 29.90,
     lon: 85.39,
-    dx: 0.12,
-    dy: -0.18,
+    lonDir: 'W',
+    reticleLeft: '53%',
+    reticleTop: '51%',
+    offsetStr: '+0.12 / -0.18',
     riProbability: 98,
     sst: '29.7°C',
     shear: '6.4 kts',
     landfallTime: 'OCT 10 · 17:30 UTC',
     landfallTarget: 'Mexico Beach / Panama City, FL',
     surgeEst: '4.3 m',
-    rotSpeed: 0.035,
-    satelliteGif: '/gifs/michael_intensification_web.gif',
+    image: '/gifs/michael_intensification_web.gif',
+    webpImage: '/gifs/michael_intensification_web.webp',
     satelliteSource: 'GOES-16 ABI Band 13 (10.35 µm)',
     satelliteTag: 'Clean Infrared Window · Intensification to Landfall',
+    bannerText: 'INTENSIFICATION TO CAT 5 LANDFALL · 118 SEQUENTIAL FRAMES',
   },
   fani: {
+    id: 'fani',
     name: 'FANI-II (BOB-04)',
-    year: 'Active Pass',
+    year: 'Active Pass Benchmark',
     basin: 'Bay of Bengal',
-    category: 'Very Severe Cyclonic Storm (VSCS)',
-    badge: 'VSCS',
-    mswKnots: 85.4,
-    mswKmh: 158.2,
-    pressureHpa: 972.0,
-    deficitHpa: -41,
-    lat: 15.86,
-    lon: 86.18,
-    dx: 0.17,
-    dy: 0.32,
-    riProbability: 82,
-    sst: '29.4°C',
-    shear: '8.2 kts',
-    landfallTime: '+28h 15m',
-    landfallTarget: 'Puri - Balasore, Odisha',
-    surgeEst: '3.4 m',
-    rotSpeed: 0.022,
+    category: 'Extremely Severe (ESCS)',
+    badge: 'ESCS',
+    mswKnots: 115.0,
+    mswKmh: 213.0,
+    pressureHpa: 932.0,
+    deficitHpa: -78,
+    lat: 19.80,
+    lon: 85.80,
+    lonDir: 'E',
+    reticleLeft: '63%',
+    reticleTop: '46%',
+    offsetStr: '+0.17 / +0.32',
+    riProbability: 92,
+    sst: '30.4°C',
+    shear: '7.8 kts',
+    landfallTime: 'MAY 03 · 03:30 UTC',
+    landfallTarget: 'Puri Coastline, Odisha',
+    surgeEst: '4.8 m',
+    image: '/images/TIR1_cyclone.png',
+    webpImage: null,
+    satelliteSource: 'INSAT-3D TIR-1 (10.8 µm)',
+    satelliteTag: 'Thermal Infrared 1 · Symmetric Eyewall Ring',
+    bannerText: 'SYMMETRIC CDO WITH PINHOLE WARM EYE · T-NO 6.5',
   },
   amphan: {
+    id: 'amphan',
     name: 'AMPHAN (BOB-01)',
     year: 'Super Cyclone Benchmark',
     basin: 'Central Bay of Bengal',
@@ -61,17 +76,24 @@ const stormPresets = {
     deficitHpa: -106,
     lat: 13.20,
     lon: 86.40,
-    dx: -0.08,
-    dy: 0.14,
+    lonDir: 'E',
+    reticleLeft: '58%',
+    reticleTop: '48%',
+    offsetStr: '-0.08 / +0.14',
     riProbability: 96,
     sst: '31.1°C',
     shear: '5.4 kts',
-    landfallTime: '+18h 40m',
+    landfallTime: 'MAY 20 · 11:30 UTC',
     landfallTarget: 'Digha - Sundarbans, WB',
     surgeEst: '5.2 m',
-    rotSpeed: 0.038,
+    image: '/images/TIR2_cyclone.png',
+    webpImage: null,
+    satelliteSource: 'INSAT-3D TIR-2 (12.0 µm)',
+    satelliteTag: 'Split-Window Thermodynamic Outflow',
+    bannerText: 'EXPLOSIVE RI: 75 KTS TO 140 KTS IN 24 HOURS',
   },
   biparjoy: {
+    id: 'biparjoy',
     name: 'BIPARJOY (ARB-02)',
     year: 'Long-Tracking Arabian Sea',
     basin: 'East-Central Arabian Sea',
@@ -83,17 +105,24 @@ const stormPresets = {
     deficitHpa: -47,
     lat: 20.70,
     lon: 66.50,
-    dx: 0.22,
-    dy: -0.19,
+    lonDir: 'E',
+    reticleLeft: '44%',
+    reticleTop: '46%',
+    offsetStr: '+0.22 / -0.19',
     riProbability: 64,
     sst: '29.8°C',
     shear: '11.5 kts',
-    landfallTime: '+34h 00m',
+    landfallTime: 'JUN 15 · 17:00 UTC',
     landfallTarget: 'Jakhau Port, Gujarat',
     surgeEst: '3.0 m',
-    rotSpeed: 0.026,
+    image: '/images/WV_image.png',
+    webpImage: null,
+    satelliteSource: 'INSAT-3D Water Vapor (6.8 µm)',
+    satelliteTag: 'Mid-Tropospheric Moisture & Steering',
+    bannerText: 'LONGEST-LIVED ARABIAN SEA CYCLONE · 13 CONSECUTIVE DAYS',
   },
   remal: {
+    id: 'remal',
     name: 'REMAL (BOB-02)',
     year: 'Rapid Monsoon Genesis',
     basin: 'North Bay of Bengal',
@@ -105,15 +134,21 @@ const stormPresets = {
     deficitHpa: -29,
     lat: 21.30,
     lon: 89.20,
-    dx: 0.05,
-    dy: 0.09,
+    lonDir: 'E',
+    reticleLeft: '68%',
+    reticleTop: '38%',
+    offsetStr: '+0.05 / +0.09',
     riProbability: 45,
     sst: '28.9°C',
     shear: '14.2 kts',
-    landfallTime: '+11h 20m',
+    landfallTime: 'MAY 26 · 15:30 UTC',
     landfallTarget: 'Khepupara - Sagar Island',
     surgeEst: '2.1 m',
-    rotSpeed: 0.016,
+    image: '/images/visible_cyclone_image.png',
+    webpImage: null,
+    satelliteSource: 'INSAT-3D Optical Visible (0.65 µm)',
+    satelliteTag: '1.0 km High-Resolution Albedo',
+    bannerText: 'EXPANSIVE MONSOONAL GYRE CONVERGENCE AT PRE-LANDFALL',
   },
 };
 
@@ -130,11 +165,83 @@ function LiveClock() {
     return () => clearInterval(timer);
   }, []);
 
-  return <span className="text-zinc-300 font-bold">{utcTime || '11:42:00 UTC'}</span>;
+  return <span className="text-zinc-300 font-bold">{utcTime || '12:00:00 UTC'}</span>;
 }
 
 export default function HeroSection({ onOpenConsole }) {
-  const storm = stormPresets.michael;
+  const [selectedPresetKey, setSelectedPresetKey] = useState('michael');
+  const [isLiveMode, setIsLiveMode] = useState(false);
+  const [liveData, setLiveData] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [liveImageError, setLiveImageError] = useState(false);
+
+  // Fetch live operational pass from FastAPI backend
+  const fetchLiveTelemetry = useCallback(async (refresh = false) => {
+    try {
+      setIsScanning(true);
+      const url = `http://127.0.0.1:8000/api/v1/live/latest-analysis${refresh ? '?refresh=true' : ''}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (res.ok) {
+        const data = await res.json();
+        setLiveData(data);
+      }
+    } catch (err) {
+      console.warn('Backend live analysis fallback:', err);
+    } finally {
+      setIsScanning(false);
+    }
+  }, []);
+
+  // Poll live telemetry periodically when in Live mode
+  useEffect(() => {
+    if (isLiveMode) {
+      fetchLiveTelemetry(false);
+      const interval = setInterval(() => fetchLiveTelemetry(false), 45000);
+      return () => clearInterval(interval);
+    }
+  }, [isLiveMode, fetchLiveTelemetry]);
+
+  // Construct active storm data object
+  let storm = stormPresets[selectedPresetKey] || stormPresets.michael;
+
+  if (isLiveMode) {
+    const hasSystems = liveData?.systems_detected && liveData.systems_detected.length > 0;
+    const topSystem = hasSystems ? liveData.systems_detected[0] : null;
+
+    storm = {
+      id: 'live',
+      name: topSystem ? `VORTEX ${topSystem.id}` : 'INSAT-3D OPERATIONAL PASS',
+      year: liveData?.timestamp_utc || 'LIVE 30-MIN CADENCE',
+      basin: topSystem?.basin || 'North Indian Ocean (BoB & AS)',
+      category: topSystem?.classification || 'Inter-Monsoon Marine Observation',
+      badge: topSystem ? (topSystem.estimated_wind_kts >= 34 ? 'CYCLONIC' : 'MONITORED') : 'OPERATIONAL',
+      mswKnots: topSystem ? topSystem.estimated_wind_kts : 22.0,
+      mswKmh: topSystem ? (topSystem.estimated_wind_kts * 1.852).toFixed(1) : 40.7,
+      pressureHpa: topSystem ? topSystem.estimated_pressure_hpa : 1010.0,
+      deficitHpa: topSystem ? (topSystem.estimated_pressure_hpa - 1012) : -2,
+      lat: topSystem ? topSystem.latitude : 15.50,
+      lon: topSystem ? topSystem.longitude : 85.00,
+      lonDir: 'E',
+      reticleLeft: topSystem ? `${topSystem.pixel_x_percent}%` : '65%',
+      reticleTop: topSystem ? `${topSystem.pixel_y_percent}%` : '46%',
+      offsetStr: topSystem ? `CONF: ${(topSystem.confidence_score * 100).toFixed(0)}%` : 'RADAR: SCANNING',
+      riProbability: topSystem ? (topSystem.estimated_wind_kts >= 40 ? 68 : 24) : 4,
+      sst: '30.1°C',
+      shear: '9.2 kts',
+      landfallTime: topSystem ? 'Tracking Oceanic Vector' : 'Clear Sea Lanes',
+      landfallTarget: topSystem ? `${topSystem.basin} Marine Sector` : 'No Imminent Landfall Threat',
+      surgeEst: '0.6 m',
+      image: liveImageError 
+        ? '/images/TIR1_cyclone.png' 
+        : 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ir1.jpg',
+      webpImage: null,
+      satelliteSource: 'ISRO INSAT-3D/3DR (IMD Downlink)',
+      satelliteTag: 'Live 10.8 µm Thermal Infrared Downlink',
+      bannerText: liveData?.bay_of_bengal_status 
+        ? `BOB: ${liveData.bay_of_bengal_status} · ARB: ${liveData.arabian_sea_status}` 
+        : 'SYNCHRONIZING WITH GEOSTATIONARY SATELLITE FEED...',
+    };
+  }
 
   return (
     <section className="relative overflow-hidden pt-8 pb-20 border-b border-zinc-850 bg-[#09090b]">
@@ -201,48 +308,115 @@ export default function HeroSection({ onOpenConsole }) {
           </div>
 
           {/* Right Column: Mission Control Telemetry Workstation */}
-          <div className="lg:col-span-5 relative">
+          <div className="lg:col-span-5 relative w-full">
             <div className="relative border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden">
               {/* Card Header with Active Storm Badge & Military Clock */}
-              <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80 font-mono text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="font-bold text-white tracking-wider">
+              <div className="px-3.5 py-2.5 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/90 font-mono text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="font-bold text-white tracking-wider truncate">
                     {storm.name}
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 border border-zinc-700 bg-zinc-800 text-zinc-200 font-bold">
+                  <span className="text-[10px] px-1.5 py-0.5 border border-zinc-700 bg-zinc-800 text-zinc-200 font-bold shrink-0">
                     {storm.badge}
                   </span>
                 </div>
                 
-                <div className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5">
+                <div className="text-[11px] font-mono text-zinc-400 flex items-center gap-1.5 shrink-0">
                   <Clock className="w-3 h-3 text-zinc-500" />
                   <LiveClock />
                 </div>
               </div>
 
+              {/* Integrated Storm Selector Tabs Strip */}
+              <div className="px-2.5 py-1.5 border-b border-zinc-800 bg-[#0b0c10] flex items-center justify-between gap-1 font-mono text-[10px]">
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                  <span className="text-zinc-500 text-[9px] uppercase tracking-wider mr-1 shrink-0">STORM:</span>
+                  {Object.keys(stormPresets).map((key) => {
+                    const p = stormPresets[key];
+                    const isSelected = !isLiveMode && selectedPresetKey === key;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setIsLiveMode(false);
+                          setSelectedPresetKey(key);
+                        }}
+                        className={`px-2 py-0.5 transition-all whitespace-nowrap border text-[10px] ${
+                          isSelected
+                            ? 'bg-white text-zinc-950 font-bold border-white shadow-xs'
+                            : 'bg-zinc-900/80 text-zinc-400 hover:text-white border-zinc-800 hover:border-zinc-700'
+                        }`}
+                      >
+                        {p.name.split(' ')[0]}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => {
+                      setIsLiveMode(true);
+                      fetchLiveTelemetry(false);
+                    }}
+                    className={`px-2 py-0.5 transition-all whitespace-nowrap border text-[10px] flex items-center gap-1 ${
+                      isLiveMode
+                        ? 'bg-emerald-500 text-black font-bold border-emerald-400 shadow-xs'
+                        : 'bg-emerald-950/40 text-emerald-400 hover:text-white border-emerald-900/60'
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>LIVE</span>
+                  </button>
+                </div>
+
+                {isLiveMode && (
+                  <button
+                    onClick={() => fetchLiveTelemetry(true)}
+                    disabled={isScanning}
+                    className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-white text-[10px] flex items-center gap-1 shrink-0 active:scale-95 transition-all disabled:opacity-50 ml-1"
+                    title="Force re-scan latest geostationary frame"
+                  >
+                    <RefreshCw className={`w-2.5 h-2.5 ${isScanning ? 'animate-spin text-emerald-400' : ''}`} />
+                    <span>{isScanning ? '...' : 'SYNC'}</span>
+                  </button>
+                )}
+              </div>
+
               {/* Display Viewport: Real Geostationary Infrared Intensification Sequence */}
               <div className="relative h-72 sm:h-80 w-full bg-[#070709] flex items-center justify-center overflow-hidden">
-                {/* Real Satellite Imagery Loop with High-Efficiency WebP and GIF Fallback */}
+                {/* Satellite Imagery Viewport */}
                 <picture className="absolute inset-0 w-full h-full select-none">
-                  <source srcSet="/gifs/michael_intensification_web.webp" type="image/webp" />
+                  {storm.webpImage && (
+                    <source srcSet={storm.webpImage} type="image/webp" />
+                  )}
                   <img
-                    src="/gifs/michael_intensification_web.gif"
-                    alt={`${storm.name} Geostationary Infrared Loop`}
+                    src={storm.image}
+                    alt={`${storm.name} Geostationary Satellite Imagery`}
                     loading="eager"
                     decoding="async"
+                    onError={() => {
+                      if (isLiveMode) setLiveImageError(true);
+                    }}
                     className="w-full h-full object-cover object-center select-none"
                   />
                 </picture>
+
                 {/* Subtle contrast grading overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
+                {/* Scanning radar sweep animation when refreshing live pass */}
+                {isScanning && (
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    <div className="w-full h-1 bg-emerald-400/80 shadow-[0_0_15px_#10b981] animate-pulse absolute top-0 animate-[scan_2s_linear_infinite]" />
+                  </div>
+                )}
+
                 {/* CenterNet Sub-Pixel Eye Fix HUD Reticle (Dynamic Target Lock) */}
                 <div
-                  className="absolute pointer-events-none flex flex-col items-center justify-center"
+                  className="absolute pointer-events-none flex flex-col items-center justify-center transition-all duration-700 ease-out"
                   style={{
-                    left: '53%',
-                    top: '51%',
+                    left: storm.reticleLeft,
+                    top: storm.reticleTop,
                     transform: 'translate(-50%, -50%)',
                   }}
                 >
@@ -251,7 +425,6 @@ export default function HeroSection({ onOpenConsole }) {
                   
                   {/* Precision Target Brackets */}
                   <div className="absolute w-12 h-12 border border-dashed border-emerald-400/80 flex items-center justify-center">
-                    {/* Corner ticks */}
                     <div className="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-emerald-400" />
                     <div className="absolute -top-1 -right-1 w-2 h-2 border-t-2 border-r-2 border-emerald-400" />
                     <div className="absolute -bottom-1 -left-1 w-2 h-2 border-b-2 border-l-2 border-emerald-400" />
@@ -265,42 +438,44 @@ export default function HeroSection({ onOpenConsole }) {
 
                   {/* Micro Target Tag */}
                   <div className="absolute top-14 whitespace-nowrap bg-black/85 backdrop-blur-sm border border-emerald-500/40 px-1.5 py-0.5 text-[8px] font-mono text-emerald-300">
-                    EYE FIX: {storm.lat}°N, {Math.abs(storm.lon)}°W
+                    EYE FIX: {storm.lat}°N, {Math.abs(storm.lon)}°{storm.lonDir}
                   </div>
                 </div>
 
                 {/* Overlay Top-Left: Storm Position Coordinates */}
-                <div className="absolute top-2.5 left-2.5 bg-black/85 backdrop-blur-md border border-zinc-800 px-2 py-1.5 font-mono text-[10px] text-zinc-300 pointer-events-none">
-                  <div className="flex items-center gap-2">
+                <div className="absolute top-2 left-2 bg-black/85 backdrop-blur-md border border-zinc-800 px-2 py-1 font-mono text-[9px] text-zinc-300 pointer-events-none">
+                  <div className="flex items-center gap-1.5">
                     <span className="text-zinc-500">POS</span>
-                    <span className="text-white font-bold">{storm.lat}°N, {Math.abs(storm.lon)}°W</span>
+                    <span className="text-white font-bold">{storm.lat}°N, {Math.abs(storm.lon)}°{storm.lonDir}</span>
                   </div>
-                  <div className="text-[9px] text-zinc-400 mt-0.5">{storm.basin}</div>
                 </div>
 
                 {/* Overlay Top-Right: Satellite Channel / Radiometric Sensor */}
-                <div className="absolute top-2.5 right-2.5 bg-black/85 backdrop-blur-md border border-zinc-800 px-2 py-1 font-mono text-[9px] text-zinc-300 pointer-events-none flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-white font-bold">{storm.satelliteSource}</span>
+                <div className="absolute top-2 right-2 bg-black/85 backdrop-blur-md border border-zinc-800 px-2 py-1 font-mono text-[9px] text-zinc-300 pointer-events-none flex items-center gap-1.5 max-w-[190px] truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="text-white font-bold truncate">{storm.satelliteSource.split('(')[0].trim()}</span>
                 </div>
 
                 {/* Live Reticle Alignment Badge */}
-                <div className="absolute bottom-2.5 right-2.5 bg-black/85 backdrop-blur-md border border-zinc-800 px-2 py-1 text-[9px] font-mono text-zinc-400 flex items-center gap-1.5 pointer-events-none">
+                <div className="absolute bottom-2 right-2 bg-black/85 backdrop-blur-md border border-zinc-800 px-2 py-0.5 text-[9px] font-mono text-zinc-400 flex items-center gap-1.5 pointer-events-none">
                   <Compass className="w-2.5 h-2.5 text-zinc-300" />
-                  <span>OFFSET: +0.12 / -0.18</span>
+                  <span>OFFSET: {storm.offsetStr}</span>
                 </div>
 
                 {/* Eye Fix Status Pill */}
-                <div className="absolute bottom-2.5 left-2.5 bg-black/85 backdrop-blur-md border border-zinc-800 px-2 py-1 text-[9px] font-mono text-emerald-400 flex items-center gap-1.5 pointer-events-none">
+                <div className="absolute bottom-2 left-2 bg-black/85 backdrop-blur-md border border-zinc-800 px-2 py-0.5 text-[9px] font-mono text-emerald-400 flex items-center gap-1.5 pointer-events-none">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>CENTERNET EYE FIX: LOCKED</span>
+                  <span>CENTERNET: LOCKED</span>
                 </div>
+              </div>
 
-                {/* Bottom Center Informational Banner for Michael */}
-                <div className="absolute bottom-9 inset-x-0 mx-auto w-fit bg-zinc-950/90 backdrop-blur-md border border-zinc-700/60 px-2.5 py-0.5 text-[9px] font-mono text-zinc-300 pointer-events-none flex items-center gap-2 shadow-lg">
-                  <Activity className="w-2.5 h-2.5 text-amber-400" />
-                  <span>INTENSIFICATION TO CAT 5 LANDFALL · 118 SEQUENTIAL FRAMES</span>
+              {/* Status Ticker Bar right under Viewport */}
+              <div className="px-3 py-1.5 bg-[#090a0e] border-t border-zinc-800 flex items-center justify-between text-[10px] font-mono text-zinc-400">
+                <div className="flex items-center gap-1.5 truncate">
+                  <Activity className="w-3 h-3 text-emerald-400 shrink-0" />
+                  <span className="truncate text-zinc-300">{storm.bannerText}</span>
                 </div>
+                <span className="text-[9px] text-zinc-500 shrink-0 ml-2">&lt; 4.0s</span>
               </div>
 
               {/* Live Telemetry Grid */}

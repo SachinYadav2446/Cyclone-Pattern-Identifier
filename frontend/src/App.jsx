@@ -5,6 +5,7 @@ import DatasetSection from './components/DatasetSection';
 import PipelineSection from './components/PipelineSection';
 import ModelArchitectureSection from './components/ModelArchitectureSection';
 import DoctorModeSection from './components/DoctorModeSection';
+import DisasterMatrixSection from './components/DisasterMatrixSection';
 import BenchmarksSection from './components/BenchmarksSection';
 import Footer from './components/Footer';
 import GISConsoleModal from './components/GISConsoleModal';
@@ -67,7 +68,10 @@ export default function App() {
           {/* 5. Explainable AI: Doctor Mode (Interactive Grad-CAM Attention Audit) */}
           <DoctorModeSection />
 
-          {/* 6. Scientific Benchmark Verification (NOAA IBTrACS Gold Standard) */}
+          {/* 6. PostGIS Life-Safety & Coastal Evacuation Vulnerability Matrix */}
+          <DisasterMatrixSection />
+
+          {/* 7. Scientific Benchmark Verification (NOAA IBTrACS Gold Standard) */}
           <BenchmarksSection />
         </main>
       </ErrorBoundary>

@@ -48,7 +48,7 @@ const channels = [
     role: 'Sub-Kilometer Eye Structural Georeferencing',
     description: 'High-resolution albedo reflecting sunlight off upper tropospheric cirrus and spiral rainband striations. Enables pinpoint CenterNet eye fix.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_vis.jpg',
-    fallbackUrl: '/images/VIS_cyclone.png',
+    fallbackUrl: '/images/visible_cyclone_image.png',
   },
   {
     id: 'wv',
@@ -61,7 +61,7 @@ const channels = [
     role: 'Upper-Level Dry Slot & Steering Flow Mapping',
     description: 'Visualizes mid-to-upper tropospheric moisture transport (300-600 hPa). Crucial for detecting dry air intrusions that disrupt cyclone core intensification.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_wv.jpg',
-    fallbackUrl: '/images/WV_cyclone.png',
+    fallbackUrl: '/images/WV_image.png',
   },
   {
     id: 'ctbt',
