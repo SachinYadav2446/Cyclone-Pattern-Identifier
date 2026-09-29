@@ -23,6 +23,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def root():
+    return {
+        "status": "ONLINE",
+        "service": "DeepCyclone Live AI Telemetry Engine",
+        "docs_url": "/docs",
+        "health_check": "/api/v1/health",
+        "telemetry_endpoint": "/api/v1/live/latest-analysis"
+    }
+
 @app.get("/api/v1/health")
 def health_check():
     return {
