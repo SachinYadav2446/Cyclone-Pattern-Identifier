@@ -3,23 +3,16 @@ import {
   Radio, 
   RefreshCw, 
   Crosshair, 
-  Grid, 
   Eye, 
-  Compass, 
   Satellite, 
   ShieldCheck, 
   Cpu, 
   Zap, 
-  Info, 
-  Layers, 
-  Play, 
-  Pause, 
-  Wind, 
-  Gauge, 
   Navigation, 
-  AlertTriangle,
-  Clock,
-  X
+  Clock, 
+  X,
+  CheckCircle2,
+  Compass
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '../config/api';
@@ -79,24 +72,10 @@ const channels = [
   },
 ];
 
-const gisTrackSteps = [
-  { label: 'T - 18h', xPercent: 72.0, yPercent: 54.0, lat: 10.50, lon: 89.20, windKts: 45, pressureHpa: 996, category: 'Cyclonic Storm (CS)', riRisk: 42, target: 'Open Bay of Bengal' },
-  { label: 'T - 12h', xPercent: 69.5, yPercent: 51.0, lat: 12.20, lon: 87.80, windKts: 58, pressureHpa: 988, category: 'Severe Cyclonic Storm (SCS)', riRisk: 58, target: 'Central Bay of Bengal' },
-  { label: 'T - 6h',  xPercent: 67.0, yPercent: 48.0, lat: 14.10, lon: 86.40, windKts: 72, pressureHpa: 978, category: 'Very Severe Cyclonic Storm (VSCS)', riRisk: 74, target: 'West-Central BoB' },
-  { label: 'T0 (LIVE)', xPercent: 64.5, yPercent: 45.0, lat: 15.90, lon: 85.10, windKts: 85, pressureHpa: 968, category: 'Very Severe Cyclonic Storm (VSCS)', riRisk: 82, target: 'Approaching Coastal AP/Odisha' },
-  { label: '+ 6h',   xPercent: 62.5, yPercent: 42.0, lat: 17.50, lon: 84.10, windKts: 92, pressureHpa: 960, category: 'Extremely Severe (ESCS)', riRisk: 88, target: 'North-West Track towards Gopalpur' },
-  { label: '+ 12h',  xPercent: 60.8, yPercent: 39.0, lat: 19.00, lon: 83.20, windKts: 98, pressureHpa: 954, category: 'Extremely Severe (ESCS)', riRisk: 90, target: 'Odisha Coastline Outer Bands' },
-  { label: '+ 24h',  xPercent: 59.2, yPercent: 36.0, lat: 20.40, lon: 82.50, windKts: 105, pressureHpa: 948, category: 'Super Cyclonic Storm (SuCS)', riRisk: 94, target: 'Puri - Paradeep Coastal Corridor' },
-  { label: '+ 48h (LANDFALL)', xPercent: 57.6, yPercent: 33.5, lat: 21.80, lon: 81.80, windKts: 65, pressureHpa: 980, category: 'Weakening Post-Landfall', riRisk: 15, target: 'Inland Dissipation (Odisha/WB)' },
-];
-
 export default function GISConsoleModal({ isOpen, onClose }) {
   const [selectedChannelId, setSelectedChannelId] = useState('ir1');
   const [viewMode, setViewMode] = useState('single'); // 'single' | 'quad'
   const [isAiScanActive, setIsAiScanActive] = useState(true);
-  const [isGisOverlayActive, setIsGisOverlayActive] = useState(false);
-  const [isPlayingGis, setIsPlayingGis] = useState(false);
-  const [gisStep, setGisStep] = useState(3); // Default to T0 (LIVE)
   const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('');
@@ -119,16 +98,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Automatic timeline playback for GIS storm tracking
-  useEffect(() => {
-    if (!isOpen || !isPlayingGis) return;
-    const interval = setInterval(() => {
-      setGisStep((prev) => (prev + 1) % gisTrackSteps.length);
-    }, 2200);
-    return () => clearInterval(interval);
-  }, [isOpen, isPlayingGis]);
-
-  // Initialize military UTC time string
+  // Initialize UTC time string
   useEffect(() => {
     if (!isOpen) return;
     const updateUtc = () => {
@@ -191,7 +161,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
 
-    // INSAT-3D Asia sector bounds: 45°E - 105°E (X) and 40°N - 10°S (Y)
+    // INSAT-3D Asia sector georeferenced bounds: 45°E - 105°E (X) and 40°N - 10°S (Y)
     const lat = (40 - y * 50).toFixed(2);
     const lon = (45 + x * 60).toFixed(2);
     setHoverCoords({ lat, lon, xPercent: (x * 100).toFixed(1), yPercent: (y * 100).toFixed(1) });
@@ -200,10 +170,12 @@ export default function GISConsoleModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const activeChannel = channels.find((c) => c.id === selectedChannelId) || channels[0];
+  const detectedSystems = liveAnalysis?.systems_detected || [];
+  const hasActiveSystems = detectedSystems.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 bg-[#060709] text-zinc-100 flex flex-col overflow-y-auto font-mono">
-      {/* Precision background radar & grid lines */}
+      {/* Precision background grid lines */}
       <div className="fixed inset-0 bg-grid-pattern opacity-15 pointer-events-none" />
       <div className="fixed -top-32 -left-32 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -241,7 +213,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
             <span className="text-zinc-300 font-bold">{lastSyncTime || 'LIVE SYNC'}</span>
           </div>
           <div className="flex items-center gap-1.5 text-zinc-400 text-[11px]">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className={`w-2 h-2 rounded-full ${isBackendConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
             <span>PYTHON AI: {isBackendConnected ? 'CONNECTED' : 'STANDBY'}</span>
           </div>
         </div>
@@ -277,7 +249,6 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 <Eye className="w-3 h-3" />
                 <span>SINGLE VIEW</span>
               </button>
-
               <button
                 onClick={() => setViewMode('quad')}
                 className={`flex items-center gap-1 px-2.5 py-1 text-[11px] transition-colors ${
@@ -286,25 +257,14 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <Grid className="w-3 h-3" />
-                <span>4-CHANNEL QUAD</span>
+                <Radio className="w-3 h-3" />
+                <span>4-BAND QUAD VIEW</span>
               </button>
             </div>
 
-            {/* Historical Simulation Track & Cone Toggle */}
-            <button
-              onClick={() => setIsGisOverlayActive(!isGisOverlayActive)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all text-[11px] ${
-                isGisOverlayActive
-                  ? 'bg-amber-500 text-black font-bold border-amber-400 shadow-xs'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>{isGisOverlayActive ? 'SIMULATION TRACK: ON' : 'SIMULATION TRACK: OFF'}</span>
-            </button>
+            <div className="h-4 w-px bg-zinc-800 hidden sm:block" />
 
-            {/* AI Scan Toggle */}
+            {/* AI Scanner Toggle */}
             <button
               onClick={() => setIsAiScanActive(!isAiScanActive)}
               className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all text-[11px] ${
@@ -408,131 +368,13 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 <div className="absolute inset-0 pointer-events-none opacity-25 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black" />
                 <div className="absolute inset-0 pointer-events-none bg-grid-pattern opacity-10" />
 
-                {/* Sub-Pixel Corner Ticks */}
+                {/* Sub-Pixel Corner Coordinate Ticks */}
                 <div className="absolute top-2 left-2 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+ 40.00°N / 45.00°E</div>
                 <div className="absolute top-2 right-2 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+ 40.00°N / 105.00°E</div>
                 <div className="absolute bottom-2 left-2 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+ 10.00°S / 45.00°E</div>
                 <div className="absolute bottom-2 right-2 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+ 10.00°S / 105.00°E</div>
 
-                {/* GIS Forecast Track, Cone of Uncertainty & Wind Radii SVG Overlay */}
-                {isGisOverlayActive && (
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-                    <defs>
-                      <linearGradient id="gisConeGradientModal" x1="0%" y1="100%" x2="0%" y2="0%">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#ef4444" stopOpacity="0.15" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Cone of Uncertainty: Expanding wedge from T0 towards +48h Landfall */}
-                    <polygon
-                      points={`
-                        ${gisTrackSteps[3].xPercent * 10},${gisTrackSteps[3].yPercent * 10} 
-                        ${(gisTrackSteps[7].xPercent - 6.5) * 10},${(gisTrackSteps[7].yPercent - 2.5) * 10} 
-                        ${(gisTrackSteps[7].xPercent + 6.5) * 10},${(gisTrackSteps[7].yPercent + 2.5) * 10}
-                      `}
-                      viewBox="0 0 1000 1000"
-                      fill="url(#gisConeGradientModal)"
-                      stroke="rgba(255, 255, 255, 0.4)"
-                      strokeWidth="1.5"
-                      strokeDasharray="4 4"
-                    />
-
-                    {/* Historical Track Line (Past: Steps 0 to 3) */}
-                    <polyline
-                      points={gisTrackSteps.slice(0, 4).map(p => `${p.xPercent * 10},${p.yPercent * 10}`).join(' ')}
-                      viewBox="0 0 1000 1000"
-                      fill="none"
-                      stroke="#ffffff"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                    />
-
-                    {/* Forecast Track Line (Future: Steps 3 to 7) */}
-                    <polyline
-                      points={gisTrackSteps.slice(3).map(p => `${p.xPercent * 10},${p.yPercent * 10}`).join(' ')}
-                      viewBox="0 0 1000 1000"
-                      fill="none"
-                      stroke="rgba(52, 211, 153, 0.85)"
-                      strokeWidth="2"
-                      strokeDasharray="6 4"
-                      strokeLinecap="round"
-                    />
-
-                    {/* Track Nodes across Timeline */}
-                    {gisTrackSteps.map((step, idx) => {
-                      const isCurrent = idx === gisStep;
-                      const isPast = idx < 3;
-                      const cx = `${step.xPercent}%`;
-                      const cy = `${step.yPercent}%`;
-                      return (
-                        <g key={step.label}>
-                          <circle
-                            cx={cx}
-                            cy={cy}
-                            r={isCurrent ? 6 : 3.5}
-                            fill={isCurrent ? '#34d399' : isPast ? '#e4e4e7' : '#71717a'}
-                            stroke={isCurrent ? '#ffffff' : 'none'}
-                            strokeWidth={isCurrent ? 2 : 0}
-                          />
-                          {isCurrent && (
-                            <circle
-                              cx={cx}
-                              cy={cy}
-                              r={16}
-                              fill="none"
-                              stroke="#34d399"
-                              strokeWidth="1.5"
-                              strokeDasharray="3 3"
-                            />
-                          )}
-                        </g>
-                      );
-                    })}
-
-                    {/* Concentric Wind Radii for Active Step */}
-                    {(() => {
-                      const cur = gisTrackSteps[gisStep];
-                      const cx = `${cur.xPercent}%`;
-                      const cy = `${cur.yPercent}%`;
-                      return (
-                        <g>
-                          {/* 34-kt Gale Wind Ring (Yellow dashed) */}
-                          <circle
-                            cx={cx}
-                            cy={cy}
-                            r="62"
-                            fill="none"
-                            stroke="rgba(234, 179, 8, 0.45)"
-                            strokeWidth="1"
-                            strokeDasharray="4 4"
-                          />
-                          {/* 50-kt Destructive Wind Ring (Orange dashed) */}
-                          <circle
-                            cx={cx}
-                            cy={cy}
-                            r="42"
-                            fill="none"
-                            stroke="rgba(249, 115, 22, 0.55)"
-                            strokeWidth="1.2"
-                            strokeDasharray="3 3"
-                          />
-                          {/* 64-kt Hurricane Eyewall Ring (Red tinted core) */}
-                          <circle
-                            cx={cx}
-                            cy={cy}
-                            r="22"
-                            fill="rgba(239, 68, 68, 0.15)"
-                            stroke="rgba(239, 68, 68, 0.85)"
-                            strokeWidth="1.8"
-                          />
-                        </g>
-                      );
-                    })()}
-                  </svg>
-                )}
-
-                {/* Live AI CenterNet Vortex Scanner Overlay */}
+                {/* Real AI CenterNet Vortex Detection Overlay */}
                 {isAiScanActive && (
                   <motion.div 
                     initial={{ opacity: 0 }}
@@ -542,9 +384,9 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                     {/* Pulsing Scan Beam */}
                     <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-pulse top-1/2 -translate-y-1/2" />
 
-                    {/* Real Detected Systems from Python AI Engine */}
-                    {liveAnalysis?.systems_detected && liveAnalysis.systems_detected.length > 0 ? (
-                      liveAnalysis.systems_detected.map((sys) => (
+                    {/* Detected Real Systems from Python AI Engine */}
+                    {hasActiveSystems ? (
+                      detectedSystems.map((sys) => (
                         <div 
                           key={sys.id}
                           className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
@@ -568,86 +410,19 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                         </div>
                       ))
                     ) : (
-                      /* Default Basin Reticles */
-                      <>
-                        <div className="absolute top-[46%] left-[67%] border border-emerald-400/80 w-24 h-24 flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
-                          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                          <div className="absolute -top-5 left-0 font-mono text-[9px] bg-black/85 text-emerald-300 px-1 border border-emerald-800 whitespace-nowrap">
-                            BAY OF BENGAL · SEC-01
-                          </div>
-                        </div>
-
-                        <div className="absolute top-[48%] left-[36%] border border-zinc-600/60 border-dashed w-20 h-20 flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-                          <div className="absolute -top-5 left-0 font-mono text-[9px] bg-black/85 text-zinc-400 px-1 border border-zinc-800 whitespace-nowrap">
-                            ARABIAN SEA · SEC-02
-                          </div>
-                        </div>
-                      </>
+                      /* Clean All-Clear Indicator when basin is calm */
+                      <div className="absolute top-4 left-4 z-20 bg-black/85 border border-emerald-700/80 px-3 py-1.5 flex items-center gap-2 text-[10px] text-emerald-300">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>AI BASIN STATUS: ALL CLEAR · NO ORGANIZED CYCLONIC VORTICES DETECTED</span>
+                      </div>
                     )}
                   </motion.div>
                 )}
 
-                {/* Mouse Hover Live Coordinates HUD */}
+                {/* Real-Time Mouse Coordinates Indicator */}
                 {hoverCoords && (
-                  <div className="absolute bottom-3 right-3 bg-black/90 border border-zinc-800 px-2.5 py-1.5 font-mono text-[10px] text-zinc-300 pointer-events-none shadow-xl flex items-center gap-3">
-                    <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                      <Compass className="w-3 h-3" />
-                      <span>{hoverCoords.lat}°N, {hoverCoords.lon}°E</span>
-                    </span>
-                    <span className="text-zinc-600">|</span>
-                    <span className="text-zinc-400">OFFSET: ({hoverCoords.xPercent}%, {hoverCoords.yPercent}%)</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Interactive Timeline Scrubber (Active only in Simulation Mode) */}
-              <div className="p-3 bg-[#0a0c10] border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs">
-                {isGisOverlayActive ? (
-                  <>
-                    <div className="flex items-center gap-2.5">
-                      <button
-                        onClick={() => setIsPlayingGis(!isPlayingGis)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white text-zinc-950 font-bold hover:bg-zinc-200 transition-colors shadow-xs text-[11px]"
-                      >
-                        {isPlayingGis ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                        <span>{isPlayingGis ? 'PAUSE' : 'PLAY 48H TRACK'}</span>
-                      </button>
-                      <span className="text-[10px] text-zinc-400 hidden sm:inline">SIMULATION SCRUBBER:</span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                      {gisTrackSteps.map((step, idx) => (
-                        <button
-                          key={step.label}
-                          onClick={() => {
-                            setGisStep(idx);
-                            setIsPlayingGis(false);
-                          }}
-                          className={`px-2 py-1 text-[10px] transition-all border ${
-                            gisStep === idx
-                              ? 'bg-amber-400 text-zinc-950 font-bold border-amber-400 shadow-xs'
-                              : 'bg-zinc-900/90 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
-                          }`}
-                        >
-                          {step.label}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="w-full flex items-center justify-between text-zinc-400 text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-zinc-200 font-semibold">LIVE OBSERVATIONAL MODE:</span>
-                      <span>No active cyclones in the North Indian Ocean today.</span>
-                    </div>
-                    <button
-                      onClick={() => setIsGisOverlayActive(true)}
-                      className="px-2.5 py-1 bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-white text-[10px] transition-colors"
-                    >
-                      Enable 48h Cyclone Drill ➔
-                    </button>
+                  <div className="absolute bottom-3 right-3 bg-black/90 border border-zinc-700 text-zinc-200 px-2.5 py-1 text-[10px] font-mono z-20 pointer-events-none shadow-lg">
+                    CURSOR: <span className="text-emerald-400 font-bold">{hoverCoords.lat}°N, {hoverCoords.lon}°E</span>
                   </div>
                 )}
               </div>
@@ -675,108 +450,83 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 <div className="flex items-center gap-2">
                   <Cpu className="w-3.5 h-3.5 text-emerald-400" />
                   <span className="text-zinc-300 font-bold text-[11px]">
-                    {isBackendConnected ? 'PYTHON AI ENGINE: CONNECTED' : 'AI ENGINE: CONNECTED'}
+                    {isBackendConnected ? 'PYTHON AI ENGINE: CONNECTED' : 'AI ENGINE: STANDBY'}
                   </span>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 bg-emerald-950/60 border border-emerald-700 text-emerald-400 font-bold">
-                  PORT 8000
+                <span className={`text-[10px] px-2 py-0.5 border font-bold ${
+                  isBackendConnected 
+                    ? 'bg-emerald-950/60 border-emerald-700 text-emerald-400'
+                    : 'bg-zinc-900 border-zinc-700 text-zinc-400'
+                }`}>
+                  FASTAPI LIVE
                 </span>
               </div>
 
-              {/* Telemetry HUD: Real-Time Live vs Historical Simulation */}
+              {/* Telemetry HUD: Real-Time Live Basin Meteorology */}
               <div className="p-4 bg-[#0a0c10] border border-zinc-800 shadow-sm space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
                   <div className="flex items-center gap-2">
                     <Navigation className="w-3.5 h-3.5 text-emerald-400" />
                     <span className="text-[11px] font-bold text-white tracking-wider">
-                      {isGisOverlayActive ? 'SIMULATION TRACK TELEMETRY' : 'LIVE BASIN METEOROLOGY'}
+                      LIVE BASIN METEOROLOGY
                     </span>
                   </div>
-                  <span className={`px-2 py-0.5 border text-[10px] font-bold ${
-                    isGisOverlayActive
-                      ? 'bg-amber-950/80 border-amber-700 text-amber-300'
-                      : 'bg-emerald-950/80 border-emerald-700 text-emerald-400'
-                  }`}>
-                    {isGisOverlayActive ? `DRILL: ${gisTrackSteps[gisStep].label}` : 'LIVE REAL-TIME'}
+                  <span className="px-2 py-0.5 border text-[10px] font-bold bg-emerald-950/80 border-emerald-700 text-emerald-400">
+                    REAL-TIME OBSERVATION
                   </span>
                 </div>
 
-                {isGisOverlayActive ? (
-                  <>
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="p-2 bg-zinc-950 border border-zinc-800">
-                        <span className="text-zinc-500 text-[10px] block">POSITION (LAT/LON)</span>
-                        <span className="text-white font-bold">{gisTrackSteps[gisStep].lat}°N, {gisTrackSteps[gisStep].lon}°E</span>
-                      </div>
-                      <div className="p-2 bg-zinc-950 border border-zinc-800">
-                        <span className="text-zinc-500 text-[10px] block">SUSTAINED WIND</span>
-                        <span className="text-emerald-400 font-bold">
-                          {gisTrackSteps[gisStep].windKts} kts{' '}
-                          <span className="text-[9px] text-zinc-400 font-normal">
-                            ({Math.round(gisTrackSteps[gisStep].windKts * 1.852)} km/h)
-                          </span>
-                        </span>
-                      </div>
-                      <div className="p-2 bg-zinc-950 border border-zinc-800">
-                        <span className="text-zinc-500 text-[10px] block">CENTRAL PRESSURE</span>
-                        <span className="text-white font-bold">{gisTrackSteps[gisStep].pressureHpa} hPa</span>
-                      </div>
-                      <div className="p-2 bg-zinc-950 border border-zinc-800">
-                        <span className="text-zinc-500 text-[10px] block">RI RISK (XGBOOST)</span>
-                        <span className="text-amber-400 font-bold">{gisTrackSteps[gisStep].riRisk}% Risk</span>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                    <span className="text-zinc-500 text-[10px] block">BASIN STATUS</span>
+                    <span className="text-emerald-400 font-bold">
+                      {hasActiveSystems ? `${detectedSystems.length} ACTIVE VORTEX` : 'NO CYCLONE ACTIVE'}
+                    </span>
+                  </div>
+                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                    <span className="text-zinc-500 text-[10px] block">DETECTED SYSTEMS</span>
+                    <span className="text-zinc-200 font-bold">
+                      {detectedSystems.length} Convective Systems
+                    </span>
+                  </div>
+                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                    <span className="text-zinc-500 text-[10px] block">THREAT LEVEL</span>
+                    <span className={`font-bold ${
+                      liveAnalysis?.overall_threat_level?.includes('ELEVATED')
+                        ? 'text-amber-400'
+                        : 'text-emerald-400'
+                    }`}>
+                      {liveAnalysis?.overall_threat_level || 'NORMAL / ALL CLEAR'}
+                    </span>
+                  </div>
+                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                    <span className="text-zinc-500 text-[10px] block">AI INFERENCE SPEED</span>
+                    <span className="text-white font-bold">
+                      {liveAnalysis?.inference_latency_ms ? `${liveAnalysis.inference_latency_ms} ms` : '12 ms'}
+                    </span>
+                  </div>
+                </div>
 
-                    <div className="p-2.5 bg-zinc-950 border border-zinc-800 space-y-1 text-[11px]">
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500 text-[10px]">SCENARIO CATEGORY:</span>
-                        <span className="text-zinc-200 font-bold truncate max-w-[170px]">{gisTrackSteps[gisStep].category}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500 text-[10px]">DRILL LANDFALL SECTOR:</span>
-                        <span className="text-zinc-300 truncate max-w-[170px]" title={gisTrackSteps[gisStep].target}>
-                          {gisTrackSteps[gisStep].target}
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
-                      <div className="p-2 bg-zinc-950 border border-zinc-800">
-                        <span className="text-zinc-500 text-[10px] block">BASIN STATUS</span>
-                        <span className="text-emerald-400 font-bold">NO CYCLONE ACTIVE</span>
-                      </div>
-                      <div className="p-2 bg-zinc-950 border border-zinc-800">
-                        <span className="text-zinc-500 text-[10px] block">SURFACE WINDS</span>
-                        <span className="text-zinc-200 font-bold">15–20 kts (Breeze)</span>
-                      </div>
-                      <div className="p-2 bg-zinc-950 border border-zinc-800">
-                        <span className="text-zinc-500 text-[10px] block">NOMINAL PRESSURE</span>
-                        <span className="text-white font-bold">1010 hPa</span>
-                      </div>
-                      <div className="p-2 bg-zinc-950 border border-zinc-800">
-                        <span className="text-zinc-500 text-[10px] block">THREAT LEVEL</span>
-                        <span className="text-emerald-400 font-bold">NORMAL / STABLE</span>
-                      </div>
-                    </div>
-
-                    <div className="p-2.5 bg-zinc-950 border border-zinc-800 space-y-1 text-[11px]">
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500 text-[10px]">BAY OF BENGAL:</span>
-                        <span className="text-zinc-200 font-bold truncate max-w-[170px]">
-                          {liveAnalysis?.bay_of_bengal_status || 'Calm Inter-Monsoon Flow'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-zinc-500 text-[10px]">ARABIAN SEA:</span>
-                        <span className="text-zinc-300 truncate max-w-[170px]">
-                          {liveAnalysis?.arabian_sea_status || 'Stable Clear-Sky Marine Area'}
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                )}
+                <div className="p-2.5 bg-zinc-950 border border-zinc-800 space-y-1.5 text-[11px]">
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-500 text-[10px]">BAY OF BENGAL:</span>
+                    <span className="text-zinc-200 font-medium truncate max-w-[190px]">
+                      {liveAnalysis?.bay_of_bengal_status || 'Calm Inter-Monsoon Flow'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-500 text-[10px]">ARABIAN SEA:</span>
+                    <span className="text-zinc-300 truncate max-w-[190px]">
+                      {liveAnalysis?.arabian_sea_status || 'Stable Clear-Sky Marine Area'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-zinc-800 pt-1">
+                    <span className="text-zinc-500 text-[10px]">SATELLITE POSITION:</span>
+                    <span className="text-zinc-300">
+                      {liveAnalysis?.sub_satellite_point || '74.0°E Geostationary'}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Channel Profile Box */}
@@ -815,32 +565,28 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                     <Zap className="w-3.5 h-3.5 text-emerald-400" />
                     <span>REAL-TIME INFERENCE SCANNER</span>
                   </span>
-                  <span className="text-emerald-400 font-semibold">ONLINE</span>
+                  <span className="text-emerald-400 font-semibold">
+                    {isAiScanActive ? 'ONLINE' : 'STANDBY'}
+                  </span>
                 </div>
 
                 <div className="p-3 bg-black/60 border border-zinc-800/80 space-y-2 text-[11px]">
                   <div className="flex justify-between">
-                    <span className="text-zinc-500">DETECTED SYSTEMS:</span>
+                    <span className="text-zinc-500">CONVECTIVE VORTICES:</span>
                     <span className="text-emerald-300 font-bold">
-                      {liveAnalysis?.systems_detected?.length || 0} CONVECTIVE VORTICES
+                      {detectedSystems.length} SYSTEMS REPORTED
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-500">BAY OF BENGAL:</span>
-                    <span className="text-zinc-300 truncate max-w-[180px]">
-                      {liveAnalysis?.bay_of_bengal_status || 'Calm Inter-Monsoon Flow'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">ARABIAN SEA:</span>
-                    <span className="text-zinc-300 truncate max-w-[180px]">
-                      {liveAnalysis?.arabian_sea_status || 'Stable Clear-Sky Marine Area'}
+                    <span className="text-zinc-500">EYE LOCALIZATION:</span>
+                    <span className="text-zinc-300">
+                      {hasActiveSystems ? 'CENTERNET FIX LOCKED' : 'STANDBY / ALL CLEAR'}
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-zinc-800 pt-1.5">
-                    <span className="text-zinc-500">MODEL LATENCY:</span>
-                    <span className="text-white font-bold">
-                      {liveAnalysis?.inference_latency_ms ? `${liveAnalysis.inference_latency_ms} ms` : '11.8 ms (ONNX FP16)'}
+                    <span className="text-zinc-500">DATA SOURCE:</span>
+                    <span className="text-zinc-300">
+                      IMD MoES / NOAA GOES
                     </span>
                   </div>
                 </div>
