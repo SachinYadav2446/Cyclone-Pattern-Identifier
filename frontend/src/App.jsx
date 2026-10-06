@@ -7,8 +7,10 @@ import ModelArchitectureSection from './components/ModelArchitectureSection';
 import DoctorModeSection from './components/DoctorModeSection';
 import DisasterMatrixSection from './components/DisasterMatrixSection';
 import BenchmarksSection from './components/BenchmarksSection';
+import EyeLocalizationWorkbench from './components/EyeLocalizationWorkbench';
 import Footer from './components/Footer';
 import GISConsoleModal from './components/GISConsoleModal';
+import PresentationGuideModal from './components/PresentationGuideModal';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -45,19 +47,29 @@ class ErrorBoundary extends Component {
 
 export default function App() {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+  const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] antialiased selection:bg-zinc-800 selection:text-white">
       {/* Top Navbar */}
-      <Navbar onOpenConsole={() => setIsConsoleOpen(true)} />
+      <Navbar 
+        onOpenConsole={() => setIsConsoleOpen(true)} 
+        onOpenDemo={() => setIsDemoGuideOpen(true)}
+      />
 
       <ErrorBoundary>
         <main>
           {/* 1. Hero Section with Live Animated Radar & Active Storm Telemetry */}
-          <HeroSection onOpenConsole={() => setIsConsoleOpen(true)} />
+          <HeroSection 
+            onOpenConsole={() => setIsConsoleOpen(true)} 
+            onOpenDemo={() => setIsDemoGuideOpen(true)}
+          />
 
           {/* 2. Multi-Spectral Satellite Telemetry & Ground Truth Dataset */}
           <DatasetSection />
+
+          {/* Interactive Eye Localization Workbench (CenterNet Keypoint & Sub-Pixel Regression) */}
+          <EyeLocalizationWorkbench />
 
           {/* 3. End-to-End Operational Pipeline (The 4 Transformations) */}
           <PipelineSection />
@@ -83,6 +95,12 @@ export default function App() {
       <GISConsoleModal
         isOpen={isConsoleOpen}
         onClose={() => setIsConsoleOpen(false)}
+      />
+
+      {/* 3-Act Live Audience Presentation & Demo Guide Modal */}
+      <PresentationGuideModal
+        isOpen={isDemoGuideOpen}
+        onClose={() => setIsDemoGuideOpen(false)}
       />
     </div>
   );
