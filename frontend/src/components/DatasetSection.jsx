@@ -137,36 +137,45 @@ export default function DatasetSection() {
         {/* Distinct Layout: Split Horizontal Interactive Spectrum Console with Auto-Looping */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12 items-stretch">
           {/* Left Column: Interactive Band Selector Stack */}
-          <div className="lg:col-span-5 flex flex-col justify-between border-y border-zinc-800 py-1 divide-y divide-zinc-850">
-            {spectralChannels.map((channel, idx) => {
+          <div className="lg:col-span-5 flex flex-col justify-between border-y border-zinc-800/80 py-1 divide-y divide-zinc-800/60 bg-[#090b10] rounded-xl border border-zinc-800/80 overflow-hidden shadow-xl">
+            {spectralChannels.map((channel) => {
               const isSelected = selectedChannel === channel.id;
+              const channelColor = {
+                vis: { bar: 'bg-amber-400', text: 'text-amber-300', border: 'border-l-amber-400', bg: 'bg-amber-950/25' },
+                tir1: { bar: 'bg-emerald-400', text: 'text-emerald-300', border: 'border-l-emerald-400', bg: 'bg-emerald-950/25' },
+                tir2: { bar: 'bg-cyan-400', text: 'text-cyan-300', border: 'border-l-cyan-400', bg: 'bg-cyan-950/25' },
+                wv: { bar: 'bg-violet-400', text: 'text-violet-300', border: 'border-l-violet-400', bg: 'bg-violet-950/25' }
+              }[channel.id] || { bar: 'bg-emerald-400', text: 'text-emerald-300', border: 'border-l-emerald-400', bg: 'bg-emerald-950/25' };
+
               return (
                 <button
                   key={channel.id}
                   onClick={() => {
                     setSelectedChannel(channel.id);
                   }}
-                  className={`w-full py-3.5 px-3 text-left transition-all flex items-center justify-between group ${
-                    isSelected ? 'bg-zinc-900/80 pl-4 border-l-2 border-white' : 'hover:bg-zinc-950/80'
+                  className={`w-full py-4 px-4 text-left transition-all flex items-center justify-between group cursor-pointer ${
+                    isSelected ? `${channelColor.bg} pl-5 border-l-4 ${channelColor.border}` : 'hover:bg-zinc-900/40'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-1.5 h-6 transition-colors rounded-full ${
-                      isSelected ? 'bg-white' : 'bg-zinc-800 group-hover:bg-zinc-600'
+                  <div className="flex items-center gap-3.5">
+                    <div className={`w-2 h-7 transition-all rounded-full ${
+                      isSelected ? `${channelColor.bar} shadow-[0_0_10px_currentColor]` : 'bg-zinc-800 group-hover:bg-zinc-700'
                     }`} />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs sm:text-sm font-semibold tracking-tight ${
+                        <span className={`text-xs sm:text-sm font-bold tracking-tight ${
                           isSelected ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'
                         }`}>
                           {channel.name}
                         </span>
                         {isSelected && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className={`w-2 h-2 rounded-full ${channelColor.bar} animate-ping`} />
                         )}
                       </div>
                       <div className="text-[11px] font-mono text-zinc-400 mt-0.5">
-                        {channel.wavelength} · {channel.resolution.split(' ')[0]}
+                        <span className={isSelected ? channelColor.text : 'text-zinc-500'}>λ {channel.wavelength}</span>
+                        <span className="mx-1.5 text-zinc-600">·</span>
+                        <span>{channel.resolution.split(' ')[0]}</span>
                       </div>
                     </div>
                   </div>
@@ -196,7 +205,7 @@ export default function DatasetSection() {
           <div 
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="lg:col-span-7 bg-black border border-zinc-800 relative overflow-hidden group/box min-h-[460px] flex flex-col justify-end shadow-2xl cursor-pointer"
+            className="lg:col-span-7 bg-[#050608] border border-cyan-500/30 rounded-xl relative overflow-hidden group/box min-h-[460px] flex flex-col justify-end shadow-[0_0_35px_rgba(6,182,212,0.12)] ring-1 ring-white/10 cursor-pointer"
           >
             {/* Pure Satellite Imagery (100% visible, no dark scrims blocking it) */}
             <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
