@@ -13,19 +13,45 @@
 .bg-grid-pattern {
   background-size: 32px 32px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
 }
 
 .bg-radial-gradient {
-  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 25%, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.06) 40%, transparent 75%);
 }
 
-/* Glassmorphism border styles */
+/* Atmospheric cyclone aurora gradients */
+.bg-aurora {
+  background: 
+    radial-gradient(ellipse 60% 50% at 20% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+}
+
+/* Glassmorphism border styles with vibrant sub-pixel edges */
 .glass-panel {
-  background: rgba(18, 18, 21, 0.75);
-  backdrop-filter: blur(12px);
+  background: rgba(14, 16, 22, 0.82);
+  backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+}
+
+.glass-panel-glow {
+  background: rgba(14, 16, 22, 0.88);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.15);
+}
+
+/* Atmospheric radar scan lines */
+@keyframes radar-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+
+.animate-scanline {
+  animation: radar-scan 3.5s linear infinite;
 }
 
 /* Precision dark obsidian scrollbar matching terminal theme */
@@ -39,17 +65,17 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #1f2937;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #10b981;
 }
 
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #27272a #060709;
+  scrollbar-color: #1f2937 #060709;
 }
 
