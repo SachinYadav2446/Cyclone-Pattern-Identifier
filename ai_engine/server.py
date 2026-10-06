@@ -56,6 +56,43 @@ def trigger_live_scan(background_tasks: BackgroundTasks):
     result = vortex_analyzer.analyze_latest_pass(force_refresh=True)
     return {"message": "Live satellite scan triggered successfully", "result": result}
 
+from pydantic import BaseModel
+from typing import Optional
+import base64
+from ai_engine.models.eye_detector import eye_detector, BENCHMARK_STORMS
+
+class LocalizeEyeRequest(BaseModel):
+    storm_id: Optional[str] = "fani"
+    image_base64: Optional[str] = None
+
+@app.post("/api/v1/models/localize-eye")
+def localize_cyclone_eye(payload: LocalizeEyeRequest):
+    """
+    Sub-pixel CenterNet eye localization endpoint.
+    Accepts preset storm ID (fani, amphan, biparjoy, remal, michael) or custom base64 image.
+    """
+    if payload.image_base64:
+        try:
+            raw_b64 = payload.image_base64
+            if "," in raw_b64:
+                raw_b64 = raw_b64.split(",")[1]
+            img_bytes = base64.b64decode(raw_b64)
+            return eye_detector.localize_image_array(img_bytes)
+        except Exception as e:
+            return {"status": "ERROR", "message": f"Failed to parse image: {str(e)}"}
+    
+    return eye_detector.localize_benchmark_storm(payload.storm_id or "fani")
+
+@app.get("/api/v1/models/localize-eye/{storm_id}")
+def get_benchmark_eye_fix(storm_id: str):
+    """Returns CenterNet keypoint localization for benchmark cyclones."""
+    return eye_detector.localize_benchmark_storm(storm_id)
+
+@app.get("/api/v1/models/benchmark-storms")
+def get_benchmark_storms():
+    """Lists available pre-calibrated benchmark cyclones for testing."""
+    return {"storms": list(BENCHMARK_STORMS.keys())}
+
 import os
 
 if __name__ == "__main__":
