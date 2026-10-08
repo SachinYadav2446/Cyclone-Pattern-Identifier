@@ -256,30 +256,31 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left Column: Mission Narrative */}
           <div className="lg:col-span-7 flex flex-col items-start pt-2">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400 mb-4 shadow-xs">
+            {/* Mission Protocol Badge */}
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-zinc-950 border border-zinc-800 text-[10px] font-mono tracking-widest text-zinc-300 mb-5 shadow-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              <span className="text-zinc-200 font-semibold">STAGE 01-04</span>
-              <span className="text-zinc-600">|</span>
-              <span className="tracking-wide">GEOSTATIONARY DEEP LEARNING ARCHITECTURE</span>
+              <span className="text-white font-bold">STAGE 01-04</span>
+              <span className="text-zinc-600">//</span>
+              <span className="text-zinc-400">DEFENSE-GRADE GEOSTATIONARY SATELLITE INTELLIGENCE</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12]">
-              Autonomous Satellite Intelligence for{' '}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12] font-mono">
+              Autonomous Deep Learning for{' '}
               <span className="text-white underline decoration-zinc-700 decoration-2 underline-offset-8">
                 Tropical Cyclone
               </span>{' '}
               Identification &amp; 48h Landfall.
             </h1>
 
-            <p className="mt-4 text-sm sm:text-base text-zinc-400 max-w-xl leading-relaxed font-sans">
-              Transforming raw geostationary infrared radiances into sub-pixel circulation center fixes, automated Dvorak wind estimations, and expanding uncertainty cones in <span className="text-white font-mono font-bold bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">&lt;4.0 seconds</span>.
+            <p className="mt-5 text-sm sm:text-base text-zinc-400 max-w-xl leading-relaxed font-sans">
+              Transforming raw geostationary infrared radiances into sub-pixel circulation center fixes, automated Dvorak wind estimations, and expanding uncertainty cones in <span className="text-white font-mono font-bold bg-zinc-900 px-1.5 py-0.5 border border-zinc-800">&lt;4.0 seconds</span>.
             </p>
 
-            {/* CTAs */}
+            {/* Tactical CTAs */}
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <button
                 onClick={onOpenConsole}
-                className="flex items-center gap-2.5 px-5 py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-black font-semibold text-xs transition-all font-mono shadow-md cursor-pointer active:scale-95"
+                className="flex items-center gap-2.5 px-5 py-2.5 bg-white hover:bg-zinc-200 text-black font-bold text-xs transition-all font-mono shadow-md cursor-pointer active:scale-95"
               >
                 <Terminal className="w-4 h-4" />
                 <span>Launch GIS Command Center</span>
@@ -288,34 +289,34 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
 
               <button
                 onClick={onOpenDemo}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 hover:text-white font-medium text-xs transition-all font-mono active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-200 hover:text-white font-medium text-xs transition-all font-mono active:scale-95 cursor-pointer"
               >
                 <Play className="w-3.5 h-3.5 fill-zinc-300 text-zinc-300" />
                 <span>Live Demo Guide (3 Acts)</span>
               </button>
 
               <a
-                href="#pipeline"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white font-medium text-xs transition-all font-mono active:scale-95"
+                href="#situation-room"
+                className="flex items-center gap-2 px-4 py-2.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-400 hover:text-white font-medium text-xs transition-all font-mono active:scale-95"
               >
-                <span>Pipeline Architecture</span>
+                <span>Situation Room</span>
               </a>
             </div>
 
             {/* Quick Metrics Bar with Precision Hairlines */}
-            <div className="mt-10 grid grid-cols-3 gap-6 pt-6 border-t border-zinc-800/80 w-full max-w-lg font-mono text-xs">
-              <div className="space-y-0.5">
-                <div className="text-zinc-500 text-[10px] tracking-wider uppercase font-semibold">CENTER FIX</div>
+            <div className="mt-10 grid grid-cols-3 gap-4 pt-6 border-t border-zinc-800/80 w-full max-w-lg font-mono text-xs">
+              <div className="p-3 bg-zinc-950 border border-zinc-900 space-y-0.5">
+                <div className="text-zinc-500 text-[9px] tracking-wider uppercase font-semibold">CENTER FIX</div>
                 <div className="text-2xl font-extrabold text-white">8.7 km</div>
                 <div className="text-zinc-500 text-[10px]">Haversine Error</div>
               </div>
-              <div className="space-y-0.5">
-                <div className="text-zinc-500 text-[10px] tracking-wider uppercase font-semibold">WIND SPEED</div>
+              <div className="p-3 bg-zinc-950 border border-zinc-900 space-y-0.5">
+                <div className="text-zinc-500 text-[9px] tracking-wider uppercase font-semibold">WIND SPEED</div>
                 <div className="text-2xl font-extrabold text-white">4.8 kts</div>
                 <div className="text-zinc-500 text-[10px]">Mean Abs Error</div>
               </div>
-              <div className="space-y-0.5">
-                <div className="text-zinc-500 text-[10px] tracking-wider uppercase font-semibold">LATENCY</div>
+              <div className="p-3 bg-zinc-950 border border-zinc-900 space-y-0.5">
+                <div className="text-zinc-500 text-[9px] tracking-wider uppercase font-semibold">LATENCY</div>
                 <div className="text-2xl font-extrabold text-white">&lt; 4.0s</div>
                 <div className="text-zinc-500 text-[10px]">Full End-to-End</div>
               </div>
@@ -325,17 +326,23 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
           {/* Right Column: Mission Control Telemetry Workstation */}
           <div className="lg:col-span-5 relative w-full group">
             {/* Ambient Backlight Halo behind radar */}
-            <div className="absolute -inset-1.5 bg-zinc-800/40 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition duration-700 pointer-events-none" />
+            <div className="absolute -inset-1 bg-zinc-800/30 blur-xl opacity-75 group-hover:opacity-100 transition duration-700 pointer-events-none" />
             
-            <div className="relative border border-zinc-800 rounded-xl bg-zinc-950 shadow-2xl overflow-hidden ring-1 ring-white/10">
+            <div className="relative border border-zinc-800 bg-[#000000] shadow-2xl overflow-hidden">
+              {/* Tactical Corner Crosshairs */}
+              <span className="absolute top-1 left-1.5 font-mono text-[9px] text-zinc-600 z-30 pointer-events-none select-none">+</span>
+              <span className="absolute top-1 right-1.5 font-mono text-[9px] text-zinc-600 z-30 pointer-events-none select-none">+</span>
+              <span className="absolute bottom-1 left-1.5 font-mono text-[9px] text-zinc-600 z-30 pointer-events-none select-none">+</span>
+              <span className="absolute bottom-1 right-1.5 font-mono text-[9px] text-zinc-600 z-30 pointer-events-none select-none">+</span>
+
               {/* Card Header with Active Storm Badge & Military Clock */}
-              <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900 backdrop-blur-md font-mono text-xs">
+              <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 font-mono text-xs">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />
                   <span className="font-bold text-white tracking-wider truncate">
                     {storm.name}
                   </span>
-                  <span className="text-[10px] px-1.5 py-0.5 border border-zinc-700 bg-zinc-800 text-zinc-200 font-bold shrink-0">
+                  <span className="text-[10px] px-1.5 py-0.5 border border-zinc-750 bg-zinc-900 text-white font-bold shrink-0">
                     {storm.badge}
                   </span>
                 </div>

@@ -11,6 +11,7 @@ import EyeLocalizationWorkbench from './components/EyeLocalizationWorkbench';
 import Footer from './components/Footer';
 import GISConsoleModal from './components/GISConsoleModal';
 import PresentationGuideModal from './components/PresentationGuideModal';
+import SynopticSituationRoom from './components/SynopticSituationRoom';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -63,6 +64,11 @@ export default function App() {
           <HeroSection 
             onOpenConsole={() => setIsConsoleOpen(true)} 
             onOpenDemo={() => setIsDemoGuideOpen(true)}
+          />
+
+          {/* Real-Time Synoptic Situation Room & Basin Threat Matrix */}
+          <SynopticSituationRoom 
+            onOpenConsole={() => setIsConsoleOpen(true)} 
           />
 
           {/* 2. Multi-Spectral Satellite Telemetry & Ground Truth Dataset */}

@@ -141,13 +141,13 @@ export default function ModelArchitectureSection() {
   return (
     <section 
       id="models" 
-      className="relative py-20 border-b border-zinc-800 bg-black text-white overflow-hidden"
+      className="relative py-20 border-y border-zinc-200 bg-[#fafafa] text-zinc-900 overflow-hidden"
     >
-      {/* Precision Blueprint Grid Pattern */}
+      {/* Precision Blueprint Grid Pattern (Light Theme) */}
       <div 
-        className="absolute inset-0 opacity-30 pointer-events-none" 
+        className="absolute inset-0 opacity-40 pointer-events-none" 
         style={{
-          backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px)',
           backgroundSize: '24px 24px'
         }}
       />
@@ -155,14 +155,14 @@ export default function ModelArchitectureSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Clean Section Header */}
         <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 shadow-xs mb-2.5">
-            <Binary className="w-3.5 h-3.5 text-white" />
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-white border border-zinc-300 text-[10px] font-mono tracking-widest text-zinc-700 shadow-2xs mb-2.5">
+            <Binary className="w-3.5 h-3.5 text-zinc-900" />
             <span>THE 4 SCIENTIFIC PILLARS · END-TO-END PIPELINE</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-zinc-950 font-mono">
             Modular Deep Learning Stack.
           </h2>
-          <p className="mt-1.5 text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed font-sans">
+          <p className="mt-2 text-xs sm:text-sm text-zinc-600 max-w-2xl leading-relaxed font-sans">
             Four specialized neural architectures chained into a synchronized meteorological pipeline.
           </p>
         </div>
@@ -176,36 +176,36 @@ export default function ModelArchitectureSection() {
               <div key={m.id} className="relative flex flex-col">
                 <button
                   onClick={() => setSelectedModelId(m.id)}
-                  className={`text-left px-3.5 py-2.5 transition-all relative border flex items-center justify-between gap-2.5 h-full group ${
+                  className={`text-left px-3.5 py-2.5 transition-all relative border flex items-center justify-between gap-2.5 h-full group cursor-pointer ${
                     isSelected
-                      ? 'bg-white text-black border-white shadow-md'
-                      : 'bg-zinc-950 text-white border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900 shadow-xs'
+                      ? 'bg-zinc-950 text-white border-zinc-950 shadow-md'
+                      : 'bg-white text-zinc-900 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50/80 shadow-2xs'
                   }`}
                 >
                   {/* Left: Icon + Stage 0X + Name */}
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className={`w-7 h-7 flex items-center justify-center shrink-0 border transition-colors ${
                       isSelected 
-                        ? 'bg-black text-white border-black' 
-                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 group-hover:border-zinc-700'
+                        ? 'bg-white text-zinc-950 border-white' 
+                        : 'bg-zinc-100 text-zinc-600 border-zinc-200 group-hover:border-zinc-300'
                     }`}>
                       <MIcon className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className={`text-[10px] font-mono font-bold ${
-                          isSelected ? 'text-zinc-600' : 'text-zinc-500'
+                          isSelected ? 'text-zinc-400' : 'text-zinc-500'
                         }`}>
                           0{m.id}
                         </span>
                         <span className={`text-xs font-bold truncate ${
-                          isSelected ? 'text-black' : 'text-white'
+                          isSelected ? 'text-white' : 'text-zinc-950'
                         }`}>
                           {m.name}
                         </span>
                       </div>
                       <div className={`text-[10px] truncate ${
-                        isSelected ? 'text-zinc-600' : 'text-zinc-400'
+                        isSelected ? 'text-zinc-300' : 'text-zinc-500'
                       }`}>
                         {m.role}
                       </div>
@@ -216,8 +216,8 @@ export default function ModelArchitectureSection() {
                   <div className="text-right shrink-0 font-mono text-[10px]">
                     <span className={`px-1.5 py-0.5 border text-[10px] ${
                       isSelected 
-                        ? 'bg-zinc-200 border-zinc-300 text-black font-semibold' 
-                        : 'bg-zinc-900 border-zinc-800 text-zinc-400'
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-200 font-semibold' 
+                        : 'bg-zinc-100 border-zinc-200 text-zinc-600'
                     }`}>
                       {m.latency}
                     </span>
@@ -225,14 +225,14 @@ export default function ModelArchitectureSection() {
 
                   {/* Active Indicator Bar */}
                   {isSelected && (
-                    <div className="absolute -bottom-[1px] inset-x-0 h-0.5 bg-black" />
+                    <div className="absolute -bottom-[1px] inset-x-0 h-0.5 bg-zinc-950" />
                   )}
                 </button>
 
                 {/* Flow Connector Arrow to next stage (Desktop) */}
                 {idx < models.length - 1 && (
-                  <div className="hidden lg:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 items-center justify-center w-5 h-5 bg-zinc-900 border border-zinc-800 rounded-full text-zinc-400 shadow-xs">
-                    <ChevronRight className="w-3 h-3 text-zinc-400" />
+                  <div className="hidden lg:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 items-center justify-center w-5 h-5 bg-white border border-zinc-300 rounded-full text-zinc-500 shadow-2xs">
+                    <ChevronRight className="w-3 h-3 text-zinc-500" />
                   </div>
                 )}
               </div>
@@ -248,30 +248,36 @@ export default function ModelArchitectureSection() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.18 }}
-            className="p-6 bg-zinc-950 border border-zinc-800 shadow-xl relative"
+            className="p-6 bg-white border border-zinc-200 shadow-md relative text-zinc-900"
           >
+            {/* Tactical Corner Crosshairs */}
+            <span className="absolute top-1 left-1.5 font-mono text-[9px] text-zinc-400 pointer-events-none select-none">+</span>
+            <span className="absolute top-1 right-1.5 font-mono text-[9px] text-zinc-400 pointer-events-none select-none">+</span>
+            <span className="absolute bottom-1 left-1.5 font-mono text-[9px] text-zinc-400 pointer-events-none select-none">+</span>
+            <span className="absolute bottom-1 right-1.5 font-mono text-[9px] text-zinc-400 pointer-events-none select-none">+</span>
+
             {/* Model Title & Tags Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-zinc-800">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-zinc-200">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-white text-black flex items-center justify-center font-bold shadow-xs">
+                <div className="w-9 h-9 bg-zinc-950 text-white flex items-center justify-center font-bold shadow-xs">
                   <ActiveIcon className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider">
                     {activeModel.stepNum} · {activeModel.role}
                   </div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">
+                  <h3 className="text-xl font-bold text-zinc-950 tracking-tight font-mono">
                     {activeModel.name}
                   </h3>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 font-mono text-xs">
-                <span className="px-2.5 py-1 bg-zinc-900 border border-zinc-800 text-zinc-300 text-[11px] font-medium">
+                <span className="px-2.5 py-1 bg-zinc-100 border border-zinc-200 text-zinc-700 text-[11px] font-medium">
                   {activeModel.framework}
                 </span>
-                <span className="px-2.5 py-1 bg-zinc-900 border border-zinc-700 text-white font-semibold text-[11px] flex items-center gap-1.5 shadow-xs">
-                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-300" />
+                <span className="px-2.5 py-1 bg-zinc-100 border border-zinc-300 text-zinc-950 font-semibold text-[11px] flex items-center gap-1.5 shadow-2xs">
+                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-700" />
                   <span>{activeModel.benchmarkBadge}</span>
                 </span>
               </div>
@@ -281,56 +287,56 @@ export default function ModelArchitectureSection() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-6 items-start">
               {/* Left Column: Layer Hierarchy Anatomy */}
               <div className="lg:col-span-6 space-y-4">
-                <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers className="w-3 h-3 text-white" />
-                  <span>NEURAL LAYER BREAKDOWN & TENSOR FLOW</span>
+                <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider flex items-center gap-1.5 font-semibold">
+                  <Layers className="w-3 h-3 text-zinc-900" />
+                  <span>NEURAL LAYER BREAKDOWN &amp; TENSOR FLOW</span>
                 </div>
 
                 <div className="space-y-2 font-mono text-xs">
                   {activeModel.layers.map((layer, lIdx) => (
                     <div 
                       key={lIdx}
-                      className="p-3 bg-zinc-900/80 border border-zinc-800 flex items-center justify-between gap-3 hover:border-zinc-700 transition-colors"
+                      className="p-3 bg-zinc-50/90 border border-zinc-200 flex items-center justify-between gap-3 hover:border-zinc-300 transition-colors"
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className="text-[10px] text-zinc-500 font-bold">0{lIdx + 1}</span>
+                        <span className="text-[10px] text-zinc-400 font-bold">0{lIdx + 1}</span>
                         <div>
-                          <div className="text-white font-semibold">{layer.name}</div>
-                          <div className="text-[10px] text-zinc-400">{layer.type}</div>
+                          <div className="text-zinc-950 font-bold">{layer.name}</div>
+                          <div className="text-[10px] text-zinc-500">{layer.type}</div>
                         </div>
                       </div>
-                      <span className="text-[11px] text-zinc-200 bg-black px-2.5 py-0.5 border border-zinc-800 font-mono shadow-xs truncate max-w-[200px]">
+                      <span className="text-[11px] text-zinc-800 bg-white px-2.5 py-0.5 border border-zinc-200 font-mono shadow-2xs truncate max-w-[200px]">
                         {layer.shape}
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="p-3 bg-zinc-900 border border-zinc-800 font-mono text-xs flex items-center justify-between text-zinc-400">
-                  <span className="font-semibold text-zinc-300 text-[10px]">DOWNSTREAM HANDOFF:</span>
-                  <span className="text-white text-right text-[11px] max-w-sm truncate">{activeModel.handoff}</span>
+                <div className="p-3 bg-zinc-50 border border-zinc-200 font-mono text-xs flex items-center justify-between text-zinc-600">
+                  <span className="font-bold text-zinc-800 text-[10px]">DOWNSTREAM HANDOFF:</span>
+                  <span className="text-zinc-950 text-right text-[11px] max-w-sm truncate font-medium">{activeModel.handoff}</span>
                 </div>
               </div>
 
               {/* Right Column: Mathematical Formulation & Telemetry */}
               <div className="lg:col-span-6 space-y-4">
-                <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Terminal className="w-3 h-3 text-white" />
-                  <span>MATHEMATICAL LOSS & HARDWARE FOOTPRINT</span>
+                <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider flex items-center gap-1.5 font-semibold">
+                  <Terminal className="w-3 h-3 text-zinc-900" />
+                  <span>MATHEMATICAL LOSS &amp; HARDWARE FOOTPRINT</span>
                 </div>
 
                 {/* Math Formula Card */}
-                <div className="p-4 bg-zinc-900/80 border border-zinc-800 font-mono text-xs space-y-3">
+                <div className="p-4 bg-zinc-50/90 border border-zinc-200 font-mono text-xs space-y-3">
                   <div>
-                    <div className="text-[10px] text-zinc-400 uppercase font-semibold">OBJECTIVE LOSS FUNCTION:</div>
-                    <code className="block mt-1 text-white text-xs bg-black p-2.5 border border-zinc-800 shadow-xs font-semibold">
+                    <div className="text-[10px] text-zinc-500 uppercase font-semibold">OBJECTIVE LOSS FUNCTION:</div>
+                    <code className="block mt-1 text-zinc-950 text-xs bg-white p-2.5 border border-zinc-200 shadow-2xs font-semibold">
                       {activeModel.loss}
                     </code>
                   </div>
 
                   <div>
-                    <div className="text-[10px] text-zinc-400 uppercase font-semibold">MATHEMATICAL FORMULATION:</div>
-                    <code className="block mt-1 text-zinc-200 text-xs bg-black p-2.5 border border-zinc-800 shadow-xs font-semibold">
+                    <div className="text-[10px] text-zinc-500 uppercase font-semibold">MATHEMATICAL FORMULATION:</div>
+                    <code className="block mt-1 text-zinc-800 text-xs bg-white p-2.5 border border-zinc-200 shadow-2xs font-semibold">
                       {activeModel.formula}
                     </code>
                   </div>
@@ -338,19 +344,19 @@ export default function ModelArchitectureSection() {
 
                 {/* Hardware Profiler Matrix */}
                 <div className="grid grid-cols-3 gap-2 font-mono text-xs text-center">
-                  <div className="p-2.5 bg-zinc-900/80 border border-zinc-800">
-                    <div className="text-[9px] text-zinc-400 uppercase font-semibold">GPU LATENCY</div>
-                    <div className="text-white font-bold text-sm mt-0.5">{activeModel.latency}</div>
+                  <div className="p-2.5 bg-zinc-50 border border-zinc-200">
+                    <div className="text-[9px] text-zinc-500 uppercase font-semibold">GPU LATENCY</div>
+                    <div className="text-zinc-950 font-bold text-sm mt-0.5">{activeModel.latency}</div>
                     <div className="text-[9px] text-zinc-500">FP16 TensorRT</div>
                   </div>
-                  <div className="p-2.5 bg-zinc-900/80 border border-zinc-800">
-                    <div className="text-[9px] text-zinc-400 uppercase font-semibold">MEMORY VRAM</div>
-                    <div className="text-white font-bold text-sm mt-0.5">{activeModel.memory}</div>
+                  <div className="p-2.5 bg-zinc-50 border border-zinc-200">
+                    <div className="text-[9px] text-zinc-500 uppercase font-semibold">MEMORY VRAM</div>
+                    <div className="text-zinc-950 font-bold text-sm mt-0.5">{activeModel.memory}</div>
                     <div className="text-[9px] text-zinc-500">Batch Size = 1</div>
                   </div>
-                  <div className="p-2.5 bg-zinc-900/80 border border-zinc-800">
-                    <div className="text-[9px] text-zinc-400 uppercase font-semibold">COMPUTE FLOPs</div>
-                    <div className="text-white font-bold text-sm mt-0.5">{activeModel.flops}</div>
+                  <div className="p-2.5 bg-zinc-50 border border-zinc-200">
+                    <div className="text-[9px] text-zinc-500 uppercase font-semibold">COMPUTE FLOPs</div>
+                    <div className="text-zinc-950 font-bold text-sm mt-0.5">{activeModel.flops}</div>
                     <div className="text-[9px] text-zinc-500">Per Frame Pass</div>
                   </div>
                 </div>
@@ -358,8 +364,8 @@ export default function ModelArchitectureSection() {
                 {/* Scientific Highlights */}
                 <div className="space-y-2">
                   {activeModel.details.slice(0, 2).map((detail, dIdx) => (
-                    <div key={dIdx} className="flex items-start gap-2 text-xs text-zinc-300 bg-zinc-900/80 border border-zinc-800 p-2.5 font-sans leading-relaxed">
-                      <Check className="w-3.5 h-3.5 text-white shrink-0 mt-0.5" />
+                    <div key={dIdx} className="flex items-start gap-2 text-xs text-zinc-800 bg-zinc-50 border border-zinc-200 p-2.5 font-sans leading-relaxed">
+                      <Check className="w-3.5 h-3.5 text-zinc-950 shrink-0 mt-0.5" />
                       <span>{detail}</span>
                     </div>
                   ))}

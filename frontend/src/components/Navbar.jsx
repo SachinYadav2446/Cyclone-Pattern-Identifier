@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Terminal, Menu, X, ShieldAlert, Cpu } from 'lucide-react';
 
 const navItems = [
+  { id: 'situation-room', label: 'SITUATION ROOM', badge: 'LIVE' },
   { id: 'dataset', label: 'DATASET' },
   { id: 'eye-workbench', label: 'EYE LOCATOR', badge: 'CENTERNET' },
   { id: 'pipeline', label: 'PIPELINE' },
@@ -136,7 +137,7 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onOpenDemo}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all font-mono tracking-wide shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-950 border border-zinc-850 hover:border-zinc-700 text-zinc-300 hover:text-white transition-all font-mono tracking-wide shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
           >
             <ShieldAlert className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
             <span>DEMO MODE</span>
@@ -144,9 +145,9 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
 
           <button 
             onClick={onOpenConsole}
-            className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 text-xs rounded-md border border-white bg-white hover:bg-zinc-200 text-black font-bold transition-all font-mono tracking-wide shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 text-xs bg-white hover:bg-zinc-200 text-black font-bold transition-all font-mono tracking-wide shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 animate-pulse" />
             <Terminal className="w-3.5 h-3.5 text-black shrink-0" />
             <span className="hidden sm:inline">GIS COMMAND CONSOLE</span>
             <span className="sm:hidden">CONSOLE</span>
@@ -155,7 +156,7 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-md border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition-colors"
+            className="md:hidden p-2 border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition-colors"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
