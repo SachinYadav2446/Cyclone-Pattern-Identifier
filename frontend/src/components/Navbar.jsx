@@ -52,14 +52,14 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-[#09090b]/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-black/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand Logo & Satellite Status */}
         <a href="#" className="flex items-center gap-3 group shrink-0">
-          <div className="relative flex items-center justify-center w-9 h-9 rounded-lg border border-zinc-700/80 bg-zinc-900 group-hover:border-emerald-500/80 transition-colors shadow-xs">
+          <div className="relative flex items-center justify-center w-9 h-9 rounded-lg border border-zinc-800 bg-zinc-950 group-hover:border-zinc-600 transition-colors shadow-xs">
             {/* Minimalist cyclone vortex eye */}
             <div 
-              className="w-4 h-4 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" 
+              className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" 
               style={{ animationDuration: '3.5s' }} 
             />
             <div className="absolute w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#ffffff]" />
@@ -69,7 +69,7 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
               <span className="font-bold text-sm tracking-tight text-white font-mono uppercase">
                 DeepCyclone
               </span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+              <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold bg-zinc-900 text-zinc-300 border border-zinc-800">
                 v2.0
               </span>
             </div>
@@ -90,7 +90,7 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
                 className={`relative py-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   isActive
                     ? 'text-white font-bold'
-                    : 'text-zinc-400 hover:text-zinc-200 font-medium'
+                    : 'text-zinc-400 hover:text-white font-medium'
                 }`}
               >
                 <span>{item.label}</span>
@@ -98,7 +98,7 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
                   <span
                     className={`text-[8px] px-1 py-0.5 rounded border font-mono transition-colors tracking-tight ${
                       isActive
-                        ? 'border-emerald-500/80 text-emerald-300 bg-emerald-950/50'
+                        ? 'border-zinc-700 text-white bg-zinc-800'
                         : 'border-zinc-800 text-zinc-500 bg-zinc-900/60'
                     }`}
                   >
@@ -107,7 +107,7 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
                 )}
                 {/* Active Indicator Bar */}
                 {isActive && (
-                  <span className="absolute -bottom-2.5 left-0 right-0 h-0.5 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                  <span className="absolute -bottom-2.5 left-0 right-0 h-0.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
                 )}
               </a>
             );
@@ -123,7 +123,7 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
                 key={item.id}
                 href={`#${item.id}`}
                 className={`py-1 transition-all ${
-                  isActive ? 'text-white font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                  isActive ? 'text-white font-bold' : 'text-zinc-400 hover:text-white'
                 }`}
               >
                 {item.label}
@@ -136,18 +136,18 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onOpenDemo}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-cyan-500/60 bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-300 hover:text-white transition-all font-mono tracking-wide shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border border-zinc-800 bg-zinc-900/90 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all font-mono tracking-wide shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
           >
-            <ShieldAlert className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <ShieldAlert className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
             <span>DEMO MODE</span>
           </button>
 
           <button 
             onClick={onOpenConsole}
-            className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 text-xs rounded-md border border-emerald-500/60 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 hover:text-white transition-all font-mono tracking-wide shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
+            className="flex items-center gap-2 px-3 sm:px-3.5 py-1.5 text-xs rounded-md border border-white bg-white hover:bg-zinc-200 text-black font-bold transition-all font-mono tracking-wide shadow-xs active:scale-95 cursor-pointer whitespace-nowrap"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <Terminal className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+            <Terminal className="w-3.5 h-3.5 text-black shrink-0" />
             <span className="hidden sm:inline">GIS COMMAND CONSOLE</span>
             <span className="sm:hidden">CONSOLE</span>
           </button>

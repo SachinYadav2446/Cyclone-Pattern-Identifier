@@ -29,12 +29,12 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-8 m-4 rounded border border-red-800 bg-red-950/40 text-red-200 font-mono text-xs">
-          <div className="font-bold text-sm text-red-400 mb-2">TELEMETRY MODULE RECOVERY</div>
+        <div className="p-8 m-4 rounded border border-zinc-700 bg-zinc-950 text-zinc-300 font-mono text-xs">
+          <div className="font-bold text-sm text-white mb-2">TELEMETRY MODULE RECOVERY</div>
           <div>Component error isolated: {this.state.error?.message}</div>
           <button 
             onClick={() => this.setState({ hasError: false, error: null })} 
-            className="mt-3 px-3 py-1 bg-red-900 border border-red-700 text-white rounded"
+            className="mt-3 px-3 py-1 bg-white text-black font-semibold rounded hover:bg-zinc-200 transition-colors"
           >
             Retry Render
           </button>

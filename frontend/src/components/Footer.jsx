@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Brand & System Status */}
           <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span className="font-bold text-white tracking-wider">DEEPCYCLONE AI</span>
             <span className="text-zinc-700">/</span>
             <span className="text-zinc-500 text-[11px]">Geostationary Cyclone Intelligence</span>
