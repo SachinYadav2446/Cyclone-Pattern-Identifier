@@ -191,15 +191,15 @@ export default function LiveObservatorySection() {
     >
       {/* Precision background radar & grid lines */}
       <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-zinc-800/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 gap-6">
           <div>
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-300 mb-2.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <Radio className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+              <Radio className="w-3.5 h-3.5 text-white" />
               <span>LIVE GEOSTATIONARY &amp; GIS COMMAND CONSOLE · INSAT-3D ASIA SECTOR</span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">
@@ -257,11 +257,11 @@ export default function LiveObservatorySection() {
               onClick={() => setIsAiScanActive(!isAiScanActive)}
               className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all text-[11px] ${
                 isAiScanActive
-                  ? 'bg-emerald-950/50 border-emerald-700 text-emerald-400 font-semibold'
+                  ? 'bg-zinc-900 border-white text-white font-semibold'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
               }`}
             >
-              <Crosshair className={`w-3.5 h-3.5 ${isAiScanActive ? 'text-emerald-400 animate-spin' : 'text-zinc-400'}`} style={{ animationDuration: '10s' }} />
+              <Crosshair className={`w-3.5 h-3.5 ${isAiScanActive ? 'text-white animate-spin' : 'text-zinc-400'}`} style={{ animationDuration: '10s' }} />
               <span>{isAiScanActive ? 'AI SCANNER ACTIVE' : 'AI SCANNER OFF'}</span>
             </button>
 
@@ -272,7 +272,7 @@ export default function LiveObservatorySection() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white transition-all text-[11px] shadow-xs active:scale-95"
               title="Poll latest satellite pass from server"
             >
-              <RefreshCw className={`w-3 h-3 text-zinc-300 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+              <RefreshCw className={`w-3 h-3 text-zinc-300 ${isRefreshing ? 'animate-spin text-white' : ''}`} />
               <span>SYNC PASS</span>
             </button>
           </div>
@@ -290,18 +290,18 @@ export default function LiveObservatorySection() {
                   className={`p-2.5 text-left border transition-all relative ${
                     isSelected
                       ? 'bg-zinc-900 border-white text-white shadow-md'
-                      : 'bg-[#0a0c10] border-zinc-800/90 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                      : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] text-zinc-500 font-bold">{ch.wavelength}</span>
-                    {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                    {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
                   </div>
                   <div className="text-xs font-bold text-white truncate">{ch.name.split(' (')[0]}</div>
                   <div className="text-[10px] text-zinc-500 mt-0.5 truncate">{ch.band}</div>
 
                   {isSelected && (
-                    <div className="absolute -bottom-[1px] inset-x-0 h-0.5 bg-gradient-to-r from-emerald-400 via-white to-emerald-400" />
+                    <div className="absolute -bottom-[1px] inset-x-0 h-0.5 bg-white" />
                   )}
                 </button>
               );
@@ -315,12 +315,12 @@ export default function LiveObservatorySection() {
         {viewMode === 'single' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Main Satellite Imagery Bay (8 Cols) */}
-            <div className="lg:col-span-8 bg-[#090b10] border border-zinc-800 relative overflow-hidden shadow-2xl group">
+            <div className="lg:col-span-8 bg-zinc-950 border border-zinc-800 relative overflow-hidden shadow-2xl group">
               {/* Telemetry Header Strip */}
-              <div className="p-3 bg-[#0c0e14] border-b border-zinc-800/80 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px]">
+              <div className="p-3 bg-zinc-900 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-3 font-mono text-[11px]">
                 <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="flex items-center gap-1.5 text-white font-bold">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                     LIVE SATELLITE TELEMETRY
                   </span>
                   <span className="text-zinc-600">|</span>
@@ -493,7 +493,7 @@ export default function LiveObservatorySection() {
                     className="absolute inset-0 pointer-events-none"
                   >
                     {/* Pulsing Scan Beam */}
-                    <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-pulse top-1/2 -translate-y-1/2" />
+                    <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_12px_rgba(255,255,255,0.4)] animate-pulse top-1/2 -translate-y-1/2" />
 
                     {/* Render Real Detected Systems from Python AI Engine if available */}
                     {liveAnalysis?.systems_detected && liveAnalysis.systems_detected.length > 0 ? (
@@ -503,19 +503,19 @@ export default function LiveObservatorySection() {
                           className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
                           style={{ left: `${sys.pixel_x_percent}%`, top: `${sys.pixel_y_percent}%` }}
                         >
-                          <div className="relative flex items-center justify-center w-24 h-24 border border-emerald-400/90 shadow-[0_0_15px_rgba(52,211,153,0.3)]">
-                            <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-emerald-400" />
-                            <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-emerald-400" />
-                            <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-emerald-400" />
-                            <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-emerald-400" />
-                            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                          <div className="relative flex items-center justify-center w-24 h-24 border border-white/80 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                            <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white" />
+                            <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white" />
+                            <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white" />
+                            <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white" />
+                            <div className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
                             <div className="w-1.5 h-1.5 rounded-full bg-white absolute" />
 
-                            <div className="absolute -top-7 left-0 whitespace-nowrap bg-black/90 border border-emerald-500/80 px-2 py-0.5 font-mono text-[9px] text-emerald-300 shadow-md">
+                            <div className="absolute -top-7 left-0 whitespace-nowrap bg-black/90 border border-zinc-600 px-2 py-0.5 font-mono text-[9px] text-zinc-200 shadow-md">
                               <span className="font-bold text-white">{sys.id}</span> · {sys.classification} ({sys.latitude}°N, {sys.longitude}°E)
                             </div>
                             <div className="absolute -bottom-6 left-0 whitespace-nowrap bg-black/85 border border-zinc-700 px-1.5 py-0.5 font-mono text-[9px] text-zinc-300">
-                              EST. WIND: <span className="text-emerald-400 font-bold">{sys.estimated_wind_kts} kts</span> ({Math.round(sys.confidence_score * 100)}% Conf)
+                              EST. WIND: <span className="text-white font-bold">{sys.estimated_wind_kts} kts</span> ({Math.round(sys.confidence_score * 100)}% Conf)
                             </div>
                           </div>
                         </div>
@@ -523,9 +523,9 @@ export default function LiveObservatorySection() {
                     ) : (
                       /* Default Basin Grid Reticles when no severe system is detected */
                       <>
-                        <div className="absolute top-[46%] left-[67%] border border-emerald-400/80 w-24 h-24 flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
-                          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                          <div className="absolute -top-5 left-0 font-mono text-[9px] bg-black/85 text-emerald-300 px-1 border border-emerald-800 whitespace-nowrap">
+                        <div className="absolute top-[46%] left-[67%] border border-zinc-600 w-24 h-24 flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
+                          <div className="w-2 h-2 rounded-full bg-white animate-ping" />
+                          <div className="absolute -top-5 left-0 font-mono text-[9px] bg-black/85 text-zinc-300 px-1 border border-zinc-700 whitespace-nowrap">
                             BAY OF BENGAL · SEC-01
                           </div>
                         </div>
@@ -544,8 +544,8 @@ export default function LiveObservatorySection() {
                 {/* Mouse Hover Live Coordinates HUD */}
                 {hoverCoords && (
                   <div className="absolute bottom-3 right-3 bg-black/90 border border-zinc-800 px-2.5 py-1.5 font-mono text-[10px] text-zinc-300 pointer-events-none shadow-xl flex items-center gap-3">
-                    <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-                      <Compass className="w-3 h-3" />
+                    <span className="flex items-center gap-1 text-white font-semibold">
+                      <Compass className="w-3 h-3 text-zinc-400" />
                       <span>{hoverCoords.lat}°N, {hoverCoords.lon}°E</span>
                     </span>
                     <span className="text-zinc-600">|</span>
@@ -577,8 +577,8 @@ export default function LiveObservatorySection() {
                       }}
                       className={`px-2 py-1 text-[10px] transition-all border ${
                         gisStep === idx
-                          ? 'bg-emerald-400 text-zinc-950 font-bold border-emerald-400 shadow-xs'
-                          : 'bg-zinc-900/90 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
+                          ? 'bg-white text-zinc-950 font-bold border-white shadow-xs'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
                       }`}
                     >
                       {step.label}
@@ -588,15 +588,15 @@ export default function LiveObservatorySection() {
               </div>
 
               {/* Bottom Viewer Status Bar */}
-              <div className="p-3 bg-[#0a0c10] border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-3 font-mono text-[10px] text-zinc-400">
+              <div className="p-3 bg-zinc-950 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3 font-mono text-[10px] text-zinc-400">
                 <div className="flex items-center gap-2">
                   <Satellite className="w-3.5 h-3.5 text-zinc-500" />
                   <span>PLATFORM: ISRO INSAT-3D/3DR (IMD/MOSDAC RELAY)</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <span>ORBIT: GEOSTATIONARY (35,786 KM)</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" />
+                  <span className="text-zinc-300 font-semibold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-zinc-400" />
                     <span>L1B RADIOMETRIC CALIBRATED</span>
                   </span>
                 </div>
@@ -606,57 +606,57 @@ export default function LiveObservatorySection() {
             {/* Side Intelligence Panel (4 Cols) */}
             <div className="lg:col-span-4 space-y-4 font-mono text-xs">
               {/* Live Python AI Engine Status Banner */}
-              <div className="p-3 bg-[#0c0e14] border border-zinc-800 flex items-center justify-between">
+              <div className="p-3 bg-zinc-950 border border-zinc-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Cpu className="w-3.5 h-3.5 text-emerald-400" />
+                  <Cpu className="w-3.5 h-3.5 text-zinc-300" />
                   <span className="text-zinc-300 font-bold text-[11px]">
                     {isBackendConnected ? 'PYTHON AI ENGINE: CONNECTED' : 'AI ENGINE: CONNECTED'}
                   </span>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 bg-emerald-950/60 border border-emerald-700 text-emerald-400 font-bold">
+                <span className="text-[10px] px-2 py-0.5 bg-zinc-900 border border-zinc-700 text-zinc-300 font-bold">
                   PORT 8000
                 </span>
               </div>
 
               {/* GIS Active Storm Telemetry HUD (Synchronized with Timeline Scrubber) */}
-              <div className="p-4 bg-[#0a0c10] border border-zinc-800 shadow-sm space-y-3">
+              <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
                   <div className="flex items-center gap-2">
-                    <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+                    <Navigation className="w-3.5 h-3.5 text-zinc-400" />
                     <span className="text-[11px] font-bold text-white tracking-wider">
                       GIS TRACK TELEMETRY
                     </span>
                   </div>
-                  <span className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-700 text-emerald-400 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 text-zinc-300 text-[10px] font-bold">
                     {gisTrackSteps[gisStep].label}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                  <div className="p-2 bg-black border border-zinc-800">
                     <span className="text-zinc-500 text-[10px] block">POSITION (LAT/LON)</span>
                     <span className="text-white font-bold">{gisTrackSteps[gisStep].lat}°N, {gisTrackSteps[gisStep].lon}°E</span>
                   </div>
-                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                  <div className="p-2 bg-black border border-zinc-800">
                     <span className="text-zinc-500 text-[10px] block">SUSTAINED WIND</span>
-                    <span className="text-emerald-400 font-bold">
+                    <span className="text-zinc-200 font-bold">
                       {gisTrackSteps[gisStep].windKts} kts{' '}
                       <span className="text-[9px] text-zinc-400 font-normal">
                         ({Math.round(gisTrackSteps[gisStep].windKts * 1.852)} km/h)
                       </span>
                     </span>
                   </div>
-                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                  <div className="p-2 bg-black border border-zinc-800">
                     <span className="text-zinc-500 text-[10px] block">CENTRAL PRESSURE</span>
                     <span className="text-white font-bold">{gisTrackSteps[gisStep].pressureHpa} hPa</span>
                   </div>
-                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                  <div className="p-2 bg-black border border-zinc-800">
                     <span className="text-zinc-500 text-[10px] block">RI RISK (XGBOOST)</span>
-                    <span className="text-amber-400 font-bold">{gisTrackSteps[gisStep].riRisk}% Risk</span>
+                    <span className="text-zinc-200 font-bold">{gisTrackSteps[gisStep].riRisk}% Risk</span>
                   </div>
                 </div>
 
-                <div className="p-2.5 bg-zinc-950 border border-zinc-800 space-y-1 text-[11px]">
+                <div className="p-2.5 bg-black border border-zinc-800 space-y-1 text-[11px]">
                   <div className="flex justify-between">
                     <span className="text-zinc-500 text-[10px]">CATEGORY:</span>
                     <span className="text-zinc-200 font-bold truncate max-w-[170px]">{gisTrackSteps[gisStep].category}</span>
@@ -671,7 +671,7 @@ export default function LiveObservatorySection() {
               </div>
 
               {/* Channel Profile Box */}
-              <div className="p-4 bg-[#0a0c10] border border-zinc-800 shadow-sm space-y-3">
+              <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
                 <div className="flex items-center justify-between pb-2.5 border-b border-zinc-800/80">
                   <div className="text-[10px] text-zinc-500 uppercase tracking-wider">SPECTRAL SPECIFICATION</div>
                   <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-200 text-[10px] font-bold">
@@ -700,19 +700,19 @@ export default function LiveObservatorySection() {
               </div>
 
               {/* Real-Time Basin AI Scanning Report */}
-              <div className="p-4 bg-[#0a0c10] border border-zinc-800 space-y-3">
+              <div className="p-4 bg-zinc-950 border border-zinc-800 space-y-3">
                 <div className="flex items-center justify-between text-[10px] uppercase text-zinc-500">
                   <span className="flex items-center gap-1.5 text-zinc-300 font-bold">
-                    <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                    <Zap className="w-3.5 h-3.5 text-zinc-300" />
                     <span>REAL-TIME INFERENCE SCANNER</span>
                   </span>
-                  <span className="text-emerald-400 font-semibold">ONLINE</span>
+                  <span className="text-zinc-300 font-semibold">ONLINE</span>
                 </div>
 
-                <div className="p-3 bg-black/60 border border-zinc-800/80 space-y-2 text-[11px]">
+                <div className="p-3 bg-black border border-zinc-800 space-y-2 text-[11px]">
                   <div className="flex justify-between">
                     <span className="text-zinc-500">DETECTED SYSTEMS:</span>
-                    <span className="text-emerald-300 font-bold">
+                    <span className="text-zinc-200 font-bold">
                       {liveAnalysis?.systems_detected?.length || 0} CONVECTIVE VORTICES
                     </span>
                   </div>
@@ -743,22 +743,22 @@ export default function LiveObservatorySection() {
               </div>
 
               {/* 4-Band Multi-Spectral Tensor Blueprint */}
-              <div className="p-4 bg-[#0a0c10] border border-zinc-800 space-y-2">
+              <div className="p-4 bg-zinc-950 border border-zinc-800 space-y-2">
                 <div className="text-[10px] text-zinc-500 uppercase">TENSOR INPUT SHAPE (4, 512, 512)</div>
                 <div className="grid grid-cols-2 gap-2 text-[10px]">
-                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                  <div className="p-2 bg-black border border-zinc-800">
                     <span className="text-zinc-500 block">CH-1: VIS</span>
                     <span className="text-zinc-200 font-bold">0.65 µm Reflect</span>
                   </div>
-                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                  <div className="p-2 bg-black border border-zinc-800">
                     <span className="text-zinc-500 block">CH-2: TIR-1</span>
                     <span className="text-zinc-200 font-bold">10.8 µm Clean Window</span>
                   </div>
-                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                  <div className="p-2 bg-black border border-zinc-800">
                     <span className="text-zinc-500 block">CH-3: WV</span>
                     <span className="text-zinc-200 font-bold">6.8 µm Upper Vapor</span>
                   </div>
-                  <div className="p-2 bg-zinc-950 border border-zinc-800">
+                  <div className="p-2 bg-black border border-zinc-800">
                     <span className="text-zinc-500 block">CH-4: CTBT</span>
                     <span className="text-zinc-200 font-bold">12.0 µm Convection</span>
                   </div>
@@ -775,11 +775,11 @@ export default function LiveObservatorySection() {
               {channels.map((ch) => (
                 <div 
                   key={ch.id} 
-                  className="bg-[#090b10] border border-zinc-800 overflow-hidden shadow-lg"
+                  className="bg-zinc-950 border border-zinc-800 overflow-hidden shadow-lg"
                 >
-                  <div className="p-2.5 bg-[#0c0e14] border-b border-zinc-800 flex items-center justify-between font-mono text-[11px]">
+                  <div className="p-2.5 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between font-mono text-[11px]">
                     <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
                       <span className="font-bold text-white">{ch.shortName}</span>
                     </div>
                     <span className="text-[10px] text-zinc-500">{ch.resolution}</span>
@@ -806,7 +806,7 @@ export default function LiveObservatorySection() {
 
             <div className="p-3 bg-zinc-950 border border-zinc-800 font-mono text-xs flex flex-wrap items-center justify-between gap-3 text-zinc-400">
               <span className="text-zinc-300 font-semibold">ALL 4 SATELLITE CHANNELS SYNCHRONIZED ACROSS 74.0°E INDIAN OCEAN PASS</span>
-              <span className="text-emerald-400 font-bold">READY FOR MULTI-BAND TENSOR FUSION</span>
+              <span className="text-white font-bold">READY FOR MULTI-BAND TENSOR FUSION</span>
             </div>
           </div>
         )}
