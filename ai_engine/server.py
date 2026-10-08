@@ -60,6 +60,7 @@ from pydantic import BaseModel
 from typing import Optional
 import base64
 from ai_engine.models.eye_detector import eye_detector, BENCHMARK_STORMS
+from ai_engine.models.intensity_estimator import intensity_estimator, BENCHMARK_STORMS_INTENSITY
 
 class LocalizeEyeRequest(BaseModel):
     storm_id: Optional[str] = "fani"
@@ -92,6 +93,43 @@ def get_benchmark_eye_fix(storm_id: str):
 def get_benchmark_storms():
     """Lists available pre-calibrated benchmark cyclones for testing."""
     return {"storms": list(BENCHMARK_STORMS.keys())}
+
+class EstimateIntensityRequest(BaseModel):
+    storm_id: Optional[str] = "fani"
+    image_base64: Optional[str] = None
+    eye_x_pct: Optional[float] = None
+    eye_y_pct: Optional[float] = None
+
+@app.post("/api/v1/models/estimate-intensity")
+def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
+    """
+    Deep Dvorak ConvNeXt-V2 Intensity Estimation endpoint.
+    Estimates MSW (knots & km/h), central minimum pressure, IMD category,
+    Dvorak T-number, and quadrant wind radii.
+    """
+    if payload.image_base64:
+        try:
+            raw_b64 = payload.image_base64
+            if "," in raw_b64:
+                raw_b64 = raw_b64.split(",")[1]
+            img_bytes = base64.b64decode(raw_b64)
+            eye_x = payload.eye_x_pct
+            eye_y = payload.eye_y_pct
+            if eye_x is None or eye_y is None:
+                eye_fix = eye_detector.localize_image_array(img_bytes)
+                if eye_fix.get("status") == "SUCCESS":
+                    eye_x = eye_fix["predicted_eye"]["pixel_x_percent"]
+                    eye_y = eye_fix["predicted_eye"]["pixel_y_percent"]
+            return intensity_estimator.estimate_image_array(img_bytes, eye_x_pct=eye_x, eye_y_pct=eye_y)
+        except Exception as e:
+            return {"status": "ERROR", "message": f"Failed to estimate intensity: {str(e)}"}
+    
+    return intensity_estimator.estimate_benchmark_storm(payload.storm_id or "fani")
+
+@app.get("/api/v1/models/estimate-intensity/{storm_id}")
+def get_benchmark_intensity(storm_id: str):
+    """Returns verified Deep Dvorak ConvNeXt-V2 intensity fix for benchmark cyclones."""
+    return intensity_estimator.estimate_benchmark_storm(storm_id)
 
 import os
 

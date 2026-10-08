@@ -3,6 +3,7 @@ DeepCyclone CenterNet Sub-Pixel Eye Localization Engine
 Anchor-Free Keypoint Heatmap & Continuous Offset Regression for Tropical Cyclone Center Pinpointing.
 """
 
+import os
 import io
 import math
 import time
@@ -185,50 +186,108 @@ class EyeDetector:
         }
 
     def localize_image_array(self, image_bytes: bytes) -> Dict[str, Any]:
-        """Analyzes an uploaded satellite image array to locate circulation eye."""
+        """Analyzes an uploaded satellite image array to locate circulation eye using multi-scale spiral circulation & cavity contrast."""
         start_t = time.perf_counter()
-        img = Image.open(io.BytesIO(image_bytes)).convert('L').resize((512, 512))
-        arr = np.array(img, dtype=np.float32)
+        img = Image.open(io.BytesIO(image_bytes))
+        img_512 = img.convert('L').resize((512, 512))
+        gray_np = np.array(img_512, dtype=np.float32)
+        h, w = gray_np.shape
 
-        # Smooth image to compute convective gradients
-        smoothed = gaussian_filter(arr, sigma=4.0)
-        
-        # High-altitude convective ring detection (cold cloud tops)
-        # In inverted satellite imagery or grayscale, find local vortex center
-        # Eye signature: relative gradient minimum inside an active gradient ring
-        grad_y, grad_x = np.gradient(smoothed)
-        grad_mag = np.sqrt(grad_y**2 + grad_x**2)
-        
-        # Heatmap peak localization (CenterNet heatmap proxy)
-        heatmap = gaussian_filter(grad_mag, sigma=8.0)
-        heatmap_norm = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min() + 1e-6)
-        
-        # Downsample to 128x128 CenterNet stride-4 resolution
-        h128 = gaussian_filter(heatmap_norm[::4, ::4], sigma=2.0)
-        peak_y, peak_x = np.unravel_index(np.argmax(h128), h128.shape)
-        
-        # Regress subpixel offset
-        sub_dy = float(np.clip((peak_y % 2 - 0.5) * 0.4, -0.5, 0.5))
-        sub_dx = float(np.clip((peak_x % 2 - 0.5) * 0.4, -0.5, 0.5))
-        
-        final_py = (peak_y + sub_dy) * 4.0
-        final_px = (peak_x + sub_dx) * 4.0
-        
+        # Step 1: Check YOLOv8 candidate if available
+        yolo_detected = False
+        final_px, final_py = 0.0, 0.0
+        conf = 0.0
+        eye_radius_px = 24.0
+        detection_mode = "Multi-Scale Log-Spiral Vorticity (Zero Bias)"
+
+        for weights_path in ['best_cyclone_eye.pt', 'runs/detect/train/weights/best.pt']:
+            if os.path.exists(weights_path):
+                try:
+                    from ultralytics import YOLO
+                    infer_model = YOLO(weights_path)
+                    rgb_img = img.convert('RGB').resize((512, 512))
+                    results = infer_model.predict(rgb_img, conf=0.15, verbose=False)
+                    boxes = results[0].boxes
+                    if len(boxes) > 0:
+                        best_box = boxes[0]
+                        conf = float(best_box.conf.cpu().numpy()[0])
+                        xyxy = best_box.xyxy.cpu().numpy()[0]
+                        x1, y1, x2, y2 = xyxy
+                        final_px = float((x1 + x2) / 2.0)
+                        final_py = float((y1 + y2) / 2.0)
+                        eye_radius_px = float(max(10.0, (x2 - x1 + y2 - y1) / 4.0))
+                        detection_mode = f"YOLOv8 Deep Neural (Conf: {conf:.1%})"
+                        yolo_detected = True
+                        break
+                except Exception:
+                    pass
+
+        # Step 2: Multi-Scale Logarithmic Spiral Vorticity & Eyewall Cavity Scan (Zero Bias)
+        if not yolo_detected:
+            # Structure tensor streaks for vortex flow
+            smooth = gaussian_filter(gray_np, 2.5)
+            gy, gx = np.gradient(smooth)
+            j_xx = gaussian_filter(gx**2, 3.5)
+            j_xy = gaussian_filter(gx * gy, 3.5)
+            j_yy = gaussian_filter(gy**2, 3.5)
+            theta = 0.5 * np.arctan2(2 * j_xy, j_xx - j_yy)
+            tx = -np.sin(theta)
+            ty = np.cos(theta)
+
+            angles = np.linspace(0, 2 * np.pi, 24, endpoint=False)
+            e_tx = -np.sin(angles)
+            e_ty = np.cos(angles)
+            cos_a = np.cos(angles)
+            sin_a = np.sin(angles)
+
+            circ_grid = np.zeros((h, w), dtype=np.float32)
+            for y in range(35, h - 35, 6):
+                for x in range(35, w - 35, 6):
+                    val = 0.0
+                    for r in [40, 75, 115, 160]:
+                        xs = np.clip(np.round(x + r * cos_a).astype(int), 0, w - 1)
+                        ys = np.clip(np.round(y + r * sin_a).astype(int), 0, h - 1)
+                        align = np.abs(tx[ys, xs] * e_tx + ty[ys, xs] * e_ty)
+                        val += float(np.mean(align))
+                    circ_grid[y:y+6, x:x+6] = val
+
+            circ_grid = gaussian_filter(circ_grid, 8.0)
+            circ_norm = (circ_grid - circ_grid.min()) / (circ_grid.max() - circ_grid.min() + 1e-6)
+            circ_norm[:35, :] = 0
+            circ_norm[-35:, :] = 0
+            circ_norm[:, :35] = 0
+            circ_norm[:, -35:] = 0
+
+            peak_y, peak_x = np.unravel_index(np.argmax(circ_norm), circ_norm.shape)
+            final_px = float(peak_x)
+            final_py = float(peak_y)
+            conf = float(circ_norm[peak_y, peak_x])
+            eye_radius_px = 22.0
+
         x_pct = round((final_px / 512.0) * 100, 2)
         y_pct = round((final_py / 512.0) * 100, 2)
-        
-        # Map to North Indian Ocean basin georeferenced coords
-        pred_lat = round(float(35.0 - (y_pct / 100.0) * 35.0), 2)
-        pred_lon = round(float(45.0 + (x_pct / 100.0) * 55.0), 2)
-        
-        # Local thermal estimate
-        core_val = float(smoothed[int(final_py), int(final_px)])
-        eye_temp_k = round(260.0 + (core_val / 255.0) * 35.0, 1)
-        eyewall_temp_k = round(eye_temp_k - 55.0, 1)
+
+        sub_dx = round(float((final_px % 1.0) - 0.5), 2)
+        sub_dy = round(float((final_py % 1.0) - 0.5), 2)
+
+        # Eyewall thermodynamics
+        cy_i = int(np.clip(final_py, 0, 511))
+        cx_i = int(np.clip(final_px, 0, 511))
+        core_val = float(gray_np[cy_i, cx_i])
+
+        r_int = int(eye_radius_px * 1.5)
+        y1_crop, y2_crop = max(0, cy_i - r_int), min(512, cy_i + r_int + 1)
+        x1_crop, x2_crop = max(0, cx_i - r_int), min(512, cx_i + r_int + 1)
+        eyewall_crop = gray_np[y1_crop:y2_crop, x1_crop:x2_crop]
+
+        eye_temp_k = round(286.0 - (core_val / 255.0) * 18.0, 1)
+        eyewall_temp_k = round(205.0 + (float(np.mean(eyewall_crop)) / 255.0) * 22.0, 1)
         delta_t = round(eye_temp_k - eyewall_temp_k, 1)
-        
+
+        pred_lat = round(float(25.0 - (y_pct / 100.0) * 16.0), 2)
+        pred_lon = round(float(78.0 + (x_pct / 100.0) * 18.0), 2)
         elapsed_ms = round((time.perf_counter() - start_t) * 1000, 1)
-        
+
         return {
             "status": "SUCCESS",
             "storm_id": "custom_upload",
@@ -240,16 +299,17 @@ class EyeDetector:
                 "pixel_x_percent": x_pct,
                 "pixel_y_percent": y_pct,
                 "subpixel_offset": {"dx": sub_dx, "dy": sub_dy},
-                "confidence": 0.91,
-                "eye_diameter_km": 34.0,
+                "confidence": round(conf, 3),
+                "eye_diameter_km": round(float(eye_radius_px * 1.6), 1),
                 "eyewall_min_temp_k": eyewall_temp_k,
                 "eye_core_temp_k": eye_temp_k,
-                "delta_t_k": delta_t
+                "delta_t_k": delta_t,
+                "detection_mode": detection_mode
             },
             "ground_truth": {
                 "latitude": pred_lat,
                 "longitude": pred_lon,
-                "agency": "CenterNet Autonomous Localization"
+                "agency": "DeepCyclone Autonomous Localization"
             },
             "haversine_error_km": 0.0,
             "operational_target_km": 30.0,
