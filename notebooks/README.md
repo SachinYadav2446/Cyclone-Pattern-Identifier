@@ -17,4 +17,6 @@
 ---
 
 ### Focused Step Notebooks
-- **[`01_ibtracs_data_pipeline.ipynb`](01_ibtracs_data_pipeline.ipynb)**: Standalone Step 1.1 ground truth data pipeline.
+- **[`01_ibtracs_data_pipeline.ipynb`](01_ibtracs_data_pipeline.ipynb)**: Standalone Step 1 ground truth data pipeline.
+- **[`02_eye_localization_centernet.ipynb`](02_eye_localization_centernet.ipynb)**: Standalone Stage 01 sub-pixel CenterNet keypoint & multi-scale log-spiral eye localization.
+- **[`03_deep_dvorak_intensity_convnext.ipynb`](03_deep_dvorak_intensity_convnext.ipynb)**: Standalone Stage 02 Deep Dvorak ConvNeXt-V2 intensity regression & automated IMD classification.
