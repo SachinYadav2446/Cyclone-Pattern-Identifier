@@ -245,29 +245,27 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
   }
 
   return (
-    <section className="relative overflow-hidden pt-8 pb-20 border-b border-zinc-800 bg-[#07080c]">
-      {/* Precision background grid & Atmospheric Auroras */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-60 pointer-events-none" />
-      <div className="absolute inset-0 bg-aurora opacity-70 pointer-events-none" />
-      <div className="absolute -top-40 right-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/3 left-[-100px] w-[450px] h-[450px] bg-cyan-500/10 rounded-full blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-[-100px] right-[-50px] w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
+    <section className="relative overflow-hidden pt-8 pb-20 border-b border-zinc-800 bg-black">
+      {/* Precision background grid & Subtle monochrome ambient lighting */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none" />
+      <div className="absolute -top-40 right-1/4 w-[500px] h-[500px] bg-zinc-800/20 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-[-100px] right-[-50px] w-[500px] h-[500px] bg-zinc-800/10 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left Column: Mission Narrative */}
           <div className="lg:col-span-7 flex flex-col items-start pt-2">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-900/90 border border-zinc-800 text-[11px] font-mono text-zinc-400 mb-4 shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-zinc-300 font-semibold">STAGE 01-04</span>
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-mono text-zinc-400 mb-4 shadow-xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <span className="text-zinc-200 font-semibold">STAGE 01-04</span>
               <span className="text-zinc-600">|</span>
               <span className="tracking-wide">GEOSTATIONARY DEEP LEARNING ARCHITECTURE</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-[1.12]">
               Autonomous Satellite Intelligence for{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+              <span className="text-white underline decoration-zinc-700 decoration-2 underline-offset-8">
                 Tropical Cyclone
               </span>{' '}
               Identification &amp; 48h Landfall.
@@ -281,7 +279,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <button
                 onClick={onOpenConsole}
-                className="flex items-center gap-2.5 px-5 py-2.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-semibold text-xs transition-all font-mono shadow-[0_0_20px_rgba(52,211,153,0.25)] cursor-pointer active:scale-95"
+                className="flex items-center gap-2.5 px-5 py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-black font-semibold text-xs transition-all font-mono shadow-md cursor-pointer active:scale-95"
               >
                 <Terminal className="w-4 h-4" />
                 <span>Launch GIS Command Center</span>
@@ -290,15 +288,15 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
 
               <button
                 onClick={onOpenDemo}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-700/60 text-cyan-300 hover:text-white font-medium text-xs transition-all font-mono active:scale-95 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 hover:text-white font-medium text-xs transition-all font-mono active:scale-95 cursor-pointer"
               >
-                <Play className="w-3.5 h-3.5 fill-cyan-400 text-cyan-400" />
+                <Play className="w-3.5 h-3.5 fill-zinc-300 text-zinc-300" />
                 <span>Live Demo Guide (3 Acts)</span>
               </button>
 
               <a
                 href="#pipeline"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white font-medium text-xs transition-all font-mono active:scale-95"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white font-medium text-xs transition-all font-mono active:scale-95"
               >
                 <span>Pipeline Architecture</span>
               </a>
@@ -318,7 +316,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
               </div>
               <div className="space-y-0.5">
                 <div className="text-zinc-500 text-[10px] tracking-wider uppercase font-semibold">LATENCY</div>
-                <div className="text-2xl font-extrabold text-emerald-400">&lt; 4.0s</div>
+                <div className="text-2xl font-extrabold text-white">&lt; 4.0s</div>
                 <div className="text-zinc-500 text-[10px]">Full End-to-End</div>
               </div>
             </div>
@@ -327,13 +325,13 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
           {/* Right Column: Mission Control Telemetry Workstation */}
           <div className="lg:col-span-5 relative w-full group">
             {/* Ambient Backlight Halo behind radar */}
-            <div className="absolute -inset-1.5 bg-gradient-to-r from-emerald-500/20 via-cyan-500/20 to-teal-500/20 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition duration-700 pointer-events-none" />
+            <div className="absolute -inset-1.5 bg-zinc-800/40 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition duration-700 pointer-events-none" />
             
-            <div className="relative border border-emerald-500/30 rounded-xl bg-[#090b10] shadow-[0_0_40px_rgba(0,0,0,0.8)] overflow-hidden ring-1 ring-white/10">
+            <div className="relative border border-zinc-800 rounded-xl bg-zinc-950 shadow-2xl overflow-hidden ring-1 ring-white/10">
               {/* Card Header with Active Storm Badge & Military Clock */}
-              <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/90 backdrop-blur-md font-mono text-xs">
+              <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-900 backdrop-blur-md font-mono text-xs">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />
                   <span className="font-bold text-white tracking-wider truncate">
                     {storm.name}
                   </span>
@@ -380,11 +378,11 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
                     }}
                     className={`px-2 py-0.5 transition-all whitespace-nowrap border text-[10px] flex items-center gap-1 ${
                       isLiveMode
-                        ? 'bg-emerald-500 text-black font-bold border-emerald-400 shadow-xs'
-                        : 'bg-emerald-950/40 text-emerald-400 hover:text-white border-emerald-900/60'
+                        ? 'bg-white text-black font-bold border-white shadow-xs'
+                        : 'bg-zinc-900 text-zinc-400 hover:text-white border-zinc-800'
                     }`}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 animate-pulse" />
                     <span>LIVE</span>
                   </button>
                 </div>
@@ -396,14 +394,14 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
                     className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-white text-[10px] flex items-center gap-1 shrink-0 active:scale-95 transition-all disabled:opacity-50 ml-1"
                     title="Force re-scan latest geostationary frame"
                   >
-                    <RefreshCw className={`w-2.5 h-2.5 ${isScanning ? 'animate-spin text-emerald-400' : ''}`} />
+                    <RefreshCw className={`w-2.5 h-2.5 ${isScanning ? 'animate-spin text-white' : ''}`} />
                     <span>{isScanning ? '...' : 'SYNC'}</span>
                   </button>
                 )}
               </div>
 
               {/* Display Viewport: Real Geostationary Infrared Intensification Sequence */}
-              <div className="relative h-72 sm:h-80 w-full bg-[#070709] flex items-center justify-center overflow-hidden">
+              <div className="relative h-72 sm:h-80 w-full bg-black flex items-center justify-center overflow-hidden">
                 {/* Satellite Imagery Viewport */}
                 <picture className="absolute inset-0 w-full h-full select-none">
                   {storm.webpImage && (
@@ -422,12 +420,12 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
                 </picture>
 
                 {/* Subtle contrast grading overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/40 pointer-events-none" />
 
                 {/* Scanning radar sweep animation when refreshing live pass */}
                 {isScanning && (
                   <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    <div className="w-full h-1 bg-emerald-400/80 shadow-[0_0_15px_#10b981] animate-pulse absolute top-0 animate-[scan_2s_linear_infinite]" />
+                    <div className="w-full h-1 bg-white/80 shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-pulse absolute top-0 animate-[scan_2s_linear_infinite]" />
                   </div>
                 )}
 
@@ -441,23 +439,23 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
                   }}
                 >
                   {/* Outer Pulsing Target Ring */}
-                  <div className="w-14 h-14 rounded-full border border-emerald-400/50 animate-ping opacity-30" />
+                  <div className="w-14 h-14 rounded-full border border-white/40 animate-ping opacity-30" />
                   
                   {/* Precision Target Brackets */}
-                  <div className="absolute w-12 h-12 border border-dashed border-emerald-400/80 flex items-center justify-center">
-                    <div className="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-emerald-400" />
-                    <div className="absolute -top-1 -right-1 w-2 h-2 border-t-2 border-r-2 border-emerald-400" />
-                    <div className="absolute -bottom-1 -left-1 w-2 h-2 border-b-2 border-l-2 border-emerald-400" />
-                    <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-emerald-400" />
+                  <div className="absolute w-12 h-12 border border-dashed border-zinc-400/80 flex items-center justify-center">
+                    <div className="absolute -top-1 -left-1 w-2 h-2 border-t-2 border-l-2 border-white" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 border-t-2 border-r-2 border-white" />
+                    <div className="absolute -bottom-1 -left-1 w-2 h-2 border-b-2 border-l-2 border-white" />
+                    <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-white" />
                     
                     {/* Center Crosshair */}
-                    <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-                    <div className="absolute w-6 h-[1px] bg-emerald-400/70" />
-                    <div className="absolute h-6 w-[1px] bg-emerald-400/70" />
+                    <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                    <div className="absolute w-6 h-[1px] bg-white/70" />
+                    <div className="absolute h-6 w-[1px] bg-white/70" />
                   </div>
 
                   {/* Micro Target Tag */}
-                  <div className="absolute top-14 whitespace-nowrap bg-black/90 backdrop-blur-md border border-emerald-500/50 px-2 py-0.5 text-[9px] font-mono text-emerald-300 rounded shadow-md pointer-events-none">
+                  <div className="absolute top-14 whitespace-nowrap bg-black/90 backdrop-blur-md border border-zinc-700 px-2 py-0.5 text-[9px] font-mono text-zinc-200 rounded shadow-md pointer-events-none">
                     EYE FIX: {storm.lat}°N, {Math.abs(storm.lon)}°{storm.lonDir}
                   </div>
                 </div>
@@ -472,13 +470,13 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
 
                 {/* Overlay Top-Right: Satellite Channel / Radiometric Sensor */}
                 <div className="absolute top-2.5 right-2.5 bg-black/90 backdrop-blur-md border border-zinc-800 px-2.5 py-1 font-mono text-[10px] text-zinc-300 pointer-events-none flex items-center gap-1.5 rounded max-w-[210px]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
                   <span className="text-white font-bold truncate">{storm.satelliteSource.split('(')[0].trim()}</span>
                 </div>
 
                 {/* Eye Fix Status Pill (Bottom Left) */}
-                <div className="absolute bottom-2.5 left-2.5 bg-black/90 backdrop-blur-md border border-zinc-800 px-2.5 py-1 text-[10px] font-mono text-emerald-400 flex items-center gap-1.5 pointer-events-none rounded">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <div className="absolute bottom-2.5 left-2.5 bg-black/90 backdrop-blur-md border border-zinc-800 px-2.5 py-1 text-[10px] font-mono text-zinc-300 flex items-center gap-1.5 pointer-events-none rounded">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
                   <span>CENTERNET: LOCKED</span>
                 </div>
 
@@ -490,68 +488,68 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
               </div>
 
               {/* Status Ticker Bar right under Viewport */}
-              <div className="px-3.5 py-2 bg-[#090a0e] border-t border-zinc-800 flex items-center justify-between text-[11px] font-mono text-zinc-400 gap-3">
+              <div className="px-3.5 py-2 bg-zinc-950 border-t border-zinc-800 flex items-center justify-between text-[11px] font-mono text-zinc-400 gap-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  <Activity className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <Activity className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                   <span className="truncate text-zinc-300 font-medium">{storm.bannerText}</span>
                 </div>
                 <span className="text-[10px] text-zinc-500 font-mono shrink-0 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800">&lt; 4.0s E2E</span>
               </div>
 
               {/* Live Telemetry Grid */}
-              <div className="grid grid-cols-2 divide-x divide-y divide-zinc-800/80 border-t border-zinc-800 bg-[#08090d] font-mono text-xs">
-                <div className="p-4 bg-gradient-to-br from-emerald-950/20 to-transparent hover:bg-zinc-900/40 transition-colors">
+              <div className="grid grid-cols-2 divide-x divide-y divide-zinc-800/80 border-t border-zinc-800 bg-zinc-950 font-mono text-xs">
+                <div className="p-4 hover:bg-zinc-900/50 transition-colors">
                   <div className="text-zinc-400 text-[10px] uppercase tracking-wider flex items-center justify-between font-semibold">
                     <span>SUSTAINED WIND</span>
-                    <Wind className="w-3.5 h-3.5 text-emerald-400" />
+                    <Wind className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
                   <div className="text-xl font-black text-white mt-1 flex items-baseline gap-1">
                     <span>{storm.mswKnots}</span>
-                    <span className="text-xs font-normal text-emerald-400">kts</span>
+                    <span className="text-xs font-normal text-zinc-400">kts</span>
                   </div>
                   <div className="text-[10px] text-zinc-400 mt-1 flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.2 rounded bg-emerald-950 border border-emerald-800/80 text-emerald-300 font-bold text-[9px]">{storm.badge}</span>
+                    <span className="px-1.5 py-0.2 rounded bg-zinc-900 border border-zinc-700 text-zinc-200 font-bold text-[9px]">{storm.badge}</span>
                     <span>{storm.mswKmh} km/h</span>
                   </div>
                 </div>
 
-                <div className="p-4 bg-gradient-to-br from-cyan-950/20 to-transparent hover:bg-zinc-900/40 transition-colors">
+                <div className="p-4 hover:bg-zinc-900/50 transition-colors">
                   <div className="text-zinc-400 text-[10px] uppercase tracking-wider flex items-center justify-between font-semibold">
                     <span>CENTRAL PRESSURE</span>
-                    <Gauge className="w-3.5 h-3.5 text-cyan-400" />
+                    <Gauge className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
-                  <div className="text-xl font-black text-cyan-300 mt-1 flex items-baseline gap-1">
+                  <div className="text-xl font-black text-white mt-1 flex items-baseline gap-1">
                     <span>{storm.pressureHpa}</span>
-                    <span className="text-xs font-normal text-cyan-400">hPa</span>
+                    <span className="text-xs font-normal text-zinc-400">hPa</span>
                   </div>
                   <div className="text-[10px] text-zinc-400 mt-1">
-                    Deficit: <span className="text-cyan-300 font-bold">{storm.deficitHpa} hPa</span>
+                    Deficit: <span className="text-zinc-200 font-bold">{storm.deficitHpa} hPa</span>
                   </div>
                 </div>
 
-                <div className="p-4 bg-gradient-to-br from-amber-950/20 to-transparent hover:bg-zinc-900/40 transition-colors">
+                <div className="p-4 hover:bg-zinc-900/50 transition-colors">
                   <div className="text-zinc-400 text-[10px] uppercase tracking-wider flex items-center justify-between font-semibold">
                     <span>RAPID INTENSIFICATION</span>
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                    <AlertTriangle className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
-                  <div className="text-xl font-black text-amber-300 mt-1 flex items-baseline gap-1">
+                  <div className="text-xl font-black text-white mt-1 flex items-baseline gap-1">
                     <span>{storm.riProbability}%</span>
-                    <span className="text-xs font-normal text-amber-400">Risk</span>
+                    <span className="text-xs font-normal text-zinc-400">Risk</span>
                   </div>
                   <div className="text-[10px] text-zinc-400 mt-1 truncate">
-                    SST <span className="text-amber-200">{storm.sst}</span> · Shear {storm.shear}
+                    SST <span className="text-zinc-200">{storm.sst}</span> · Shear {storm.shear}
                   </div>
                 </div>
 
-                <div className="p-4 bg-gradient-to-br from-indigo-950/20 to-transparent hover:bg-zinc-900/40 transition-colors">
+                <div className="p-4 hover:bg-zinc-900/50 transition-colors">
                   <div className="text-zinc-400 text-[10px] uppercase tracking-wider flex items-center justify-between font-semibold">
                     <span>EST. LANDFALL ETA</span>
-                    <Navigation className="w-3.5 h-3.5 text-indigo-400" />
+                    <Navigation className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
                   <div className="text-base font-bold text-white mt-1 truncate">
                     {storm.landfallTime}
                   </div>
-                  <div className="text-[10px] text-indigo-300 mt-1 truncate" title={storm.landfallTarget}>
+                  <div className="text-[10px] text-zinc-300 mt-1 truncate" title={storm.landfallTarget}>
                     {storm.landfallTarget}
                   </div>
                 </div>

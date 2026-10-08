@@ -106,12 +106,12 @@ export default function DatasetSection() {
   }, [isPaused]);
 
   return (
-    <section id="dataset" className="py-16 border-b border-zinc-800/80 bg-[#09090b]">
+    <section id="dataset" className="py-16 border-b border-zinc-800/80 bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 mb-2">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 mb-2">
               <Satellite className="w-3 h-3 text-zinc-300" />
               <span>EARTH OBSERVATION & SATELLITE TELEMETRY</span>
             </div>
@@ -137,15 +137,9 @@ export default function DatasetSection() {
         {/* Distinct Layout: Split Horizontal Interactive Spectrum Console with Auto-Looping */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12 items-stretch">
           {/* Left Column: Interactive Band Selector Stack */}
-          <div className="lg:col-span-5 flex flex-col justify-between border-y border-zinc-800/80 py-1 divide-y divide-zinc-800/60 bg-[#090b10] rounded-xl border border-zinc-800/80 overflow-hidden shadow-xl">
+          <div className="lg:col-span-5 flex flex-col justify-between border-y border-zinc-800/80 py-1 divide-y divide-zinc-800/60 bg-zinc-950 rounded-xl border border-zinc-800/80 overflow-hidden shadow-xl">
             {spectralChannels.map((channel) => {
               const isSelected = selectedChannel === channel.id;
-              const channelColor = {
-                vis: { bar: 'bg-amber-400', text: 'text-amber-300', border: 'border-l-amber-400', bg: 'bg-amber-950/25' },
-                tir1: { bar: 'bg-emerald-400', text: 'text-emerald-300', border: 'border-l-emerald-400', bg: 'bg-emerald-950/25' },
-                tir2: { bar: 'bg-cyan-400', text: 'text-cyan-300', border: 'border-l-cyan-400', bg: 'bg-cyan-950/25' },
-                wv: { bar: 'bg-violet-400', text: 'text-violet-300', border: 'border-l-violet-400', bg: 'bg-violet-950/25' }
-              }[channel.id] || { bar: 'bg-emerald-400', text: 'text-emerald-300', border: 'border-l-emerald-400', bg: 'bg-emerald-950/25' };
 
               return (
                 <button
@@ -154,12 +148,12 @@ export default function DatasetSection() {
                     setSelectedChannel(channel.id);
                   }}
                   className={`w-full py-4 px-4 text-left transition-all flex items-center justify-between group cursor-pointer ${
-                    isSelected ? `${channelColor.bg} pl-5 border-l-4 ${channelColor.border}` : 'hover:bg-zinc-900/40'
+                    isSelected ? 'bg-zinc-900 pl-5 border-l-4 border-l-white' : 'hover:bg-zinc-900/40'
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
                     <div className={`w-2 h-7 transition-all rounded-full ${
-                      isSelected ? `${channelColor.bar} shadow-[0_0_10px_currentColor]` : 'bg-zinc-800 group-hover:bg-zinc-700'
+                      isSelected ? 'bg-white shadow-xs' : 'bg-zinc-800 group-hover:bg-zinc-700'
                     }`} />
                     <div>
                       <div className="flex items-center gap-2">
@@ -169,11 +163,11 @@ export default function DatasetSection() {
                           {channel.name}
                         </span>
                         {isSelected && (
-                          <span className={`w-2 h-2 rounded-full ${channelColor.bar} animate-ping`} />
+                          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
                         )}
                       </div>
                       <div className="text-[11px] font-mono text-zinc-400 mt-0.5">
-                        <span className={isSelected ? channelColor.text : 'text-zinc-500'}>λ {channel.wavelength}</span>
+                        <span className={isSelected ? 'text-zinc-200 font-semibold' : 'text-zinc-500'}>λ {channel.wavelength}</span>
                         <span className="mx-1.5 text-zinc-600">·</span>
                         <span>{channel.resolution.split(' ')[0]}</span>
                       </div>
@@ -182,7 +176,7 @@ export default function DatasetSection() {
 
                   <span className={`font-mono text-[10px] px-2 py-0.5 border ${
                     isSelected
-                      ? 'border-white text-white font-bold bg-white/10'
+                      ? 'border-white text-black font-bold bg-white'
                       : 'border-zinc-800 text-zinc-400 group-hover:border-zinc-700'
                   }`}>
                     {channel.id.toUpperCase()}
@@ -194,7 +188,7 @@ export default function DatasetSection() {
             {/* Loop status bar */}
             <div className="pt-2 px-3 flex items-center justify-between font-mono text-[10px] text-zinc-400">
               <span className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-400' : 'bg-emerald-400 animate-ping'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-zinc-400' : 'bg-white animate-ping'}`} />
                 <span>{isPaused ? 'CYCLE PAUSED (HOVER/CLICK)' : 'AUTO-CYCLE ACTIVE (2s)'}</span>
               </span>
               <span>INSAT-3D 4-BAND SEQUENCE</span>
@@ -205,7 +199,7 @@ export default function DatasetSection() {
           <div 
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="lg:col-span-7 bg-[#050608] border border-cyan-500/30 rounded-xl relative overflow-hidden group/box min-h-[460px] flex flex-col justify-end shadow-[0_0_35px_rgba(6,182,212,0.12)] ring-1 ring-white/10 cursor-pointer"
+            className="lg:col-span-7 bg-black border border-zinc-800 rounded-xl relative overflow-hidden group/box min-h-[460px] flex flex-col justify-end shadow-2xl ring-1 ring-white/10 cursor-pointer"
           >
             {/* Pure Satellite Imagery (100% visible, no dark scrims blocking it) */}
             <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
@@ -219,7 +213,7 @@ export default function DatasetSection() {
             {/* Minimal Channel Pill Tag in Top-Left (Non-intrusive) */}
             <div className="absolute top-3 left-3 z-10 pointer-events-none">
               <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-black/80 backdrop-blur-md border border-zinc-700/80 text-white font-mono text-xs font-semibold shadow-lg">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 <span>{activeChannel.name}</span>
               </div>
             </div>
