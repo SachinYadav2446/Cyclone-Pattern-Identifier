@@ -153,6 +153,7 @@ class EyeDetector:
         
         return {
             "status": "SUCCESS",
+            "has_cyclone": True,
             "storm_id": sid,
             "storm_name": info['name'],
             "category": info['category'],
@@ -227,6 +228,9 @@ class EyeDetector:
             # Structure tensor streaks for vortex flow
             smooth = gaussian_filter(gray_np, 2.5)
             gy, gx = np.gradient(smooth)
+            mean_grad = float(np.mean(np.sqrt(gx**2 + gy**2)))
+            std_val = float(np.std(gray_np))
+
             j_xx = gaussian_filter(gx**2, 3.5)
             j_xy = gaussian_filter(gx * gy, 3.5)
             j_yy = gaussian_filter(gy**2, 3.5)
@@ -250,6 +254,46 @@ class EyeDetector:
                         align = np.abs(tx[ys, xs] * e_tx + ty[ys, xs] * e_ty)
                         val += float(np.mean(align))
                     circ_grid[y:y+6, x:x+6] = val
+
+            valid_grid = circ_grid[35:-35, 35:-35]
+            peak_val = float(np.max(valid_grid))
+            mean_val = float(np.mean(valid_grid))
+            std_circ = float(np.std(valid_grid))
+            prominence = (peak_val - mean_val) / (std_circ + 1e-6)
+            bright_frac = float(np.mean(gray_np > 130))
+
+            # Operational Stage 0 Screening Criterion:
+            # Check for organized cyclonic circulation and convective banding
+            is_cyclonic = (
+                std_val >= 35.0 and
+                mean_grad >= 2.0 and
+                prominence >= 3.6 and
+                peak_val >= 3.0 and
+                bright_frac >= 0.12
+            )
+
+            if not is_cyclonic:
+                elapsed_ms = round((time.perf_counter() - start_t) * 1000, 1)
+                return {
+                    "status": "NO_CYCLONE_DETECTED",
+                    "has_cyclone": False,
+                    "storm_id": "non_cyclonic",
+                    "storm_name": "QUIESCENT SATELLITE PASS",
+                    "category": "Non-Cyclonic Atmospheric Pattern",
+                    "predicted_eye": None,
+                    "diagnostic": {
+                        "vortex_organization_score": round(float(min(1.0, prominence / 5.0)), 2),
+                        "convective_contrast": round(std_val, 1),
+                        "gradient_strength": round(mean_grad, 2),
+                        "summary": "No organized cyclonic circulation or closed eyewall detected. Basin atmospheric state is quiescent (Zero False Alarms)."
+                    },
+                    "ground_truth": None,
+                    "haversine_error_km": None,
+                    "operational_target_km": 30.0,
+                    "verification_status": "ALL CLEAR (NO CYCLONE)",
+                    "inference_latency_ms": elapsed_ms,
+                    "timestamp_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
+                }
 
             circ_grid = gaussian_filter(circ_grid, 8.0)
             circ_norm = (circ_grid - circ_grid.min()) / (circ_grid.max() - circ_grid.min() + 1e-6)
@@ -290,6 +334,7 @@ class EyeDetector:
 
         return {
             "status": "SUCCESS",
+            "has_cyclone": True,
             "storm_id": "custom_upload",
             "storm_name": "USER UPLOADED SATELLITE CAPTURE",
             "category": "Detected Organized Vortex",

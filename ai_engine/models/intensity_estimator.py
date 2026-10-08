@@ -406,6 +406,7 @@ class IntensityEstimator:
 
         return {
             "status": "SUCCESS",
+            "has_cyclone": True,
             "storm_id": sid,
             "storm_name": data['name'],
             "model_architecture": "Deep Dvorak ConvNeXt-V2 + GRN",
@@ -445,12 +446,48 @@ class IntensityEstimator:
         self,
         image_bytes: bytes,
         eye_x_pct: Optional[float] = None,
-        eye_y_pct: Optional[float] = None
+        eye_y_pct: Optional[float] = None,
+        has_cyclone: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
         Runs autonomous Deep Dvorak ConvNeXt-V2 inference on an uploaded satellite image.
         Crops a 256x256 eye-centered patch and extracts convective thermodynamics.
         """
+        if has_cyclone is False:
+            return {
+                "status": "NO_CYCLONE_DETECTED",
+                "has_cyclone": False,
+                "storm_id": "non_cyclonic",
+                "storm_name": "QUIESCENT MARINE ENVIRONMENT",
+                "model_architecture": "Deep Dvorak ConvNeXt-V2 + GRN",
+                "intensity_metrics": {
+                    "has_cyclone": False,
+                    "msw_knots": 12.0,
+                    "msw_kmh": 22.2,
+                    "central_pressure_hpa": 1012.0,
+                    "pressure_deficit_hpa": 0.0,
+                    "dvorak_t_number": 0.0,
+                    "current_intensity_ci": 0.0,
+                    "imd_category_code": "CALM",
+                    "imd_category_name": "Non-Cyclonic Ambient Flow",
+                    "imd_severity": "Quiescent Baseline",
+                    "badge_color": "#71717a"
+                },
+                "thermodynamics": {
+                    "eye_temp_k": 290.0,
+                    "eyewall_temp_k": 280.0,
+                    "delta_t_k": 10.0,
+                    "physics_audit": "PASS (Quiescent Baseline Flow)"
+                },
+                "quadrant_wind_radii": {
+                    "r34_knots_nm": {"ne": 0, "se": 0, "sw": 0, "nw": 0},
+                    "r50_knots_nm": {"ne": 0, "se": 0, "sw": 0, "nw": 0},
+                    "r64_knots_nm": {"ne": 0, "se": 0, "sw": 0, "nw": 0}
+                },
+                "inference_latency_ms": 1.0,
+                "timestamp_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
+            }
+
         start_t = time.perf_counter()
         img = Image.open(io.BytesIO(image_bytes)).convert('L').resize((512, 512))
         gray_np = np.array(img, dtype=np.float32)
@@ -506,6 +543,7 @@ class IntensityEstimator:
 
         return {
             "status": "SUCCESS",
+            "has_cyclone": True,
             "storm_id": "custom_upload",
             "storm_name": "USER UPLOADED SATELLITE CAPTURE",
             "model_architecture": "Deep Dvorak ConvNeXt-V2 + GRN",

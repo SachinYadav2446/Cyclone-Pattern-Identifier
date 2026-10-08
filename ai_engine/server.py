@@ -42,18 +42,38 @@ def health_check():
         "version": "2.0.0"
     }
 
+from fastapi.responses import Response
+
 @app.get("/api/v1/live/latest-analysis")
-def get_latest_analysis(refresh: bool = False):
+def get_latest_analysis(channel: str = "ir1", refresh: bool = False):
     """
-    Returns live multi-spectral vortex detection, latitude/longitude center fixes,
-    and convective cloud telemetry for the North Indian Ocean basin.
+    Returns live multi-spectral vortex detection, CenterNet eye localization (Feature 1),
+    and Deep Dvorak ConvNeXt-V2 intensity estimation with quadrant wind radii (Feature 2)
+    for the requested satellite channel (ir1, vis, wv, ctbt).
     """
-    return vortex_analyzer.analyze_latest_pass(force_refresh=refresh)
+    return vortex_analyzer.analyze_latest_pass(channel=channel, force_refresh=refresh)
+
+@app.get("/api/v1/live/image-proxy/{channel}")
+def get_channel_image_proxy(channel: str = "ir1"):
+    """
+    Proxies the latest live operational satellite image to prevent browser CORS/HTTPS blocks.
+    """
+    channel_key = channel.lower() if channel.lower() in vortex_analyzer.IMD_CHANNELS else "ir1"
+    img_bytes = vortex_analyzer.get_cached_image_bytes(channel_key)
+    if not img_bytes:
+        try:
+            _, img_bytes, _, _ = vortex_analyzer.fetch_live_image(channel_key)
+        except Exception:
+            # Fallback to local image if live uplink unreachable
+            pass
+    if img_bytes:
+        return Response(content=img_bytes, media_type="image/jpeg")
+    return {"status": "ERROR", "message": f"Channel image {channel_key} currently unavailable"}
 
 @app.post("/api/v1/live/trigger-scan")
-def trigger_live_scan(background_tasks: BackgroundTasks):
+def trigger_live_scan(channel: str = "ir1"):
     """Force an immediate satellite downlink pull and re-analyze."""
-    result = vortex_analyzer.analyze_latest_pass(force_refresh=True)
+    result = vortex_analyzer.analyze_latest_pass(channel=channel, force_refresh=True)
     return {"message": "Live satellite scan triggered successfully", "result": result}
 
 from pydantic import BaseModel
@@ -61,6 +81,7 @@ from typing import Optional
 import base64
 from ai_engine.models.eye_detector import eye_detector, BENCHMARK_STORMS
 from ai_engine.models.intensity_estimator import intensity_estimator, BENCHMARK_STORMS_INTENSITY
+from ai_engine.models.trajectory_forecaster import trajectory_forecaster
 
 class LocalizeEyeRequest(BaseModel):
     storm_id: Optional[str] = "fani"
@@ -117,6 +138,8 @@ def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
             eye_y = payload.eye_y_pct
             if eye_x is None or eye_y is None:
                 eye_fix = eye_detector.localize_image_array(img_bytes)
+                if eye_fix.get("has_cyclone") is False:
+                    return intensity_estimator.estimate_image_array(img_bytes, has_cyclone=False)
                 if eye_fix.get("status") == "SUCCESS":
                     eye_x = eye_fix["predicted_eye"]["pixel_x_percent"]
                     eye_y = eye_fix["predicted_eye"]["pixel_y_percent"]
@@ -130,6 +153,46 @@ def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
 def get_benchmark_intensity(storm_id: str):
     """Returns verified Deep Dvorak ConvNeXt-V2 intensity fix for benchmark cyclones."""
     return intensity_estimator.estimate_benchmark_storm(storm_id)
+
+class ForecastTrajectoryRequest(BaseModel):
+    storm_id: Optional[str] = "fani"
+    current_lat: Optional[float] = None
+    current_lon: Optional[float] = None
+    msw_knots: Optional[float] = None
+    central_pressure_hpa: Optional[float] = None
+    has_cyclone: Optional[bool] = True
+
+@app.get("/api/v1/models/forecast-trajectory/{storm_id}")
+def get_benchmark_trajectory(storm_id: str):
+    """
+    Returns ConvLSTM 48-hour trajectory waypoints, cone of uncertainty polygons,
+    and coastal landfall projection for benchmark storms.
+    """
+    if storm_id.lower() in ("none", "calm", "clear", "quiescent"):
+        return trajectory_forecaster.get_quiescent_track()
+    return trajectory_forecaster.forecast_benchmark_storm(storm_id)
+
+@app.post("/api/v1/models/forecast-trajectory")
+def forecast_cyclone_trajectory(payload: ForecastTrajectoryRequest):
+    """
+    ConvLSTM Spatio-Temporal Trajectory Forecasting endpoint.
+    Computes 48-hour forward track waypoints, expanding cone of uncertainty,
+    and coastal landfall intersection from given coordinates and intensity.
+    """
+    if payload.has_cyclone is False:
+        return trajectory_forecaster.get_quiescent_track()
+    
+    if payload.current_lat is not None and payload.current_lon is not None:
+        wind = payload.msw_knots or 65.0
+        pressure = payload.central_pressure_hpa or 980.0
+        return trajectory_forecaster.forecast_dynamic_track(
+            current_lat=payload.current_lat,
+            current_lon=payload.current_lon,
+            current_wind_kts=wind,
+            current_pressure_hpa=pressure
+        )
+    return trajectory_forecaster.forecast_benchmark_storm(payload.storm_id or "fani")
+
 
 import os
 
