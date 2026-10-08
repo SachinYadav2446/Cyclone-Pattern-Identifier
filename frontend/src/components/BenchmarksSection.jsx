@@ -106,10 +106,9 @@ export default function BenchmarksSection() {
     : comparisons.filter(c => c.category === selectedCategory);
 
   return (
-    <section id="benchmarks" className="relative py-20 border-y border-zinc-800/80 bg-gradient-to-b from-[#090a0d] via-[#0d0f15] to-[#090a0d] text-zinc-100 overflow-hidden">
+    <section id="benchmarks" className="relative py-20 border-y border-zinc-800/80 bg-black text-zinc-100 overflow-hidden">
       {/* Precision ambient background elements */}
       <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
-      <div className="absolute inset-0 bg-radial-gradient opacity-30 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
@@ -128,8 +127,8 @@ export default function BenchmarksSection() {
           </div>
 
           <div className="flex items-center gap-3 font-mono text-xs">
-            <div className="px-3.5 py-1.5 bg-zinc-900/90 border border-zinc-800 text-zinc-300 flex items-center gap-2 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="px-3.5 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center gap-2 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
               <span>AUDIT BENCHMARK: <strong className="text-white">NOAA IBTrACS v04r00</strong></span>
             </div>
           </div>
@@ -145,7 +144,7 @@ export default function BenchmarksSection() {
               viewport={{ once: true }}
               transition={{ duration: 0.25, delay: i * 0.05 }}
               whileHover={{ y: -3, borderColor: '#52525b' }}
-              className="relative p-4 bg-[#0e1017]/90 border border-zinc-800 shadow-xl flex flex-col justify-between transition-all overflow-hidden group before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-zinc-500/40 before:to-transparent"
+              className="relative p-4 bg-zinc-950 border border-zinc-800 shadow-xl flex flex-col justify-between transition-all overflow-hidden group"
             >
               {/* Micro Corner Plus Marks */}
               <div className="absolute top-1.5 left-1.5 text-[8px] text-zinc-700 select-none pointer-events-none">+</div>
@@ -158,8 +157,8 @@ export default function BenchmarksSection() {
                 <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                   {s.value}
                 </div>
-                <div className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-800/50 px-2 py-0.5">
-                  <TrendingUp className="w-2.5 h-2.5" />
+                <div className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-zinc-200 font-semibold bg-zinc-900 border border-zinc-700 px-2 py-0.5">
+                  <TrendingUp className="w-2.5 h-2.5 text-zinc-400" />
                   <span>{s.gain}</span>
                 </div>
               </div>
@@ -193,10 +192,10 @@ export default function BenchmarksSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.3 }}
-          className="border border-zinc-800 bg-[#0a0b10] shadow-2xl overflow-hidden"
+          className="border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden"
         >
           {/* Terminal Header Bar with Interactive Category Tabs */}
-          <div className="p-3.5 sm:p-4 bg-zinc-900/90 border-b border-zinc-800 font-mono text-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3.5 sm:p-4 bg-zinc-900 border-b border-zinc-800 font-mono text-xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-zinc-600" />
               <span className="w-2 h-2 bg-zinc-600" />
@@ -259,13 +258,13 @@ export default function BenchmarksSection() {
                   <th className="px-5 py-3 font-semibold uppercase tracking-wider w-[24%]">
                     METEOROLOGICAL CAPABILITY
                   </th>
-                  <th className="px-5 py-3 font-bold text-white bg-[#121520] border-x border-[#232736] w-[30%]">
+                  <th className="px-5 py-3 font-bold text-white bg-zinc-900 border-x border-zinc-800 w-[30%]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
                         <span>DEEPCYCLONE AI (OURS)</span>
                       </div>
-                      <span className="text-[9px] px-1.5 py-0.2 bg-emerald-950/60 border border-emerald-700/60 text-emerald-400 font-mono">
+                      <span className="text-[9px] px-1.5 py-0.2 bg-white text-black font-bold font-mono">
                         SOTA
                       </span>
                     </div>
@@ -291,15 +290,15 @@ export default function BenchmarksSection() {
                     >
                       <td className="px-5 py-3.5 font-sans font-medium text-white text-xs">
                         <div>{c.feature}</div>
-                        <div className="font-mono text-[10px] text-emerald-400 mt-0.5">
+                        <div className="font-mono text-[10px] text-zinc-400 mt-0.5">
                           ➔ {c.impact}
                         </div>
                       </td>
 
                       {/* DeepCyclone AI Column (Elevated Slate Highlight) */}
-                      <td className="px-5 py-3.5 font-bold text-white bg-[#121520]/80 border-x border-[#232736] group-hover:bg-[#151928] transition-colors">
+                      <td className="px-5 py-3.5 font-bold text-white bg-zinc-900/60 border-x border-zinc-800 group-hover:bg-zinc-900 transition-colors">
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 bg-emerald-950/80 border border-emerald-500/60 flex items-center justify-center text-emerald-400 shrink-0">
+                          <div className="w-4 h-4 bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white shrink-0">
                             <Check className="w-2.5 h-2.5" />
                           </div>
                           <span className="leading-snug">{c.deepcyclone}</span>
@@ -323,10 +322,10 @@ export default function BenchmarksSection() {
           </div>
 
           {/* Table Footer Bar */}
-          <div className="px-5 py-2.5 bg-[#08090d] border-t border-zinc-800 font-mono text-[10px] text-zinc-400 flex flex-wrap items-center justify-between gap-3">
+          <div className="px-5 py-2.5 bg-zinc-950 border-t border-zinc-800 font-mono text-[10px] text-zinc-400 flex flex-wrap items-center justify-between gap-3">
             <span>AUDIT CONSENSUS: HELD-OUT 2014-2024 CYCLONE SEASONS BENCHMARKED AGAINST NOAA IBTRACS & IMD ARCHIVES</span>
             <div className="flex items-center gap-2 text-white font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-white" />
               <span>SUPERIOR BENCHMARK ACHIEVED ACROSS ALL 5 OPERATIONAL VECTORS</span>
             </div>
           </div>

@@ -101,11 +101,11 @@ export default function DoctorModeSection() {
   };
 
   return (
-    <section id="doctor-mode" className="py-16 border-b border-zinc-800/80 bg-zinc-950">
+    <section id="doctor-mode" className="py-16 border-b border-zinc-800/80 bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 mb-2">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 mb-2">
               <Eye className="w-3 h-3 text-zinc-300" />
               <span>AUTHENTIC SATELLITE LOOP · GRAD-CAM ATTENTION AUDIT</span>
             </div>
@@ -139,7 +139,7 @@ export default function DoctorModeSection() {
               className="relative border border-zinc-800 overflow-hidden bg-black aspect-[16/10] select-none cursor-crosshair shadow-2xl group"
             >
               {/* Layer 1: Satellite Video Stream */}
-              <div className="absolute inset-0 bg-[#060608] flex items-center justify-center overflow-hidden">
+              <div className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden">
                 <picture className="w-full h-full select-none">
                   <source
                     srcSet={activeView === 'raw' ? '/gifs/ophelia_visible_raw.webp' : '/gifs/ophelia_infrared_gradcam.webp'}
@@ -157,7 +157,7 @@ export default function DoctorModeSection() {
                 {/* Video Playback & Satellite Metadata Badge */}
                 <div className="absolute top-3 left-3 flex items-center gap-2 pointer-events-none">
                   <div className="font-mono text-[10px] px-2 py-0.5 bg-black/85 backdrop-blur-sm border border-zinc-800 text-zinc-300 flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${activeView === 'raw' ? 'bg-zinc-400' : 'bg-red-500 animate-pulse'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${activeView === 'raw' ? 'bg-zinc-400' : 'bg-white animate-pulse'}`} />
                     <span>
                       {activeView === 'raw'
                         ? 'RAW 1ST FEED: GOES-13 VISIBLE OPTICAL (0.63 µm)'
@@ -308,7 +308,7 @@ export default function DoctorModeSection() {
             <div className="p-3.5 bg-zinc-950 border border-zinc-800">
               <div className="text-zinc-500 text-[10px] uppercase">AUDIT VERDICT:</div>
               <div className="text-white text-xs font-bold flex items-center gap-1.5 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white" />
                 {audit.verdict}
               </div>
               <div className="text-zinc-400 text-[10px] mt-0.5">Background ocean noise: {audit.falseAlarm}</div>

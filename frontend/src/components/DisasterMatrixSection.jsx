@@ -61,9 +61,9 @@ export default function DisasterMatrixSection() {
 
   const getAlertLevel = (surge) => {
     const s = parseFloat(surge);
-    if (s >= 3.0) return { label: 'RED ALERT', bg: 'bg-red-950/40 border-red-500/40 text-red-300', dot: 'bg-red-400 animate-pulse' };
-    if (s >= 2.0) return { label: 'ORANGE ALERT', bg: 'bg-amber-950/40 border-amber-500/40 text-amber-300', dot: 'bg-amber-400' };
-    return { label: 'YELLOW WATCH', bg: 'bg-zinc-900 border-zinc-700 text-zinc-300', dot: 'bg-zinc-400' };
+    if (s >= 3.0) return { label: 'CRITICAL ALERT', bg: 'bg-white text-black font-bold border-white', dot: 'bg-black animate-pulse' };
+    if (s >= 2.0) return { label: 'ELEVATED RISK', bg: 'bg-zinc-800 text-zinc-200 border-zinc-700', dot: 'bg-white' };
+    return { label: 'MONITORED', bg: 'bg-zinc-900 border-zinc-800 text-zinc-400', dot: 'bg-zinc-500' };
   };
 
   return (

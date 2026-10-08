@@ -163,7 +163,7 @@ export default function PipelineSection() {
     <section 
       id="pipeline" 
       ref={containerRef}
-      className="relative border-b border-zinc-800/80 bg-[#09090b]"
+      className="relative border-b border-zinc-800/80 bg-black"
       style={{ height: '360vh' }}
     >
       {/* Precision background dot pattern */}
@@ -184,16 +184,16 @@ export default function PipelineSection() {
           </div>
 
           <div className="font-mono text-xs text-zinc-400 flex items-center gap-3">
-            <div className="px-3 py-1 bg-zinc-900/90 border border-zinc-800 text-white font-bold text-[11px] flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="px-3 py-1 bg-zinc-900 border border-zinc-800 text-white font-bold text-[11px] flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
               <span>STAGE 0{current.id} / 04 · END-TO-END LATENCY &lt; 4.0s</span>
             </div>
           </div>
         </div>
 
-        {/* Crisp Monochromatic Engineering Workstation Card (Deep Graphite-Slate Elevation) */}
-        <div className="relative border border-[#232733] bg-gradient-to-b from-[#111319] via-[#0e1015] to-[#0a0b0e] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] p-5 sm:p-7 backdrop-blur-xl max-h-[82vh] flex flex-col justify-between overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-zinc-500/30 before:to-transparent">
-          {/* Micro Corner Plus Marks (DoD / Scientific Instrumentation Accents) */}
+        {/* Crisp Monochromatic Engineering Workstation Card */}
+        <div className="relative border border-zinc-800 bg-zinc-950 shadow-2xl p-5 sm:p-7 backdrop-blur-xl max-h-[82vh] flex flex-col justify-between overflow-hidden">
+          {/* Micro Corner Plus Marks (Scientific Instrumentation Accents) */}
           <div className="absolute top-1.5 left-1.5 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+</div>
           <div className="absolute top-1.5 right-1.5 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+</div>
           <div className="absolute bottom-1.5 left-1.5 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+</div>
@@ -212,12 +212,12 @@ export default function PipelineSection() {
               <div className="lg:col-span-6 flex flex-col items-start">
                 {/* Top Badge Row */}
                 <div className="flex items-center gap-2 mb-2.5">
-                  <div className="w-7 h-7 bg-[#161822] border border-[#272b38] flex items-center justify-center text-white shadow-sm">
+                  <div className="w-7 h-7 bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white shadow-sm">
                     <Icon className="w-3.5 h-3.5" />
                   </div>
 
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#161822] border border-[#272b38] text-[10px] font-mono font-semibold text-zinc-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-[10px] font-mono font-semibold text-zinc-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                     <span>{current.badge}</span>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export default function PipelineSection() {
                 <div className="space-y-2 w-full mb-4">
                   {current.bullets.map((bullet, idx) => (
                     <div key={idx} className="flex items-start gap-2.5 text-xs text-zinc-300">
-                      <div className="w-3.5 h-3.5 border border-[#2f3545] bg-[#141620] flex items-center justify-center shrink-0 mt-0.5 text-white">
+                      <div className="w-3.5 h-3.5 border border-zinc-700 bg-zinc-900 flex items-center justify-center shrink-0 mt-0.5 text-white">
                         <CheckCircle className="w-2.5 h-2.5 text-white" />
                       </div>
                       <span className="leading-tight">{bullet}</span>
@@ -250,12 +250,12 @@ export default function PipelineSection() {
                 </div>
 
                 {/* Mathematical / Technical Formula Box (Clean Inset Console) */}
-                <div className="w-full p-2.5 bg-[#090a0e] border border-[#232733] font-mono text-xs">
+                <div className="w-full p-2.5 bg-zinc-900 border border-zinc-800 font-mono text-xs">
                   <div className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1 flex items-center justify-between">
                     <span>NUMERICAL FORMULATION</span>
                     <span className="text-zinc-400">BENCHMARK: {current.accuracy}</span>
                   </div>
-                  <div className="text-white font-semibold text-[11px] truncate bg-black/90 p-2 border border-[#1b1e28]">
+                  <div className="text-white font-semibold text-[11px] truncate bg-black p-2 border border-zinc-800">
                     {current.formula}
                   </div>
                 </div>
@@ -264,11 +264,11 @@ export default function PipelineSection() {
               {/* Right Column: Live Node Graph Canvas (Deep Blueprint Console) */}
               <div className="lg:col-span-6">
                 <div 
-                  className="relative border border-[#262b3a] bg-[#07080b] overflow-hidden shadow-2xl p-4 sm:p-5 h-[340px] flex flex-col justify-between"
+                  className="relative border border-zinc-800 bg-black overflow-hidden shadow-2xl p-4 sm:p-5 h-[340px] flex flex-col justify-between"
                   style={{ backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px)', backgroundSize: '16px 16px' }}
                 >
                   {/* Terminal Header */}
-                  <div className="flex items-center justify-between border-b border-[#1e222e] pb-2.5 mb-3">
+                  <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5 mb-3">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 bg-zinc-600" />
                       <span className="w-2 h-2 bg-zinc-600" />
@@ -277,8 +277,8 @@ export default function PipelineSection() {
                         EXECUTION_DAG // STAGE_0{current.id}
                       </span>
                     </div>
-                    <div className="inline-flex items-center gap-1 font-mono text-[9px] text-emerald-400 px-2 py-0.5 bg-emerald-950/40 border border-emerald-800/60">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <div className="inline-flex items-center gap-1 font-mono text-[9px] text-zinc-300 px-2 py-0.5 bg-zinc-900 border border-zinc-750">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                       <span>LIVE EXECUTION</span>
                     </div>
                   </div>
@@ -315,7 +315,7 @@ export default function PipelineSection() {
                     </svg>
 
                     {/* Node 1: Input Port (Top Left) */}
-                    <div className="relative z-10 w-fit max-w-[270px] p-2.5 border border-[#282d3d] bg-[#11131a]/95 shadow-xl font-mono text-xs">
+                    <div className="relative z-10 w-fit max-w-[270px] p-2.5 border border-zinc-800 bg-zinc-900 shadow-xl font-mono text-xs">
                       <div className="flex items-center justify-between gap-2 text-[9px] text-zinc-400 font-semibold mb-0.5">
                         <span className="text-zinc-500 uppercase tracking-wider">[IN] {current.inputNode.title}</span>
                         <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
@@ -326,13 +326,13 @@ export default function PipelineSection() {
                     </div>
 
                     {/* Node 2: Neural Processing Engine (Center Right) */}
-                    <div className="relative z-10 ml-auto w-fit max-w-[290px] p-3 border border-zinc-500/80 bg-[#161822] shadow-2xl font-mono text-xs">
+                    <div className="relative z-10 ml-auto w-fit max-w-[290px] p-3 border border-zinc-700 bg-zinc-900 shadow-2xl font-mono text-xs">
                       <div className="flex items-center justify-between gap-2 text-[9px] text-zinc-300 font-semibold mb-0.5">
                         <span className="flex items-center gap-1.5 text-white font-bold">
                           <Cpu className="w-3 h-3 text-white" />
                           <span>[KERNEL] {current.middleNode.title}</span>
                         </span>
-                        <span className="px-1.5 py-0.2 bg-[#0e1015] border border-[#2e3447] text-emerald-400 text-[8px] font-bold">
+                        <span className="px-1.5 py-0.2 bg-zinc-950 border border-zinc-800 text-zinc-300 text-[8px] font-bold">
                           {current.middleNode.latency}
                         </span>
                       </div>
@@ -342,10 +342,10 @@ export default function PipelineSection() {
                     </div>
 
                     {/* Node 3: Output Port (Bottom Left) */}
-                    <div className="relative z-10 w-fit max-w-[270px] p-2.5 border border-[#282d3d] bg-[#11131a]/95 shadow-xl font-mono text-xs">
+                    <div className="relative z-10 w-fit max-w-[270px] p-2.5 border border-zinc-800 bg-zinc-900 shadow-xl font-mono text-xs">
                       <div className="flex items-center justify-between gap-2 text-[9px] text-zinc-400 font-semibold mb-0.5">
-                        <span className="text-emerald-400 uppercase tracking-wider">[OUT] {current.outputNode.title}</span>
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="text-zinc-300 uppercase tracking-wider">[OUT] {current.outputNode.title}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
                       </div>
                       <div className="text-white font-semibold text-[11px]">
                         {current.outputNode.label}
@@ -354,7 +354,7 @@ export default function PipelineSection() {
                   </div>
 
                   {/* Mini Tensor Signature Footer */}
-                  <div className="pt-2 border-t border-[#1e222e] grid grid-cols-2 gap-3 font-mono text-[9px] text-zinc-400">
+                  <div className="pt-2 border-t border-zinc-800 grid grid-cols-2 gap-3 font-mono text-[9px] text-zinc-400">
                     <div>
                       <span className="text-zinc-500 block uppercase">INPUT TENSOR:</span>
                       <span className="text-zinc-200">{current.tensorIn}</span>
@@ -370,7 +370,7 @@ export default function PipelineSection() {
           </AnimatePresence>
 
           {/* Bottom Stage Switcher / Progress Indicators (Sharp Technical Tabs) */}
-          <div className="mt-4 pt-3 border-t border-[#232733] flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+          <div className="mt-4 pt-3 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
             <div className="flex items-center gap-2">
               <span className="text-zinc-500 text-[10px]">STAGE SELECTOR:</span>
               <div className="flex items-center gap-1">
@@ -382,8 +382,8 @@ export default function PipelineSection() {
                       onClick={() => setActiveStepId(step.id)}
                       className={`px-3 py-1 transition-all text-xs font-mono font-medium border ${
                         isSelected
-                          ? 'bg-white text-zinc-950 font-bold border-white shadow-sm'
-                          : 'bg-[#13151d] border-[#262a38] text-zinc-400 hover:text-white hover:bg-[#1a1d28]'
+                          ? 'bg-white text-black font-bold border-white shadow-sm'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
                       }`}
                     >
                       0{step.id} · {step.title.split(' ')[0]}
@@ -396,7 +396,7 @@ export default function PipelineSection() {
             {/* Scroll Progress Bar (Precision Linear Track) */}
             <div className="hidden sm:flex items-center gap-2 text-zinc-400 text-[10px]">
               <span>SCROLL PINNED</span>
-              <div className="w-28 h-1 bg-[#13151d] border border-[#262a38] overflow-hidden">
+              <div className="w-28 h-1 bg-zinc-900 border border-zinc-800 overflow-hidden">
                 <div 
                   className="h-full bg-white transition-all duration-200"
                   style={{ width: `${(activeStepId / pipelineSteps.length) * 100}%` }}
