@@ -29,6 +29,7 @@ const spectralSensors = [
     status: 'OPTIMAL · SNR 48.2 dB',
     calib: 'MOSDAC Radiance L1B',
     img: '/images/TIR1_cyclone.png',
+    webp: '/images/TIR1_cyclone.webp',
   },
   {
     id: 'vis',
@@ -39,6 +40,7 @@ const spectralSensors = [
     status: 'OPTIMAL · ALBEDO 100%',
     calib: 'Solar Zenith Normalized',
     img: '/images/visible_cyclone_image.png',
+    webp: '/images/visible_cyclone_image.webp',
   },
   {
     id: 'wv',
@@ -49,6 +51,7 @@ const spectralSensors = [
     status: 'OPTIMAL · 300-600 hPa',
     calib: 'RTTOV Fast Radiative Model',
     img: '/images/WV_image.png',
+    webp: '/images/WV_image.webp',
   },
   {
     id: 'ctbt',
@@ -59,6 +62,7 @@ const spectralSensors = [
     status: 'OPTIMAL · ΔT Calibrated',
     calib: 'Dual-Channel Split Differential',
     img: '/images/TIR2_cyclone.png',
+    webp: '/images/TIR2_cyclone.webp',
   },
 ];
 
@@ -392,6 +396,65 @@ export default function SynopticSituationRoom({ onOpenConsole }) {
                 </button>
               );
             })}
+          </div>
+
+          {/* Active Radiometric Feed Visual Inspection Bay */}
+          <div className="mt-4 border border-zinc-800 bg-black overflow-hidden relative group">
+            <div className="p-3 bg-zinc-950 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                <span className="font-bold text-white tracking-wide">
+                  ACTIVE RADIOMETRIC FEED // {activeSensor.name.toUpperCase()} ({activeSensor.band})
+                </span>
+                <span className="text-zinc-600">|</span>
+                <span className="text-zinc-400 text-[11px]">{activeSensor.calib}</span>
+              </div>
+              <div className="flex items-center gap-3 text-[10px] text-zinc-400">
+                <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-700 text-white font-bold">
+                  {activeSensor.code} PASS
+                </span>
+                <span className="text-zinc-400">74.0°E GEOSTATIONARY</span>
+              </div>
+            </div>
+
+            <div className="relative aspect-[21/9] sm:aspect-[24/9] w-full bg-black overflow-hidden flex items-center justify-center">
+              <picture className="w-full h-full select-none">
+                {activeSensor.webp && (
+                  <source srcSet={activeSensor.webp} type="image/webp" />
+                )}
+                <img
+                  src={activeSensor.img}
+                  alt={`${activeSensor.name} Radiometry Pass`}
+                  loading="eager"
+                  decoding="async"
+                  onError={(e) => {
+                    if (e.currentTarget.src !== activeSensor.img) {
+                      e.currentTarget.src = activeSensor.img;
+                    }
+                  }}
+                  className="w-full h-full object-cover object-center filter contrast-110 brightness-100 transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+              </picture>
+
+              {/* Grid overlay lines */}
+              <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black" />
+              <div className="absolute inset-0 pointer-events-none bg-grid-pattern opacity-10" />
+
+              {/* Corner coordinate reticles */}
+              <span className="absolute top-2 left-2 font-mono text-[9px] text-zinc-400 select-none bg-black/80 px-1.5 py-0.5 border border-zinc-800">+ 35.00°N / 50.00°E</span>
+              <span className="absolute top-2 right-2 font-mono text-[9px] text-zinc-400 select-none bg-black/80 px-1.5 py-0.5 border border-zinc-800">+ 35.00°N / 95.00°E</span>
+              <span className="absolute bottom-2 left-2 font-mono text-[9px] text-zinc-400 select-none bg-black/80 px-1.5 py-0.5 border border-zinc-800">+ 00.00°N / 50.00°E</span>
+              <span className="absolute bottom-2 right-2 font-mono text-[9px] text-zinc-400 select-none bg-black/80 px-1.5 py-0.5 border border-zinc-800">+ 00.00°N / 95.00°E</span>
+
+              {/* Bottom telemetry badge */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/90 backdrop-blur-md border border-zinc-700/80 px-3 py-1 font-mono text-[10px] text-zinc-300 flex items-center gap-3 shadow-xl">
+                <span className="text-white font-bold">{activeSensor.name}</span>
+                <span className="text-zinc-600">·</span>
+                <span>{activeSensor.desc}</span>
+                <span className="text-zinc-600">·</span>
+                <span className="text-white font-semibold">{activeSensor.status}</span>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -16,6 +16,7 @@ const spectralChannels = [
     bands: 'Channel 1 · INSAT-3D Imager',
     calibMethod: 'Solar Zenith Normalized Bidirectional Reflectance',
     image: '/images/visible_cyclone_image.png',
+    webp: '/images/visible_cyclone_image.webp',
   },
   {
     id: 'tir1',
@@ -30,6 +31,7 @@ const spectralChannels = [
     bands: 'Channel 4 · INSAT-3D Imager',
     calibMethod: 'Planck Inverse Inversion via MOSDAC Lookup Calibration',
     image: '/images/TIR1_cyclone.png',
+    webp: '/images/TIR1_cyclone.webp',
   },
   {
     id: 'tir2',
@@ -44,6 +46,7 @@ const spectralChannels = [
     bands: 'Channel 5 · INSAT-3D Imager',
     calibMethod: 'Differential Split-Window Radiative Transfer (RTTOV)',
     image: '/images/TIR2_cyclone.png',
+    webp: '/images/TIR2_cyclone.webp',
   },
   {
     id: 'wv',
@@ -58,6 +61,7 @@ const spectralChannels = [
     bands: 'Channel 3 · INSAT-3D Imager',
     calibMethod: 'Mid-Tropospheric Water Vapor Radiance Integration',
     image: '/images/WV_image.png',
+    webp: '/images/WV_image.webp',
   },
 ];
 
@@ -203,11 +207,24 @@ export default function DatasetSection() {
           >
             {/* Pure Satellite Imagery (100% visible, no dark scrims blocking it) */}
             <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
-              <img
-                src={activeChannel.image}
-                alt={activeChannel.name}
-                className="w-full h-full object-cover object-center filter contrast-105 brightness-100 transition-transform duration-300 ease-out group-hover/box:scale-105"
-              />
+              <picture className="w-full h-full select-none">
+                {activeChannel.webp && (
+                  <source srcSet={activeChannel.webp} type="image/webp" />
+                )}
+                <img
+                  src={activeChannel.image}
+                  alt={activeChannel.name}
+                  loading="eager"
+                  decoding="async"
+                  onError={(e) => {
+                    // Fallback to png immediately if any format issues occur
+                    if (e.currentTarget.src !== activeChannel.image) {
+                      e.currentTarget.src = activeChannel.image;
+                    }
+                  }}
+                  className="w-full h-full object-cover object-center filter contrast-105 brightness-100 transition-transform duration-300 ease-out group-hover/box:scale-105"
+                />
+              </picture>
             </div>
 
             {/* Minimal Channel Pill Tag in Top-Left (Non-intrusive) */}

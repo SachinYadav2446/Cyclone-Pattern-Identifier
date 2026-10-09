@@ -35,7 +35,9 @@ const channels = [
     role: 'Eyewall Deep Convection & Cloud-Top Brightness',
     description: 'Measures radiative temperature of cloud tops. Severe eyewall convection bursts appear as ultra-cold, high-radiance bright signatures down to -80°C.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ir1.jpg',
+    proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/ir1`,
     fallbackUrl: '/images/TIR1_cyclone.png',
+    webpUrl: '/images/TIR1_cyclone.webp',
   },
   {
     id: 'vis',
@@ -48,7 +50,9 @@ const channels = [
     role: 'Sub-Kilometer Eye Structural Georeferencing',
     description: 'High-resolution albedo reflecting sunlight off upper tropospheric cirrus and spiral rainband striations. Enables pinpoint CenterNet eye fix.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_vis.jpg',
+    proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/vis`,
     fallbackUrl: '/images/visible_cyclone_image.png',
+    webpUrl: '/images/visible_cyclone_image.webp',
   },
   {
     id: 'wv',
@@ -61,7 +65,9 @@ const channels = [
     role: 'Upper-Level Dry Slot & Steering Flow Mapping',
     description: 'Visualizes mid-to-upper tropospheric moisture transport (300-600 hPa). Crucial for detecting dry air intrusions that disrupt cyclone core intensification.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_wv.jpg',
+    proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/wv`,
     fallbackUrl: '/images/WV_image.png',
+    webpUrl: '/images/WV_image.webp',
   },
   {
     id: 'ctbt',
@@ -74,7 +80,9 @@ const channels = [
     role: 'Calibrated Deep Convective Cooling',
     description: 'Calibrated thermodynamic brightness temperature map highlighting intense eyewall thunderstorm bursting and explosive cloud-top cooling.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ctbt.jpg',
+    proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/ctbt`,
     fallbackUrl: '/images/TIR2_cyclone.png',
+    webpUrl: '/images/TIR2_cyclone.webp',
   },
 ];
 
@@ -417,16 +425,30 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 className="relative aspect-[16/11] bg-black overflow-hidden flex items-center justify-center cursor-crosshair select-none"
               >
                 {/* Live Satellite Image */}
-                <img
-                  src={
-                    failedImages[activeChannel.id]
-                      ? activeChannel.fallbackUrl
-                      : `${activeChannel.liveUrl}?t=${cacheBuster}`
-                  }
-                  alt={activeChannel.name}
-                  onError={() => handleImageError(activeChannel.id)}
-                  className="w-full h-full object-cover filter contrast-110"
-                />
+                <picture className="w-full h-full select-none">
+                  {activeChannel.webpUrl && (
+                    <source srcSet={activeChannel.webpUrl} type="image/webp" />
+                  )}
+                  <img
+                    src={
+                      failedImages[activeChannel.id]
+                        ? activeChannel.fallbackUrl
+                        : (activeChannel.id === 'vis'
+                            ? activeChannel.fallbackUrl
+                            : `${activeChannel.liveUrl}?t=${cacheBuster}`)
+                    }
+                    alt={activeChannel.name}
+                    loading="eager"
+                    decoding="async"
+                    onError={(e) => {
+                      if (e.currentTarget.src !== activeChannel.fallbackUrl) {
+                        e.currentTarget.src = activeChannel.fallbackUrl;
+                      }
+                      handleImageError(activeChannel.id);
+                    }}
+                    className="w-full h-full object-cover filter contrast-110"
+                  />
+                </picture>
 
                 {/* Micro Crosshair Grid Lines */}
                 <div className="absolute inset-0 pointer-events-none opacity-25 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black" />
@@ -1228,16 +1250,30 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                   </div>
 
                   <div className="relative aspect-[16/10] bg-black overflow-hidden flex items-center justify-center">
-                    <img
-                      src={
-                        failedImages[ch.id]
-                          ? ch.fallbackUrl
-                          : `${ch.liveUrl}?t=${cacheBuster}`
-                      }
-                      alt={ch.name}
-                      onError={() => handleImageError(ch.id)}
-                      className="w-full h-full object-cover filter contrast-110"
-                    />
+                    <picture className="w-full h-full select-none">
+                      {ch.webpUrl && (
+                        <source srcSet={ch.webpUrl} type="image/webp" />
+                      )}
+                      <img
+                        src={
+                          failedImages[ch.id]
+                            ? ch.fallbackUrl
+                            : (ch.id === 'vis'
+                                ? ch.fallbackUrl
+                                : `${ch.liveUrl}?t=${cacheBuster}`)
+                        }
+                        alt={ch.name}
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          if (e.currentTarget.src !== ch.fallbackUrl) {
+                            e.currentTarget.src = ch.fallbackUrl;
+                          }
+                          handleImageError(ch.id);
+                        }}
+                        className="w-full h-full object-cover filter contrast-110"
+                      />
+                    </picture>
                     <div className="absolute bottom-2 left-2 font-mono text-[9px] bg-black/80 text-zinc-400 px-1.5 py-0.5 border border-zinc-800">
                       {ch.band}
                     </div>
