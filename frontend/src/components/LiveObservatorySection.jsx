@@ -21,6 +21,7 @@ import {
   Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE_URL } from '../config/api';
 
 const channels = [
   {
@@ -34,8 +35,8 @@ const channels = [
     role: 'Primary 24/7 Dvorak Cloud-Top Thermometry',
     description: 'Measures longwave emission from convective storm clouds 24/7. Evaluates temperature contrast between the warm eye and freezing cloud shield.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ir1.jpg',
+    proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/ir1`,
     fallbackUrl: '/images/TIR1_cyclone.png',
-    webpUrl: '/images/TIR1_cyclone.webp',
   },
   {
     id: 'vis',
@@ -48,8 +49,8 @@ const channels = [
     role: 'High-Res Eyewall Structure & Stadium Effect',
     description: 'High-resolution daytime optical reflection channel revealing eyewall mesovortices, cloud shadow heights, and low-level circulation centers.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_vis.jpg',
+    proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/vis`,
     fallbackUrl: '/images/visible_cyclone_image.png',
-    webpUrl: '/images/visible_cyclone_image.webp',
   },
   {
     id: 'wv',
@@ -62,8 +63,8 @@ const channels = [
     role: 'Synoptic Steering & Moisture Conveyor',
     description: 'Captures upper-air moisture flow (300 to 600 hPa). Traces dry air intrusions that weaken vortex symmetry and maps subtropical jet steering.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_wv.jpg',
+    proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/wv`,
     fallbackUrl: '/images/WV_image.png',
-    webpUrl: '/images/WV_image.webp',
   },
   {
     id: 'ctbt',
@@ -76,8 +77,8 @@ const channels = [
     role: 'Calibrated Deep Convective Cooling',
     description: 'Calibrated thermodynamic brightness temperature map highlighting intense eyewall thunderstorm bursting and explosive cloud-top cooling.',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ctbt.jpg',
+    proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/ctbt`,
     fallbackUrl: '/images/TIR2_cyclone.png',
-    webpUrl: '/images/TIR2_cyclone.webp',
   },
 ];
 
@@ -137,7 +138,7 @@ export default function LiveObservatorySection() {
   // Fetch real-time AI inference from Python FastAPI backend
   const fetchLiveAnalysis = async (refresh = false) => {
     try {
-      const endpoint = `http://127.0.0.1:8000/api/v1/live/latest-analysis${refresh ? '?refresh=true' : ''}`;
+      const endpoint = `${API_BASE_URL}/api/v1/live/latest-analysis${refresh ? '?refresh=true' : ''}`;
       const res = await fetch(endpoint, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
         const data = await res.json();
@@ -159,6 +160,7 @@ export default function LiveObservatorySection() {
   // Manual refresh trigger: pulls newest satellite pass & triggers fresh AI analysis
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    setFailedImages({}); // Clear errors so refreshed live passes are tried first
     const now = new Date();
     const hours = String(now.getUTCHours()).padStart(2, '0');
     const mins = String(now.getUTCMinutes()).padStart(2, '0');
@@ -169,8 +171,27 @@ export default function LiveObservatorySection() {
     setIsRefreshing(false);
   };
 
+  // Resolves live satellite frame: direct IMD -> backend proxy -> local backup
+  const getLiveImageSrc = (channel) => {
+    const status = failedImages[channel.id];
+    if (status === 'fallback') {
+      return channel.fallbackUrl;
+    }
+    if (status === 'proxy') {
+      return `${channel.proxyUrl}?t=${cacheBuster}`;
+    }
+    return `${channel.liveUrl}?t=${cacheBuster}`;
+  };
+
   const handleImageError = (channelId) => {
-    setFailedImages((prev) => ({ ...prev, [channelId]: true }));
+    setFailedImages((prev) => {
+      // Step 1: if direct liveUrl failed, try local Python backend proxy
+      if (!prev[channelId]) {
+        return { ...prev, [channelId]: 'proxy' };
+      }
+      // Step 2: if proxy also failed, use verified offline asset
+      return { ...prev, [channelId]: 'fallback' };
+    });
   };
 
   // Track mouse coordinates over satellite viewer to calculate real-world Lat/Lon
@@ -350,30 +371,13 @@ export default function LiveObservatorySection() {
                 className="relative aspect-[16/11] bg-black overflow-hidden flex items-center justify-center cursor-crosshair select-none"
               >
                 {/* Live Satellite Image (direct from IMD / MoES) */}
-                <picture className="w-full h-full select-none">
-                  {activeChannel.webpUrl && (
-                    <source srcSet={activeChannel.webpUrl} type="image/webp" />
-                  )}
-                  <img
-                    src={
-                      failedImages[activeChannel.id]
-                        ? activeChannel.fallbackUrl
-                        : (activeChannel.id === 'vis'
-                            ? activeChannel.fallbackUrl
-                            : `${activeChannel.liveUrl}?t=${cacheBuster}`)
-                    }
-                    alt={activeChannel.name}
-                    loading="eager"
-                    decoding="async"
-                    onError={(e) => {
-                      if (e.currentTarget.src !== activeChannel.fallbackUrl) {
-                        e.currentTarget.src = activeChannel.fallbackUrl;
-                      }
-                      handleImageError(activeChannel.id);
-                    }}
-                    className="w-full h-full object-cover filter contrast-110"
-                  />
-                </picture>
+                <img
+                  src={getLiveImageSrc(activeChannel)}
+                  alt={activeChannel.name}
+                  loading="eager"
+                  onError={() => handleImageError(activeChannel.id)}
+                  className="w-full h-full object-cover filter contrast-110"
+                />
 
                 {/* Micro Crosshair Grid Lines */}
                 <div className="absolute inset-0 pointer-events-none opacity-25 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black" />
@@ -804,30 +808,14 @@ export default function LiveObservatorySection() {
                   </div>
 
                   <div className="relative aspect-[16/10] bg-black overflow-hidden flex items-center justify-center">
-                    <picture className="w-full h-full select-none">
-                      {ch.webpUrl && (
-                        <source srcSet={ch.webpUrl} type="image/webp" />
-                      )}
-                      <img
-                        src={
-                          failedImages[ch.id]
-                            ? ch.fallbackUrl
-                            : (ch.id === 'vis'
-                                ? ch.fallbackUrl
-                                : `${ch.liveUrl}?t=${cacheBuster}`)
-                        }
-                        alt={ch.name}
-                        loading="lazy"
-                        decoding="async"
-                        onError={(e) => {
-                          if (e.currentTarget.src !== ch.fallbackUrl) {
-                            e.currentTarget.src = ch.fallbackUrl;
-                          }
-                          handleImageError(ch.id);
-                        }}
-                        className="w-full h-full object-cover filter contrast-110"
-                      />
-                    </picture>
+                    <img
+                      src={getLiveImageSrc(ch)}
+                      alt={ch.name}
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => handleImageError(ch.id)}
+                      className="w-full h-full object-cover filter contrast-110"
+                    />
                     <div className="absolute bottom-2 left-2 font-mono text-[9px] bg-black/80 text-zinc-400 px-1.5 py-0.5 border border-zinc-800">
                       {ch.band}
                     </div>

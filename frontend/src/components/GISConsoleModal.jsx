@@ -37,7 +37,6 @@ const channels = [
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ir1.jpg',
     proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/ir1`,
     fallbackUrl: '/images/TIR1_cyclone.png',
-    webpUrl: '/images/TIR1_cyclone.webp',
   },
   {
     id: 'vis',
@@ -52,7 +51,6 @@ const channels = [
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_vis.jpg',
     proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/vis`,
     fallbackUrl: '/images/visible_cyclone_image.png',
-    webpUrl: '/images/visible_cyclone_image.webp',
   },
   {
     id: 'wv',
@@ -67,7 +65,6 @@ const channels = [
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_wv.jpg',
     proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/wv`,
     fallbackUrl: '/images/WV_image.png',
-    webpUrl: '/images/WV_image.webp',
   },
   {
     id: 'ctbt',
@@ -82,7 +79,6 @@ const channels = [
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ctbt.jpg',
     proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/ctbt`,
     fallbackUrl: '/images/TIR2_cyclone.png',
-    webpUrl: '/images/TIR2_cyclone.webp',
   },
 ];
 
@@ -157,6 +153,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
   // Manual refresh trigger: pulls newest satellite pass & triggers fresh AI analysis
   const handleRefresh = async () => {
     setIsRefreshing(true);
+    setFailedImages({}); // Clear any prior errors to re-attempt newest live passes
     const now = new Date();
     const hours = String(now.getUTCHours()).padStart(2, '0');
     const mins = String(now.getUTCMinutes()).padStart(2, '0');
@@ -167,8 +164,27 @@ export default function GISConsoleModal({ isOpen, onClose }) {
     setIsRefreshing(false);
   };
 
+  // Resolves live satellite frame: direct IMD -> backend proxy -> local backup
+  const getLiveImageSrc = (channel) => {
+    const status = failedImages[channel.id];
+    if (status === 'fallback') {
+      return channel.fallbackUrl;
+    }
+    if (status === 'proxy') {
+      return `${channel.proxyUrl}?t=${cacheBuster}`;
+    }
+    return `${channel.liveUrl}?t=${cacheBuster}`;
+  };
+
   const handleImageError = (channelId) => {
-    setFailedImages((prev) => ({ ...prev, [channelId]: true }));
+    setFailedImages((prev) => {
+      // Step 1: if direct liveUrl failed, try local Python backend proxy
+      if (!prev[channelId]) {
+        return { ...prev, [channelId]: 'proxy' };
+      }
+      // Step 2: if proxy also failed, use verified offline asset
+      return { ...prev, [channelId]: 'fallback' };
+    });
   };
 
   // Track mouse coordinates over satellite viewer to calculate real-world Lat/Lon
@@ -425,30 +441,13 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                 className="relative aspect-[16/11] bg-black overflow-hidden flex items-center justify-center cursor-crosshair select-none"
               >
                 {/* Live Satellite Image */}
-                <picture className="w-full h-full select-none">
-                  {activeChannel.webpUrl && (
-                    <source srcSet={activeChannel.webpUrl} type="image/webp" />
-                  )}
-                  <img
-                    src={
-                      failedImages[activeChannel.id]
-                        ? activeChannel.fallbackUrl
-                        : (activeChannel.id === 'vis'
-                            ? activeChannel.fallbackUrl
-                            : `${activeChannel.liveUrl}?t=${cacheBuster}`)
-                    }
-                    alt={activeChannel.name}
-                    loading="eager"
-                    decoding="async"
-                    onError={(e) => {
-                      if (e.currentTarget.src !== activeChannel.fallbackUrl) {
-                        e.currentTarget.src = activeChannel.fallbackUrl;
-                      }
-                      handleImageError(activeChannel.id);
-                    }}
-                    className="w-full h-full object-cover filter contrast-110"
-                  />
-                </picture>
+                <img
+                  src={getLiveImageSrc(activeChannel)}
+                  alt={activeChannel.name}
+                  loading="eager"
+                  onError={() => handleImageError(activeChannel.id)}
+                  className="w-full h-full object-cover filter contrast-110"
+                />
 
                 {/* Micro Crosshair Grid Lines */}
                 <div className="absolute inset-0 pointer-events-none opacity-25 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black" />
@@ -1250,30 +1249,14 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                   </div>
 
                   <div className="relative aspect-[16/10] bg-black overflow-hidden flex items-center justify-center">
-                    <picture className="w-full h-full select-none">
-                      {ch.webpUrl && (
-                        <source srcSet={ch.webpUrl} type="image/webp" />
-                      )}
-                      <img
-                        src={
-                          failedImages[ch.id]
-                            ? ch.fallbackUrl
-                            : (ch.id === 'vis'
-                                ? ch.fallbackUrl
-                                : `${ch.liveUrl}?t=${cacheBuster}`)
-                        }
-                        alt={ch.name}
-                        loading="lazy"
-                        decoding="async"
-                        onError={(e) => {
-                          if (e.currentTarget.src !== ch.fallbackUrl) {
-                            e.currentTarget.src = ch.fallbackUrl;
-                          }
-                          handleImageError(ch.id);
-                        }}
-                        className="w-full h-full object-cover filter contrast-110"
-                      />
-                    </picture>
+                    <img
+                      src={getLiveImageSrc(ch)}
+                      alt={ch.name}
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => handleImageError(ch.id)}
+                      className="w-full h-full object-cover filter contrast-110"
+                    />
                     <div className="absolute bottom-2 left-2 font-mono text-[9px] bg-black/80 text-zinc-400 px-1.5 py-0.5 border border-zinc-800">
                       {ch.band}
                     </div>

@@ -174,12 +174,13 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [liveData, setLiveData] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [liveImageError, setLiveImageError] = useState(false);
+  const [liveImageError, setLiveImageError] = useState(null);
 
   // Fetch live operational pass from FastAPI backend
   const fetchLiveTelemetry = useCallback(async (refresh = false) => {
     try {
       setIsScanning(true);
+      if (refresh) setLiveImageError(null);
       const url = `${API_BASE_URL}/api/v1/live/latest-analysis${refresh ? '?refresh=true' : ''}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
@@ -232,8 +233,10 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
       landfallTime: topSystem ? 'Tracking Oceanic Vector' : 'Clear Sea Lanes',
       landfallTarget: topSystem ? `${topSystem.basin} Marine Sector` : 'No Imminent Landfall Threat',
       surgeEst: '0.6 m',
-      image: liveImageError 
+      image: liveImageError === 'fallback' 
         ? '/images/TIR1_cyclone.png' 
+        : liveImageError === 'proxy'
+        ? `${API_BASE_URL}/api/v1/live/image-proxy/ir1`
         : 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ir1.jpg',
       webpImage: null,
       satelliteSource: 'ISRO INSAT-3D/3DR (IMD Downlink)',
@@ -420,7 +423,9 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
                     loading="eager"
                     decoding="async"
                     onError={() => {
-                      if (isLiveMode) setLiveImageError(true);
+                      if (isLiveMode) {
+                        setLiveImageError((prev) => (!prev ? 'proxy' : 'fallback'));
+                      }
                     }}
                     className="w-full h-full object-cover object-center select-none"
                   />
