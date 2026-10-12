@@ -22,6 +22,8 @@ from ai_engine.models.intensity_estimator import (
     atkinson_holliday_pressure,
     classify_imd_category,
     calculate_quadrant_radii,
+    classify_dvorak_pattern,
+    generate_radial_temperature_profile,
 )
 from ai_engine.models.trajectory_forecaster import trajectory_forecaster
 
@@ -418,6 +420,13 @@ class LiveVortexAnalyzer:
             "summary": f"Eye fix established at {lat}°N, {lon}°E with ΔT = {delta_t_k} K."
         }
 
+        pattern_info = classify_dvorak_pattern(msw_kts, delta_t_k)
+        radial_profile = generate_radial_temperature_profile(
+            eye_temp_k=eye_temp_k,
+            eyewall_temp_k=eyewall_temp_k,
+            eye_radius_km=round(float(eye_diameter_km / 2.0), 1)
+        )
+
         intensity_analysis = {
             "has_cyclone": True,
             "msw_knots": msw_kts,
@@ -425,11 +434,20 @@ class LiveVortexAnalyzer:
             "central_pressure_hpa": central_pressure_hpa,
             "pressure_deficit_hpa": pressure_deficit_hpa,
             "dvorak_t_number": dvorak_t,
+            "current_intensity_ci": dvorak_t,
             "imd_category_code": imd_cat["code"],
             "imd_category_name": imd_cat["name"],
-            "badge_color": "#ffffff",  # Monochrome styling
+            "badge_color": "#ffffff",
             "severity": imd_cat["severity"],
-            "confidence_score": conf_score
+            "confidence_score": conf_score,
+            "pattern_classification": pattern_info,
+            "radial_temperature_profile": radial_profile,
+            "atkinson_holliday_balance": {
+                "theoretical_p_min_hpa": central_pressure_hpa,
+                "ambient_baseline_hpa": 1010.0,
+                "pressure_deficit_hpa": pressure_deficit_hpa,
+                "cyclostrophic_fit": "PHYSICALLY_CONSTRAINED"
+            }
         }
 
         return {

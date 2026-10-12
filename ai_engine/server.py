@@ -139,6 +139,7 @@ class EstimateIntensityRequest(BaseModel):
     image_base64: Optional[str] = None
     eye_x_pct: Optional[float] = None
     eye_y_pct: Optional[float] = None
+    has_cyclone: Optional[bool] = None
 
 @app.post("/api/v1/models/estimate-intensity")
 def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
@@ -147,6 +148,9 @@ def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
     Estimates MSW (knots & km/h), central minimum pressure, IMD category,
     Dvorak T-number, and quadrant wind radii.
     """
+    if payload.has_cyclone is False:
+        return intensity_estimator.estimate_image_array(b"", has_cyclone=False)
+
     if payload.image_base64:
         try:
             raw_b64 = payload.image_base64

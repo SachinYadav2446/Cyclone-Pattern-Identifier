@@ -8,8 +8,33 @@ import math
 import time
 from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+    HAS_TORCH = True
+except (ImportError, OSError):
+    torch = None
+    nn = None
+    HAS_TORCH = False
+
+if not HAS_TORCH:
+    class _MockTensor: pass
+    class _MockTorch:
+        Tensor = _MockTensor
+        float32 = "float32"
+        device = staticmethod(lambda *a, **k: "cpu")
+        cuda = type("cuda", (), {"is_available": staticmethod(lambda: False)})()
+    torch = _MockTorch()
+    class _MockModule:
+        def __init__(self, *args, **kwargs): pass
+        def __call__(self, *args, **kwargs): return self.forward(*args, **kwargs)
+        def forward(self, *args, **kwargs): return None
+        def to(self, *args, **kwargs): return self
+        def eval(self): return self
+    class _MockNN:
+        Module = _MockModule
+        def __getattr__(self, name): return lambda *args, **kwargs: _MockModule()
+    nn = _MockNN()
 
 # ---------------------------------------------------------------------------
 # Physical Reference Data & Coastal Geometry for Landfall Intersection
@@ -383,9 +408,13 @@ class TrajectoryForecaster:
     """
 
     def __init__(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = ConvLSTMTrajectoryForecaster().to(self.device)
-        self.model.eval()
+        if HAS_TORCH:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            self.model = ConvLSTMTrajectoryForecaster().to(self.device)
+            self.model.eval()
+        else:
+            self.device = "cpu"
+            self.model = None
 
     def forecast_benchmark_storm(self, storm_id: str) -> Dict[str, Any]:
         """Returns verified 48-hour trajectory forecast and landfall metrics for benchmark cyclones."""
