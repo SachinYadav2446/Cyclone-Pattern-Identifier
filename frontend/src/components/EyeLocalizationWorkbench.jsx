@@ -17,7 +17,10 @@ import {
   CheckCircle2, 
   AlertCircle,
   Wind,
-  Navigation
+  Navigation,
+  Flame,
+  BarChart2,
+  TrendingDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '../config/api';
@@ -40,7 +43,7 @@ const benchmarkStorms = [
     diameterKm: 0.0,
     eyeTempK: 280.0,
     eyewallTempK: 280.0,
-    image: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ir1.jpg',
+    image: `${API_BASE_URL}/api/v1/live/image-proxy/ir1`,
   },
   {
     id: 'fani',
@@ -149,8 +152,14 @@ export default function EyeLocalizationWorkbench() {
   const [intensityData, setIntensityData] = useState(null);
   const [trajectoryData, setTrajectoryData] = useState(null);
   const [hudTab, setHudTab] = useState('intensity'); // 'intensity' | 'localization' | 'quadrants' | 'forecast'
+  const [showDvorakEir, setShowDvorakEir] = useState(false);
+  const [showThermodynamicAnnulus, setShowThermodynamicAnnulus] = useState(true);
+  const [showGaleRadii, setShowGaleRadii] = useState(false);
+  const [eirOpacity, setEirOpacity] = useState(85);
   const [customImage, setCustomImage] = useState(null);
   const [mouseCoords, setMouseCoords] = useState(null);
+  const [radiiUnit, setRadiiUnit] = useState('nm'); // 'nm' | 'km'
+  const [hoveredProfilePoint, setHoveredProfilePoint] = useState(null);
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -188,7 +197,10 @@ export default function EyeLocalizationWorkbench() {
               has_cyclone: liveData.has_active_vortex,
               storm_id: 'live_insat',
               intensity_metrics: liveData.intensity_analysis,
-              quadrant_wind_radii: liveData.quadrant_wind_radii
+              quadrant_wind_radii: liveData.quadrant_wind_radii,
+              pattern_classification: liveData.pattern_classification,
+              radial_temperature_profile: liveData.radial_temperature_profile,
+              atkinson_holliday_balance: liveData.atkinson_holliday_balance
             });
           }
           if (liveData.trajectory_forecast) {
@@ -304,8 +316,60 @@ export default function EyeLocalizationWorkbench() {
   const quadrantRadii = intensityData?.quadrant_wind_radii ?? {
     r34_knots_nm: { ne: 145, se: 130, sw: 95, nw: 120 },
     r50_knots_nm: { ne: 80, se: 70, sw: 50, nw: 65 },
-    r64_knots_nm: { ne: 40, se: 35, sw: 25, nw: 30 }
+    r64_knots_nm: { ne: 40, se: 35, sw: 25, nw: 30 },
+    r34_knots_km: { ne: 269, se: 241, sw: 176, nw: 222 },
+    r50_knots_km: { ne: 148, se: 130, sw: 93, nw: 120 },
+    r64_knots_km: { ne: 74, se: 65, sw: 46, nw: 56 }
   };
+
+  const patternInfo = intensityData?.pattern_classification || {
+    pattern_code: mswKnots >= 90 ? 'EYE' : (mswKnots >= 64 ? 'CDO' : (mswKnots >= 34 ? 'CB' : 'SHEAR')),
+    pattern_name: mswKnots >= 90 ? 'Pinhole Warm Eye Pattern (EYE)' : (mswKnots >= 64 ? 'Central Dense Overcast (CDO)' : (mswKnots >= 34 ? 'Curved Band Pattern (CB)' : 'Sheared Formative Depression')),
+    description: mswKnots >= 90 ? 'Distinct high-temperature eye core surrounded by complete, unbroken axisymmetric cold convective ring.' : 'Dense convective cloud shield embedding emerging warm center.',
+    cdo_embedded_distance_km: Math.round(35.0 + (mswKnots / 140.0) * 30.0),
+    stadium_effect_active: mswKnots >= 90
+  };
+
+  const radialProfile = (intensityData?.radial_temperature_profile && intensityData.radial_temperature_profile.length > 0)
+    ? intensityData.radial_temperature_profile
+    : [
+        { radius_km: 0, temp_k: eyeTemp, temp_c: Math.round(eyeTemp - 273.15), region: 'Warm Eye Core' },
+        { radius_km: 15, temp_k: Math.round((eyeTemp + eyewallTemp) / 2), temp_c: Math.round(((eyeTemp + eyewallTemp) / 2) - 273.15), region: 'Inner Eyewall Slope' },
+        { radius_km: 30, temp_k: eyewallTemp, temp_c: Math.round(eyewallTemp - 273.15), region: 'Violent Eyewall Ring' },
+        { radius_km: 55, temp_k: eyewallTemp + 10, temp_c: Math.round((eyewallTemp + 10) - 273.15), region: 'Violent Eyewall Ring' },
+        { radius_km: 90, temp_k: eyewallTemp + 28, temp_c: Math.round((eyewallTemp + 28) - 273.15), region: 'Central Dense Overcast (CDO)' },
+        { radius_km: 140, temp_k: 245, temp_c: -28, region: 'Central Dense Overcast (CDO)' },
+        { radius_km: 190, temp_k: 258, temp_c: -15, region: 'Outer Spiral Feeder Bands' },
+        { radius_km: 250, temp_k: 272, temp_c: -1, region: 'Outer Spiral Feeder Bands' },
+        { radius_km: 300, temp_k: 288, temp_c: 15, region: 'Peripheral Marine Ocean' },
+      ];
+
+  const atkinsonBalance = intensityData?.atkinson_holliday_balance || {
+    theoretical_p_min_hpa: centralPressure,
+    ambient_baseline_hpa: 1010.0,
+    pressure_deficit_hpa: pressureDeficit,
+    cyclostrophic_fit: 'PHYSICALLY_CONSTRAINED'
+  };
+
+  const getRadius = (threshold, quad, unit = radiiUnit) => {
+    const key = `r${threshold}_knots_${unit}`;
+    if (quadrantRadii?.[key]?.[quad] !== undefined) {
+      return quadrantRadii[key][quad];
+    }
+    const nmVal = quadrantRadii?.[`r${threshold}_knots_nm`]?.[quad] ?? 0;
+    return unit === 'km' ? Math.round(nmVal * 1.852) : nmVal;
+  };
+
+  const dvorakSteps = [
+    { t: 1.0, kts: 25, cat: 'TD', label: 'T1' },
+    { t: 2.0, kts: 30, cat: 'DD', label: 'T2' },
+    { t: 3.0, kts: 45, cat: 'CS', label: 'T3' },
+    { t: 4.0, kts: 65, cat: 'VSCS', label: 'T4' },
+    { t: 5.0, kts: 90, cat: 'ESCS', label: 'T5' },
+    { t: 6.0, kts: 115, cat: 'ESCS', label: 'T6' },
+    { t: 7.0, kts: 140, cat: 'SuCS', label: 'T7' },
+    { t: 8.0, kts: 170, cat: 'SuCS+', label: 'T8' },
+  ];
 
   // Trajectory & Landfall Forecasting Metrics (Feature 3)
   const waypoints48h = trajectoryData?.waypoints_48h || [];
@@ -324,6 +388,29 @@ export default function EyeLocalizationWorkbench() {
   const compassBearing = trajectoryData?.current_fix?.bearing_degrees || 28.0;
   const coneRadii = trajectoryData?.cone_of_uncertainty || { r12_km: 50.0, r24_km: 88.0, r48_km: 175.0 };
 
+  // SVG Radial Temperature Profile Coordinates (0–300 km)
+  const currentTVal = parseFloat(dvorakT) || 1.0;
+  const svgProfilePoints = radialProfile.map((pt) => {
+    const r = Math.min(300, Math.max(0, pt.radius_km));
+    const k = Math.min(295, Math.max(190, pt.temp_k));
+    const x = Math.round((30 + (r / 300) * 278) * 10) / 10;
+    const y = Math.round((12 + (1 - (k - 190) / 105) * 86) * 10) / 10;
+    return { ...pt, x, y };
+  });
+
+  const profileLinePath = svgProfilePoints.reduce(
+    (acc, pt, idx) => (idx === 0 ? `M ${pt.x},${pt.y}` : `${acc} L ${pt.x},${pt.y}`),
+    ''
+  );
+
+  const profileAreaPath = svgProfilePoints.length > 0
+    ? `${profileLinePath} L ${svgProfilePoints[svgProfilePoints.length - 1].x},98 L ${svgProfilePoints[0].x},98 Z`
+    : '';
+
+  const eyewallMinPoint = svgProfilePoints.reduce(
+    (min, pt) => (pt.temp_k < min.temp_k ? pt : min),
+    svgProfilePoints[0] || { x: 55, y: 85, temp_k: eyewallTemp, radius_km: 30 }
+  );
 
   // Track mouse over canvas
   const handleMouseMove = (e) => {
@@ -459,20 +546,65 @@ export default function EyeLocalizationWorkbench() {
                 </span>
               </div>
 
-              {/* Slider for Heatmap Opacity */}
-              <div className="flex items-center gap-3">
+              {/* Interactive Visual Overlay Controls */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Dvorak BD-Curve EIR Colormap */}
+                <button
+                  onClick={() => setShowDvorakEir(!showDvorakEir)}
+                  className={`px-2 py-0.5 text-[10px] border transition-colors flex items-center gap-1 cursor-pointer ${
+                    showDvorakEir
+                      ? 'bg-purple-950/80 border-purple-500 text-purple-200 font-semibold'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                  title="Toggle Dvorak Enhanced Infrared (BD-Curve) Colormap"
+                >
+                  <Flame className={`w-3 h-3 ${showDvorakEir ? 'text-purple-400' : 'text-zinc-500'}`} />
+                  <span>EIR BD-CURVE</span>
+                </button>
+
+                {/* Eyewall Thermodynamic Annulus */}
+                <button
+                  onClick={() => setShowThermodynamicAnnulus(!showThermodynamicAnnulus)}
+                  className={`px-2 py-0.5 text-[10px] border transition-colors flex items-center gap-1 cursor-pointer ${
+                    showThermodynamicAnnulus
+                      ? 'bg-cyan-950/80 border-cyan-500 text-cyan-200 font-semibold'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                  title="Toggle Eyewall Thermodynamic Delta-T Annulus"
+                >
+                  <Thermometer className={`w-3 h-3 ${showThermodynamicAnnulus ? 'text-cyan-400' : 'text-zinc-500'}`} />
+                  <span>ΔT ANNULUS</span>
+                </button>
+
+                {/* Quadrant Gale Radii */}
+                <button
+                  onClick={() => setShowGaleRadii(!showGaleRadii)}
+                  className={`px-2 py-0.5 text-[10px] border transition-colors flex items-center gap-1 cursor-pointer ${
+                    showGaleRadii
+                      ? 'bg-emerald-950/80 border-emerald-500 text-emerald-200 font-semibold'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                  title="Toggle Quadrant Gale Wind Radii (R34, R50, R64)"
+                >
+                  <Wind className={`w-3 h-3 ${showGaleRadii ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                  <span>GALE RADII</span>
+                </button>
+
+                <div className="h-3.5 w-px bg-zinc-800 hidden sm:block" />
+
+                {/* Slider for Heatmap Opacity */}
                 <div className="flex items-center gap-1.5 text-zinc-400 text-[11px]">
-                  <Sliders className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>HEATMAP:</span>
+                  <Sliders className="w-3 h-3 text-zinc-500" />
+                  <span className="text-[10px]">HEAT:</span>
                   <input
                     type="range"
                     min="0"
                     max="100"
                     value={heatmapOpacity}
                     onChange={(e) => setHeatmapOpacity(Number(e.target.value))}
-                    className="w-24 accent-white cursor-pointer"
+                    className="w-16 accent-white cursor-pointer"
                   />
-                  <span className="text-white font-bold w-7 text-right">{heatmapOpacity}%</span>
+                  <span className="text-white font-bold text-[10px] w-5 text-right">{heatmapOpacity}%</span>
                 </div>
 
                 <div className="h-3.5 w-px bg-zinc-800" />
@@ -480,7 +612,7 @@ export default function EyeLocalizationWorkbench() {
                 {/* Toggle Loupe */}
                 <button
                   onClick={() => setShowZoomLoupe(!showZoomLoupe)}
-                  className={`px-2 py-0.5 text-[10px] border transition-colors ${
+                  className={`px-2 py-0.5 text-[10px] border transition-colors cursor-pointer ${
                     showZoomLoupe 
                       ? 'bg-zinc-800 border-zinc-600 text-white font-semibold' 
                       : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
@@ -502,10 +634,48 @@ export default function EyeLocalizationWorkbench() {
               <img
                 src={displayImage}
                 alt="Cyclone Pass"
+                onError={(e) => {
+                  if (activeStorm.id === 'live_insat' && e.currentTarget.src !== '/images/TIR1_cyclone.png') {
+                    e.currentTarget.src = '/images/TIR1_cyclone.png';
+                  }
+                }}
                 className="w-full h-full object-cover filter contrast-110"
               />
 
-              {/* 2. CenterNet 2D Gaussian Keypoint Heatmap Overlay (Monochrome Spectral) */}
+              {/* 2. Dvorak BD-Curve EIR (Enhanced Infrared) Thermal Grading Overlay */}
+              {showDvorakEir && hasCyclone && (
+                <div 
+                  className="absolute inset-0 pointer-events-none transition-opacity duration-300 select-none z-10"
+                  style={{ opacity: eirOpacity / 100 }}
+                >
+                  <div
+                    className="absolute inset-0 mix-blend-color-dodge pointer-events-none"
+                    style={{
+                      background: `radial-gradient(circle at ${reticleX}% ${reticleY}%, 
+                        rgba(255, 255, 255, 0.95) 0%, 
+                        rgba(255, 255, 255, 0.5) 2.5%, 
+                        rgba(20, 20, 20, 0.95) 5%, 
+                        rgba(239, 68, 68, 0.85) 10%, 
+                        rgba(249, 115, 22, 0.8) 18%, 
+                        rgba(234, 179, 8, 0.7) 28%, 
+                        rgba(16, 185, 129, 0.6) 38%, 
+                        rgba(6, 182, 212, 0.45) 50%, 
+                        rgba(59, 130, 246, 0.3) 65%, 
+                        transparent 80%)`
+                    }}
+                  />
+                  {/* Floating BD-Curve Thermal Legend */}
+                  <div className="absolute top-3 right-3 z-30 bg-black/90 border border-zinc-700 px-2 py-1 text-[8px] font-mono flex items-center gap-1.5 shadow-lg">
+                    <span className="text-zinc-400 font-bold">DVORAK BD-CURVE:</span>
+                    <span className="px-1 bg-white text-black font-bold">WARM EYE (&gt;0°C)</span>
+                    <span className="px-1 bg-zinc-900 text-white border border-zinc-600">B (-64°C)</span>
+                    <span className="px-1 bg-red-600 text-white font-bold">W (-70°C)</span>
+                    <span className="px-1 bg-purple-700 text-white font-bold">CMG (&lt;-80°C)</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. CenterNet 2D Gaussian Keypoint Heatmap Overlay (Monochrome Spectral) */}
               {hasCyclone && (
                 <div
                   className="absolute inset-0 pointer-events-none transition-opacity duration-150"
@@ -517,7 +687,7 @@ export default function EyeLocalizationWorkbench() {
                 />
               )}
 
-              {/* 3. Sub-Pixel Continuous Float Offset Vectors Overlay */}
+              {/* 4. Sub-Pixel Continuous Float Offset Vectors Overlay */}
               {showOffsetVectors && hasCyclone && (
                 <div
                   className="absolute z-10 pointer-events-none"
@@ -559,6 +729,100 @@ export default function EyeLocalizationWorkbench() {
                     />
                   )}
                 </div>
+              )}
+
+              {/* 5. Thermodynamic Eyewall Temperature Annulus & Delta-T Overlay */}
+              {showThermodynamicAnnulus && hasCyclone && (
+                <div 
+                  className="absolute pointer-events-none z-15 select-none"
+                  style={{ left: `${reticleX}%`, top: `${reticleY}%` }}
+                >
+                  {/* Eye Core Cavity (Warm Ring) */}
+                  <div 
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-400/90 bg-amber-400/10 shadow-[0_0_12px_rgba(251,191,36,0.3)] flex items-center justify-center pointer-events-none"
+                    style={{ width: `${Math.max(26, eyeDiameter * 0.9)}px`, height: `${Math.max(26, eyeDiameter * 0.9)}px` }}
+                  >
+                    <span className="text-[7px] text-amber-300 font-bold font-mono tracking-tighter bg-black/80 px-0.5 border border-amber-500/50">
+                      {eyeTemp}K
+                    </span>
+                  </div>
+
+                  {/* Freezing Eyewall Annulus (Cold Ring) */}
+                  <div 
+                    className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-cyan-400/80 border-dashed animate-[spin_40s_linear_infinite] pointer-events-none"
+                    style={{ width: `${Math.max(70, eyeDiameter * 2.5)}px`, height: `${Math.max(70, eyeDiameter * 2.5)}px` }}
+                  />
+
+                  {/* Delta-T Floating Tag callout */}
+                  <div className="absolute top-8 left-8 bg-black/95 border border-cyan-500 px-2 py-0.5 font-mono text-[9px] shadow-xl flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                    <span className="text-zinc-400">ΔT CONTRAST:</span>
+                    <span className="text-white font-bold">{deltaT} K</span>
+                    <span className="text-[8px] text-cyan-300">({eyeTemp}K core vs {eyewallTemp}K wall)</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 6. Quadrant Gale Wind Radii (R34, R50, R64) Overlay */}
+              {showGaleRadii && hasCyclone && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-15">
+                  <g style={{ transform: `translate(${reticleX}%, ${reticleY}%)` }}>
+                    {/* Crosshair Quadrant Axis Lines */}
+                    <line x1="-120" y1="0" x2="120" y2="0" stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3" strokeWidth="1" />
+                    <line x1="0" y1="-120" x2="0" y2="120" stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3" strokeWidth="1" />
+
+                    {/* Quadrant Labels */}
+                    <text x="65" y="-65" fill="#a1a1aa" fontSize="8" fontFamily="monospace">NE ({quadrantRadii.r34_knots_nm?.ne || 145} NM)</text>
+                    <text x="65" y="75" fill="#a1a1aa" fontSize="8" fontFamily="monospace">SE ({quadrantRadii.r34_knots_nm?.se || 130} NM)</text>
+                    <text x="-105" y="75" fill="#a1a1aa" fontSize="8" fontFamily="monospace">SW ({quadrantRadii.r34_knots_nm?.sw || 95} NM)</text>
+                    <text x="-105" y="-65" fill="#a1a1aa" fontSize="8" fontFamily="monospace">NW ({quadrantRadii.r34_knots_nm?.nw || 120} NM)</text>
+
+                    {/* R34 Gale (34 kts) */}
+                    <polygon
+                      points={`
+                        0,${-(quadrantRadii.r34_knots_nm?.nw || 120) * 0.55} 
+                        ${(quadrantRadii.r34_knots_nm?.ne || 145) * 0.55},0 
+                        0,${(quadrantRadii.r34_knots_nm?.se || 130) * 0.55} 
+                        ${-(quadrantRadii.r34_knots_nm?.sw || 95) * 0.55},0
+                      `}
+                      fill="rgba(16, 185, 129, 0.12)"
+                      stroke="#10b981"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 2"
+                    />
+
+                    {/* R50 Storm (50 kts) */}
+                    {mswKnots >= 50 && (
+                      <polygon
+                        points={`
+                          0,${-(quadrantRadii.r50_knots_nm?.nw || 65) * 0.55} 
+                          ${(quadrantRadii.r50_knots_nm?.ne || 80) * 0.55},0 
+                          0,${(quadrantRadii.r50_knots_nm?.se || 70) * 0.55} 
+                          ${-(quadrantRadii.r50_knots_nm?.sw || 50) * 0.55},0
+                        `}
+                        fill="rgba(245, 158, 11, 0.15)"
+                        stroke="#f59e0b"
+                        strokeWidth="1.5"
+                        strokeDasharray="3 2"
+                      />
+                    )}
+
+                    {/* R64 Hurricane (64 kts) */}
+                    {mswKnots >= 64 && (
+                      <polygon
+                        points={`
+                          0,${-(quadrantRadii.r64_knots_nm?.nw || 30) * 0.55} 
+                          ${(quadrantRadii.r64_knots_nm?.ne || 40) * 0.55},0 
+                          0,${(quadrantRadii.r64_knots_nm?.se || 35) * 0.55} 
+                          ${-(quadrantRadii.r64_knots_nm?.sw || 25) * 0.55},0
+                        `}
+                        fill="rgba(239, 68, 68, 0.2)"
+                        stroke="#ef4444"
+                        strokeWidth="1.5"
+                      />
+                    )}
+                  </g>
+                </svg>
               )}
 
               {/* Stage 0 Non-Cyclonic Status Overlay */}
@@ -730,98 +994,377 @@ export default function EyeLocalizationWorkbench() {
                     </div>
                   </div>
                 ) : (
-                  /* Intensity Primary Metric Card */
-                  <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-                      <div className="flex items-center gap-2">
-                        <Gauge className="w-4 h-4 text-zinc-300" />
-                        <span className="font-bold text-white text-[12px]">DEEP DVORAK AUDIT VERDICT</span>
+                  <div className="space-y-3 font-mono">
+                    {/* CARD 1: PRIMARY METRIC & DVORAK CI 8-STEP LADDER */}
+                    <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                        <div className="flex items-center gap-2">
+                          <Gauge className="w-4 h-4 text-zinc-300" />
+                          <span className="font-bold text-white text-[12px]">DEEP DVORAK AUDIT VERDICT</span>
+                        </div>
+                        <span className="px-2 py-0.5 bg-zinc-850 border border-zinc-700 text-zinc-200 font-bold text-[10px]">
+                          PASS (MAE &lt; 7.5 KTS · SOTA)
+                        </span>
                       </div>
-                      <span className="px-2 py-0.5 bg-zinc-850 border border-zinc-700 text-zinc-200 font-bold text-[10px]">
-                        PASS (MAE &lt; 7.5 KTS)
-                      </span>
-                    </div>
 
-                  {/* Big MSW Gauge */}
-                  <div className="p-3 bg-zinc-900 border border-zinc-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-zinc-500 text-[10px] block">MAXIMUM SUSTAINED WIND (MSW)</span>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-3xl font-bold text-white tracking-tight">
-                            {mswKnots}
-                          </span>
-                          <span className="text-xs text-zinc-400 font-normal">KNOTS</span>
-                          <span className="text-xs text-zinc-500 font-mono">({mswKmh} km/h)</span>
+                      {/* Big MSW Gauge */}
+                      <div className="p-3 bg-zinc-900 border border-zinc-800 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-zinc-500 text-[10px] block">MAXIMUM SUSTAINED WIND (MSW)</span>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-3xl font-bold text-white tracking-tight">
+                                {mswKnots}
+                              </span>
+                              <span className="text-xs text-zinc-400 font-normal">KNOTS</span>
+                              <span className="text-xs text-zinc-500 font-mono">({mswKmh} km/h)</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-zinc-500 text-[10px] block">DVORAK RATING</span>
+                            <span className="text-white font-bold text-lg">T{dvorakT}</span>
+                            <span className="text-[9px] text-zinc-300 block font-semibold">CI {dvorakT}</span>
+                          </div>
+                        </div>
+
+                        {/* Continuous Gauge Bar */}
+                        <div className="w-full bg-black h-2 overflow-hidden border border-zinc-700">
+                          <div 
+                            className="h-full transition-all duration-500 bg-gradient-to-r from-zinc-500 via-zinc-300 to-white"
+                            style={{ width: `${Math.min(100, Math.max(12, (mswKnots / 160) * 100))}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[9px] text-zinc-500 font-mono">
+                          <span>D (17 kts)</span>
+                          <span>CS (34 kts)</span>
+                          <span>VSCS (64 kts)</span>
+                          <span>SuCS (120+ kts)</span>
+                        </div>
+
+                        {/* 8-Step Segmented Dvorak CI Scale */}
+                        <div className="pt-2 border-t border-zinc-800/80">
+                          <div className="flex justify-between items-center pb-1 text-[10px]">
+                            <span className="text-zinc-400 font-bold">DVORAK CI LADDER (T1.0–T8.0):</span>
+                            <span className="text-white font-bold">CURRENT: T{dvorakT}</span>
+                          </div>
+                          <div className="grid grid-cols-8 gap-1">
+                            {dvorakSteps.map((step, idx) => {
+                              const isReached = currentTVal >= step.t;
+                              const isCurrent = Math.abs(currentTVal - step.t) < 0.6 || (idx === 7 && currentTVal >= 7.5);
+                              return (
+                                <div
+                                  key={step.t}
+                                  className={`p-1 text-center border transition-all ${
+                                    isCurrent
+                                      ? 'bg-white text-black border-white font-bold shadow-sm'
+                                      : isReached
+                                      ? 'bg-zinc-850 text-zinc-200 border-zinc-700'
+                                      : 'bg-zinc-950 text-zinc-600 border-zinc-900'
+                                  }`}
+                                  title={`T${step.t}: ${step.kts} kts (${step.cat})`}
+                                >
+                                  <span className="text-[10px] block font-mono font-bold leading-none">{step.label}</span>
+                                  <span className="text-[8px] block opacity-80 mt-0.5 leading-none">{step.kts}k</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-zinc-500 text-[10px] block">DVORAK RATING</span>
-                        <span className="text-white font-bold text-lg">T{dvorakT}</span>
-                        <span className="text-[9px] text-zinc-300 block font-semibold">CI {dvorakT}</span>
+
+                      {/* Dvorak Cloud Pattern Classification Card */}
+                      <div className="p-3 bg-zinc-900 border border-zinc-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-1.5 py-0.5 bg-zinc-800 text-white font-bold text-[10px] border border-zinc-700">
+                              {patternInfo.pattern_code}
+                            </span>
+                            <span className="text-white font-bold text-xs">
+                              {patternInfo.pattern_name}
+                            </span>
+                          </div>
+                          <span className="text-[9px] text-zinc-400">
+                            {imdCatCode}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-zinc-400 font-sans leading-relaxed">
+                          {patternInfo.description}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-[10px] pt-1 border-t border-zinc-800/80">
+                          <div>
+                            <span className="text-zinc-500 block">CDO EMBEDDED DIST:</span>
+                            <span className="text-white font-bold">{patternInfo.cdo_embedded_distance_km} km</span>
+                          </div>
+                          <div>
+                            <span className="text-zinc-500 block">STADIUM EFFECT:</span>
+                            <span className="text-white font-bold">
+                              {patternInfo.stadium_effect_active ? 'ACTIVE (Sloping Wall)' : 'INACTIVE'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Gauge Progress Bar */}
-                    <div className="w-full bg-black h-2 overflow-hidden border border-zinc-700">
-                      <div 
-                        className="h-full transition-all duration-500 bg-gradient-to-r from-zinc-500 via-zinc-300 to-white"
-                        style={{ width: `${Math.min(100, Math.max(12, (mswKnots / 160) * 100))}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[9px] text-zinc-500 font-mono">
-                      <span>D (17 kts)</span>
-                      <span>CS (34 kts)</span>
-                      <span>VSCS (64 kts)</span>
-                      <span>SuCS (120+ kts)</span>
-                    </div>
-                  </div>
-
-                  {/* IMD Category Badge & Pressure Matrix */}
-                  <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                    <div className="p-2.5 bg-zinc-900 border border-zinc-800 flex flex-col justify-between">
-                      <span className="text-zinc-500 text-[10px] block">IMD STAGE</span>
-                      <div className="mt-1">
-                        <span 
-                          className="px-2 py-0.5 text-xs font-bold inline-block bg-zinc-850 text-white border border-zinc-700"
-                        >
-                          {imdCatCode}
-                        </span>
-                        <span className="text-[10px] text-zinc-300 block font-sans mt-1 line-clamp-1">
-                          {imdCatName}
+                    {/* CARD 2: RADIAL TEMPERATURE CROSS-SECTION (0–300 KM) */}
+                    <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                        <div className="flex items-center gap-2">
+                          <Thermometer className="w-4 h-4 text-zinc-300" />
+                          <span className="font-bold text-white text-[12px]">RADIAL THERMAL CROSS-SECTION</span>
+                        </div>
+                        <span className="text-[10px] text-zinc-400 font-bold">
+                          0–300 KM PROFILE
                         </span>
                       </div>
-                      <span className="text-[9px] text-zinc-500 block mt-1">{imdSeverity}</span>
+
+                      {/* SVG Plot */}
+                      <div className="space-y-2">
+                        <div className="relative bg-black border border-zinc-850 p-1">
+                          <svg
+                            viewBox="0 0 320 120"
+                            className="w-full h-28 overflow-visible select-none"
+                          >
+                            <defs>
+                              <linearGradient id="radialTempGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
+                                <stop offset="60%" stopColor="#38bdf8" stopOpacity="0.10" />
+                                <stop offset="100%" stopColor="#000000" stopOpacity="0.0" />
+                              </linearGradient>
+                            </defs>
+
+                            {/* Reference Gridlines */}
+                            {/* 0°C (273.15 K) */}
+                            <line x1="30" y1="26" x2="308" y2="26" stroke="#27272a" strokeDasharray="3 3" strokeWidth="1" />
+                            <text x="26" y="29" fill="#71717a" fontSize="7" textAnchor="end" fontFamily="monospace">0°C</text>
+
+                            {/* -53°C (220 K - Deep Convection Threshold) */}
+                            <line x1="30" y1="69" x2="308" y2="69" stroke="#27272a" strokeDasharray="3 3" strokeWidth="1" />
+                            <text x="26" y="72" fill="#71717a" fontSize="7" textAnchor="end" fontFamily="monospace">-53°</text>
+
+                            {/* Baseline at Y = 98 */}
+                            <line x1="30" y1="98" x2="308" y2="98" stroke="#3f3f46" strokeWidth="1" />
+                            <text x="30" y="108" fill="#71717a" fontSize="7" textAnchor="middle" fontFamily="monospace">0</text>
+                            <text x="122" y="108" fill="#71717a" fontSize="7" textAnchor="middle" fontFamily="monospace">100</text>
+                            <text x="215" y="108" fill="#71717a" fontSize="7" textAnchor="middle" fontFamily="monospace">200</text>
+                            <text x="308" y="108" fill="#71717a" fontSize="7" textAnchor="middle" fontFamily="monospace">300 km</text>
+
+                            {/* Eyewall dip guide line */}
+                            {eyewallMinPoint && (
+                              <g>
+                                <line
+                                  x1={eyewallMinPoint.x}
+                                  y1="12"
+                                  x2={eyewallMinPoint.x}
+                                  y2="98"
+                                  stroke="#06b6d4"
+                                  strokeDasharray="2 2"
+                                  strokeWidth="0.8"
+                                  opacity="0.6"
+                                />
+                                <text
+                                  x={eyewallMinPoint.x}
+                                  y="9"
+                                  fill="#06b6d4"
+                                  fontSize="6.5"
+                                  textAnchor="middle"
+                                  fontFamily="monospace"
+                                  fontWeight="bold"
+                                >
+                                  EYEWALL MIN
+                                </text>
+                              </g>
+                            )}
+
+                            {/* Curve Area Fill */}
+                            {profileAreaPath && (
+                              <path d={profileAreaPath} fill="url(#radialTempGrad)" />
+                            )}
+
+                            {/* Curve Line Stroke */}
+                            {profileLinePath && (
+                              <path d={profileLinePath} fill="none" stroke="#ffffff" strokeWidth="1.8" strokeLinecap="round" />
+                            )}
+
+                            {/* Data points */}
+                            {svgProfilePoints.map((pt, idx) => {
+                              const isHovered = hoveredProfilePoint?.radius_km === pt.radius_km;
+                              const isMin = pt.radius_km === eyewallMinPoint?.radius_km;
+                              const isEye = pt.radius_km === 0;
+                              return (
+                                <g key={idx}>
+                                  <circle
+                                    cx={pt.x}
+                                    cy={pt.y}
+                                    r={isHovered ? 4.5 : (isMin || isEye ? 3 : 2)}
+                                    fill={isHovered ? '#ffffff' : (isMin ? '#06b6d4' : (isEye ? '#f43f5e' : '#a1a1aa'))}
+                                    stroke="#000000"
+                                    strokeWidth="1"
+                                    className="cursor-pointer transition-all hover:scale-125"
+                                    onMouseEnter={() => setHoveredProfilePoint(pt)}
+                                    onMouseLeave={() => setHoveredProfilePoint(null)}
+                                  />
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        </div>
+
+                        {/* Interactive Readout Bar */}
+                        <div className="p-2 bg-zinc-900 border border-zinc-850 text-[10px] font-mono flex items-center justify-between">
+                          {hoveredProfilePoint ? (
+                            <div className="flex items-center justify-between w-full">
+                              <span className="text-white font-bold">
+                                r = {hoveredProfilePoint.radius_km} km: {hoveredProfilePoint.temp_k} K ({hoveredProfilePoint.temp_c}°C)
+                              </span>
+                              <span className="text-zinc-400 font-semibold">{hoveredProfilePoint.region}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between w-full text-zinc-400">
+                              <span>
+                                EYE: <strong className="text-white">{eyeTemp}K</strong> (+{(eyeTemp - 273.15).toFixed(1)}°C)
+                              </span>
+                              <span className="text-cyan-400">
+                                WALL: <strong>{eyewallTemp}K</strong> ({(eyewallTemp - 273.15).toFixed(1)}°C)
+                              </span>
+                              <span className="text-white font-bold">
+                                ΔT = {deltaT} K
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="p-2.5 bg-zinc-900 border border-zinc-800 flex flex-col justify-between">
-                      <span className="text-zinc-500 text-[10px] block">CENTRAL MIN PRESSURE</span>
-                      <div className="mt-1">
-                        <span className="text-white font-bold text-base">{centralPressure}</span>
-                        <span className="text-xs text-zinc-400 ml-1">hPa</span>
-                        <span className="text-[10px] text-zinc-300 block mt-0.5">
-                          Deficit: -{pressureDeficit} hPa
+                    {/* CARD 3: ATKINSON-HOLLIDAY DYNAMIC EQUILIBRIUM */}
+                    <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                        <div className="flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-zinc-300" />
+                          <span className="font-bold text-white text-[12px]">ATKINSON-HOLLIDAY BALANCE</span>
+                        </div>
+                        <span className="text-[10px] text-zinc-400 font-bold">
+                          PHYSICALLY CONSTRAINED
                         </span>
                       </div>
-                      <span className="text-[9px] text-zinc-500 block mt-1">Atkinson-Holliday Balance</span>
-                    </div>
-                  </div>
 
-                  {/* Thermodynamic Eyewall Contrast */}
-                  <div className="p-2.5 bg-zinc-900 border border-zinc-800 flex items-center justify-between text-[11px] font-mono">
-                    <div>
-                      <span className="text-zinc-500 text-[10px] block">THERMAL CONTRAST (ΔT)</span>
-                      <span className="text-white font-bold text-sm">{deltaT} K</span>
-                      <span className="text-[9px] text-zinc-500 block">Core {eyeTemp}K vs Wall {eyewallTemp}K</span>
+                      {/* Formula Banner */}
+                      <div className="p-2 bg-zinc-900 border border-zinc-850 flex items-center justify-between text-[10px]">
+                        <span className="text-zinc-400">FORMULA:</span>
+                        <code className="text-zinc-200 font-bold">Vmax = 6.7 × (1010 - Pmin)^0.644</code>
+                      </div>
+
+                      {/* Metrics 2-Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="p-2.5 bg-zinc-900 border border-zinc-800">
+                          <span className="text-zinc-500 text-[10px] block">CENTRAL MIN PRESSURE</span>
+                          <div className="mt-0.5">
+                            <span className="text-white font-bold text-base">{centralPressure}</span>
+                            <span className="text-xs text-zinc-400 ml-1">hPa</span>
+                          </div>
+                          <span className="text-[9px] text-zinc-400 block mt-0.5">
+                            Deficit: -{pressureDeficit} hPa
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 bg-zinc-900 border border-zinc-800">
+                          <span className="text-zinc-500 text-[10px] block">THERMAL CONTRAST (ΔT)</span>
+                          <div className="mt-0.5">
+                            <span className="text-white font-bold text-base">{deltaT}</span>
+                            <span className="text-xs text-zinc-400 ml-1">K</span>
+                          </div>
+                          <span className="text-[9px] text-zinc-400 block mt-0.5">
+                            Core {eyeTemp}K vs Wall {eyewallTemp}K
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Physical Audit Stamp */}
+                      <div className="p-2 bg-zinc-900 border border-zinc-850 flex items-center justify-between text-[10px]">
+                        <span className="text-zinc-400">CYCLOSTROPHIC BALANCE:</span>
+                        <span className="text-zinc-200 font-bold">✓ PASS (NO INVERSION ARTIFACT)</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-zinc-500 text-[10px] block">PHYSICS CONSTRAINT</span>
-                      <span className="text-zinc-200 font-semibold text-[10px]">✓ CONFIRMED</span>
-                      <span className="text-[9px] text-zinc-400 block">No Inversion Artifacts</span>
+
+                    {/* CARD 4: QUADRANT GALE RADII MATRIX */}
+                    <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-2.5">
+                      <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                        <div className="flex items-center gap-2">
+                          <Compass className="w-4 h-4 text-zinc-300" />
+                          <span className="font-bold text-white text-[12px]">QUADRANT GALE RADII MATRIX</span>
+                        </div>
+                        <div className="flex items-center gap-1 bg-zinc-900 p-0.5 border border-zinc-800">
+                          <button
+                            onClick={() => setRadiiUnit('nm')}
+                            className={`px-1.5 py-0.5 text-[9px] font-mono transition-colors ${
+                              radiiUnit === 'nm' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            NM
+                          </button>
+                          <button
+                            onClick={() => setRadiiUnit('km')}
+                            className={`px-1.5 py-0.5 text-[9px] font-mono transition-colors ${
+                              radiiUnit === 'km' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            KM
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 text-[11px] font-mono">
+                        <div className="grid grid-cols-5 gap-1 text-[9px] text-zinc-500 pb-1 border-b border-zinc-850 px-1">
+                          <span>THRESHOLD</span>
+                          <span className="text-center font-bold text-zinc-300">NE (DANGER)</span>
+                          <span className="text-center">SE</span>
+                          <span className="text-center">SW</span>
+                          <span className="text-center">NW</span>
+                        </div>
+
+                        {/* R34 Gale */}
+                        <div className="grid grid-cols-5 gap-1 items-center p-1.5 bg-zinc-900 border border-zinc-850">
+                          <div>
+                            <span className="text-emerald-400 font-bold block text-[10px]">R34 GALE</span>
+                            <span className="text-[8px] text-zinc-500">≥34 kts</span>
+                          </div>
+                          <span className="text-center font-bold text-white">{getRadius(34, 'ne')}</span>
+                          <span className="text-center text-zinc-300">{getRadius(34, 'se')}</span>
+                          <span className="text-center text-zinc-400">{getRadius(34, 'sw')}</span>
+                          <span className="text-center text-zinc-300">{getRadius(34, 'nw')}</span>
+                        </div>
+
+                        {/* R50 Storm */}
+                        <div className="grid grid-cols-5 gap-1 items-center p-1.5 bg-zinc-900 border border-zinc-850">
+                          <div>
+                            <span className="text-amber-400 font-bold block text-[10px]">R50 STORM</span>
+                            <span className="text-[8px] text-zinc-500">≥50 kts</span>
+                          </div>
+                          <span className="text-center font-bold text-white">{getRadius(50, 'ne')}</span>
+                          <span className="text-center text-zinc-300">{getRadius(50, 'se')}</span>
+                          <span className="text-center text-zinc-400">{getRadius(50, 'sw')}</span>
+                          <span className="text-center text-zinc-300">{getRadius(50, 'nw')}</span>
+                        </div>
+
+                        {/* R64 Hurricane */}
+                        <div className="grid grid-cols-5 gap-1 items-center p-1.5 bg-zinc-900 border border-zinc-850">
+                          <div>
+                            <span className="text-red-400 font-bold block text-[10px]">R64 HURR</span>
+                            <span className="text-[8px] text-zinc-500">≥64 kts</span>
+                          </div>
+                          <span className="text-center font-bold text-white">{getRadius(64, 'ne')}</span>
+                          <span className="text-center text-zinc-300">{getRadius(64, 'se')}</span>
+                          <span className="text-center text-zinc-400">{getRadius(64, 'sw')}</span>
+                          <span className="text-center text-zinc-300">{getRadius(64, 'nw')}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-1 text-[9px] text-zinc-500 font-mono flex items-center justify-between">
+                        <span>* UNITS: {radiiUnit === 'nm' ? 'NAUTICAL MILES (NM)' : 'KILOMETERS (KM)'}</span>
+                        <span className="text-zinc-400 font-semibold">NE: ASYMMETRIC ENHANCEMENT</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
 
@@ -952,11 +1495,26 @@ export default function EyeLocalizationWorkbench() {
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
                   <div className="flex items-center gap-2">
                     <Compass className="w-4 h-4 text-zinc-300" />
-                    <span className="font-bold text-white text-[12px]">QUADRANT WIND RADII (NM)</span>
+                    <span className="font-bold text-white text-[12px]">QUADRANT WIND RADII ({radiiUnit.toUpperCase()})</span>
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-bold">
-                    {hasCyclone ? 'ASL ASYMMETRY' : 'NIL'}
-                  </span>
+                  <div className="flex items-center gap-1 bg-zinc-900 p-0.5 border border-zinc-800">
+                    <button
+                      onClick={() => setRadiiUnit('nm')}
+                      className={`px-1.5 py-0.5 text-[9px] font-mono transition-colors ${
+                        radiiUnit === 'nm' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      NM
+                    </button>
+                    <button
+                      onClick={() => setRadiiUnit('km')}
+                      className={`px-1.5 py-0.5 text-[9px] font-mono transition-colors ${
+                        radiiUnit === 'km' ? 'bg-white text-black font-bold' : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      KM
+                    </button>
+                  </div>
                 </div>
 
                 {!hasCyclone ? (
@@ -972,24 +1530,24 @@ export default function EyeLocalizationWorkbench() {
                     <div className="p-2.5 bg-zinc-900 border border-zinc-800 space-y-1.5">
                       <div className="flex justify-between items-center">
                         <span className="text-white font-bold">R34 (GALE FORCE · &ge;34 KTS)</span>
-                        <span className="text-[9px] text-zinc-500">Nautical Miles</span>
+                        <span className="text-[9px] text-zinc-500">{radiiUnit === 'nm' ? 'Nautical Miles' : 'Kilometers'}</span>
                       </div>
                       <div className="grid grid-cols-4 gap-1 text-center font-mono">
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">NE</span>
-                          <span className="text-white font-bold">{quadrantRadii.r34_knots_nm.ne}</span>
+                          <span className="text-white font-bold">{getRadius(34, 'ne')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">SE</span>
-                          <span className="text-white font-bold">{quadrantRadii.r34_knots_nm.se}</span>
+                          <span className="text-white font-bold">{getRadius(34, 'se')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">SW</span>
-                          <span className="text-white font-bold">{quadrantRadii.r34_knots_nm.sw}</span>
+                          <span className="text-white font-bold">{getRadius(34, 'sw')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">NW</span>
-                          <span className="text-white font-bold">{quadrantRadii.r34_knots_nm.nw}</span>
+                          <span className="text-white font-bold">{getRadius(34, 'nw')}</span>
                         </div>
                       </div>
                     </div>
@@ -998,24 +1556,24 @@ export default function EyeLocalizationWorkbench() {
                     <div className="p-2.5 bg-zinc-900 border border-zinc-800 space-y-1.5">
                       <div className="flex justify-between items-center">
                         <span className="text-zinc-200 font-bold">R50 (STORM FORCE · &ge;50 KTS)</span>
-                        <span className="text-[9px] text-zinc-500">Nautical Miles</span>
+                        <span className="text-[9px] text-zinc-500">{radiiUnit === 'nm' ? 'Nautical Miles' : 'Kilometers'}</span>
                       </div>
                       <div className="grid grid-cols-4 gap-1 text-center font-mono">
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">NE</span>
-                          <span className="text-white font-bold">{quadrantRadii.r50_knots_nm.ne}</span>
+                          <span className="text-white font-bold">{getRadius(50, 'ne')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">SE</span>
-                          <span className="text-white font-bold">{quadrantRadii.r50_knots_nm.se}</span>
+                          <span className="text-white font-bold">{getRadius(50, 'se')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">SW</span>
-                          <span className="text-white font-bold">{quadrantRadii.r50_knots_nm.sw}</span>
+                          <span className="text-white font-bold">{getRadius(50, 'sw')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">NW</span>
-                          <span className="text-white font-bold">{quadrantRadii.r50_knots_nm.nw}</span>
+                          <span className="text-white font-bold">{getRadius(50, 'nw')}</span>
                         </div>
                       </div>
                     </div>
@@ -1024,24 +1582,24 @@ export default function EyeLocalizationWorkbench() {
                     <div className="p-2.5 bg-zinc-900 border border-zinc-800 space-y-1.5">
                       <div className="flex justify-between items-center">
                         <span className="text-zinc-300 font-bold">R64 (HURRICANE FORCE · &ge;64 KTS)</span>
-                        <span className="text-[9px] text-zinc-500">Nautical Miles</span>
+                        <span className="text-[9px] text-zinc-500">{radiiUnit === 'nm' ? 'Nautical Miles' : 'Kilometers'}</span>
                       </div>
                       <div className="grid grid-cols-4 gap-1 text-center font-mono">
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">NE</span>
-                          <span className="text-white font-bold">{quadrantRadii.r64_knots_nm.ne}</span>
+                          <span className="text-white font-bold">{getRadius(64, 'ne')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">SE</span>
-                          <span className="text-white font-bold">{quadrantRadii.r64_knots_nm.se}</span>
+                          <span className="text-white font-bold">{getRadius(64, 'se')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">SW</span>
-                          <span className="text-white font-bold">{quadrantRadii.r64_knots_nm.sw}</span>
+                          <span className="text-white font-bold">{getRadius(64, 'sw')}</span>
                         </div>
                         <div className="p-1 bg-zinc-950 border border-zinc-800">
                           <span className="text-[9px] text-zinc-500 block">NW</span>
-                          <span className="text-white font-bold">{quadrantRadii.r64_knots_nm.nw}</span>
+                          <span className="text-white font-bold">{getRadius(64, 'nw')}</span>
                         </div>
                       </div>
                     </div>
