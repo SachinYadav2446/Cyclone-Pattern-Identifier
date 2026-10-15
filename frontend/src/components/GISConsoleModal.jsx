@@ -1,53 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Radio, 
   RefreshCw, 
-  Crosshair, 
-  Eye, 
   Satellite, 
-  ShieldCheck, 
-  Cpu, 
-  Zap, 
-  Navigation, 
   Clock, 
   X,
   CheckCircle2,
-  Compass,
-  Wind,
   Gauge,
-  Layers,
-  Thermometer,
-  Activity,
-  AlertCircle
+  Navigation,
+  AlertCircle,
+  LayoutGrid
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '../config/api';
 
 const channels = [
   {
     id: 'ir1',
     name: 'Thermal Infrared-1 (TIR-1)',
-    shortName: 'TIR-1 (10.8 µm)',
-    band: 'Channel 02 · Clean Window',
-    wavelength: '10.8 µm Window',
-    resolution: '4.0 km Spatial GSD',
-    cadence: '30-minute rapid downlink',
-    role: 'Eyewall Deep Convection & Cloud-Top Brightness',
-    description: 'Measures radiative temperature of cloud tops. Severe eyewall convection bursts appear as ultra-cold, high-radiance bright signatures down to -80°C.',
+    shortName: 'TIR-1',
+    wavelength: '10.8 µm',
+    resolution: '4.0 km GSD',
+    role: 'Eyewall Deep Convection & Cloud-Top Cooling',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ir1.jpg',
     proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/ir1`,
     fallbackUrl: '/images/TIR1_cyclone.png',
   },
   {
     id: 'vis',
-    name: 'Visible Channel (VIS)',
-    shortName: 'VIS (0.65 µm)',
-    band: 'Channel 01 · Solar Reflectance',
-    wavelength: '0.65 µm Albedo',
-    resolution: '1.0 km High-Resolution',
-    cadence: 'Daylight operational scan',
-    role: 'Sub-Kilometer Eye Structural Georeferencing',
-    description: 'High-resolution albedo reflecting sunlight off upper tropospheric cirrus and spiral rainband striations. Enables pinpoint CenterNet eye fix.',
+    name: 'Visible Spectrum (VIS)',
+    shortName: 'VIS',
+    wavelength: '0.65 µm',
+    resolution: '1.0 km GSD',
+    role: 'High-Resolution Daylight Eye Georeferencing',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_vis.jpg',
     proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/vis`,
     fallbackUrl: '/images/visible_cyclone_image.png',
@@ -55,27 +38,21 @@ const channels = [
   {
     id: 'wv',
     name: 'Water Vapor (WV)',
-    shortName: 'WV (6.8 µm)',
-    band: 'Channel 03 · Mid-Troposphere',
-    wavelength: '6.8 µm Moisture',
-    resolution: '8.0 km Spatial GSD',
-    cadence: '30-minute rapid downlink',
-    role: 'Upper-Level Dry Slot & Steering Flow Mapping',
-    description: 'Visualizes mid-to-upper tropospheric moisture transport (300-600 hPa). Crucial for detecting dry air intrusions that disrupt cyclone core intensification.',
+    shortName: 'WV',
+    wavelength: '6.8 µm',
+    resolution: '8.0 km GSD',
+    role: 'Mid-Tropospheric Moisture & Steering Flow',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_wv.jpg',
     proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/wv`,
     fallbackUrl: '/images/WV_image.png',
   },
   {
     id: 'ctbt',
-    name: 'Cloud-Top Brightness Temp (CTBT)',
-    shortName: 'CTBT (12.0 µm)',
-    band: 'Channel 04 · Dirty Window',
-    wavelength: '12.0 µm Split Window',
-    resolution: '4.0 km Spatial GSD',
-    cadence: '30-minute rapid downlink',
-    role: 'Calibrated Deep Convective Cooling',
-    description: 'Calibrated thermodynamic brightness temperature map highlighting intense eyewall thunderstorm bursting and explosive cloud-top cooling.',
+    name: 'Split Window (CTBT)',
+    shortName: 'CTBT',
+    wavelength: '12.0 µm',
+    resolution: '4.0 km GSD',
+    role: 'Thermodynamic Brightness Differential',
     liveUrl: 'https://mausam.imd.gov.in/Satellite/3Dasiasec_ctbt.jpg',
     proxyUrl: `${API_BASE_URL}/api/v1/live/image-proxy/ctbt`,
     fallbackUrl: '/images/TIR2_cyclone.png',
@@ -83,12 +60,8 @@ const channels = [
 ];
 
 export default function GISConsoleModal({ isOpen, onClose }) {
-  const [selectedChannelId, setSelectedChannelId] = useState('ir1');
-  const [viewMode, setViewMode] = useState('single'); // 'single' | 'quad'
-  const [isAiScanActive, setIsAiScanActive] = useState(true);
-  const [hudTab, setHudTab] = useState('intensity'); // 'intensity' | 'eye_fix' | 'radii' | 'forecast' | 'channel'
-  const [showWindRings, setShowWindRings] = useState(true);
-  const [showForecastTrack, setShowForecastTrack] = useState(true);
+  const [selectedView, setSelectedView] = useState('ir1'); // 'ir1' | 'vis' | 'wv' | 'ctbt' | 'quad'
+  const [activeTab, setActiveTab] = useState('telemetry'); // 'telemetry' | 'trajectory'
   const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('');
@@ -111,7 +84,7 @@ export default function GISConsoleModal({ isOpen, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Initialize UTC time string
+  // Real-time UTC clock initialization
   useEffect(() => {
     if (!isOpen) return;
     const updateUtc = () => {
@@ -122,14 +95,15 @@ export default function GISConsoleModal({ isOpen, onClose }) {
       setLastSyncTime(`${hours}:${mins}:${secs} UTC`);
     };
     updateUtc();
-    const interval = setInterval(updateUtc, 60000);
+    const interval = setInterval(updateUtc, 1000);
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  // Fetch real-time AI inference from Python FastAPI backend with channel support
-  const fetchLiveAnalysis = async (channelId = selectedChannelId, refresh = false) => {
+  // Fetch real-time AI inference from Python FastAPI backend
+  const fetchLiveAnalysis = async (channelId = selectedView === 'quad' ? 'ir1' : selectedView, refresh = false) => {
     try {
-      const endpoint = `${API_BASE_URL}/api/v1/live/latest-analysis?channel=${channelId}${refresh ? '&refresh=true' : ''}`;
+      const activeParam = channelId === 'quad' ? 'ir1' : channelId;
+      const endpoint = `${API_BASE_URL}/api/v1/live/latest-analysis?channel=${activeParam}${refresh ? '&refresh=true' : ''}`;
       const res = await fetch(endpoint, { signal: AbortSignal.timeout(7000) });
       if (res.ok) {
         const data = await res.json();
@@ -146,63 +120,50 @@ export default function GISConsoleModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      fetchLiveAnalysis(selectedChannelId, false);
+      fetchLiveAnalysis(selectedView === 'quad' ? 'ir1' : selectedView, false);
     }
-  }, [isOpen, selectedChannelId]);
+  }, [isOpen, selectedView]);
 
-  // Manual refresh trigger: pulls newest satellite pass & triggers fresh AI analysis
+  // Manual refresh trigger
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    setFailedImages({}); // Clear any prior errors to re-attempt newest live passes
-    const now = new Date();
-    const hours = String(now.getUTCHours()).padStart(2, '0');
-    const mins = String(now.getUTCMinutes()).padStart(2, '0');
-    const secs = String(now.getUTCSeconds()).padStart(2, '0');
-    setLastSyncTime(`${hours}:${mins}:${secs} UTC`);
+    setFailedImages({});
     setCacheBuster(Date.now());
-    await fetchLiveAnalysis(selectedChannelId, true);
+    await fetchLiveAnalysis(selectedView === 'quad' ? 'ir1' : selectedView, true);
     setIsRefreshing(false);
   };
 
-  // Resolves live satellite frame: direct IMD -> backend proxy -> local backup
+  // Image source resolution with fallback
   const getLiveImageSrc = (channel) => {
     const status = failedImages[channel.id];
-    if (status === 'fallback') {
-      return channel.fallbackUrl;
-    }
-    if (status === 'proxy') {
-      return `${channel.proxyUrl}?t=${cacheBuster}`;
-    }
+    if (status === 'fallback') return channel.fallbackUrl;
+    if (status === 'proxy') return `${channel.proxyUrl}?t=${cacheBuster}`;
     return `${channel.liveUrl}?t=${cacheBuster}`;
   };
 
   const handleImageError = (channelId) => {
     setFailedImages((prev) => {
-      // Step 1: if direct liveUrl failed, try local Python backend proxy
-      if (!prev[channelId]) {
-        return { ...prev, [channelId]: 'proxy' };
-      }
-      // Step 2: if proxy also failed, use verified offline asset
+      if (!prev[channelId]) return { ...prev, [channelId]: 'proxy' };
       return { ...prev, [channelId]: 'fallback' };
     });
   };
 
-  // Track mouse coordinates over satellite viewer to calculate real-world Lat/Lon
+  // Mouse hover coordinate resolution over georeferenced satellite grid
   const handleMouseMove = (e) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
 
-    // INSAT-3D Asia sector georeferenced bounds: 45°E - 105°E (X) and 40°N - 10°S (Y)
+    // INSAT-3D Asia sector bounds: 45°E - 105°E (X) and 40°N - 10°S (Y)
     const lat = (40 - y * 50).toFixed(2);
     const lon = (45 + x * 60).toFixed(2);
-    setHoverCoords({ lat, lon, xPercent: (x * 100).toFixed(1), yPercent: (y * 100).toFixed(1) });
+    setHoverCoords({ lat, lon });
   };
 
   if (!isOpen) return null;
 
-  const activeChannel = channels.find((c) => c.id === selectedChannelId) || channels[0];
+  const activeChannel = channels.find((c) => c.id === selectedView) || channels[0];
   const detectedSystems = liveAnalysis?.systems_detected || [];
   const hasActiveSystems = detectedSystems.length > 0;
   const eyeFix = liveAnalysis?.eye_localization || null;
@@ -212,228 +173,224 @@ export default function GISConsoleModal({ isOpen, onClose }) {
     r50_knots_nm: { ne: 0, se: 0, sw: 0, nw: 0 },
     r64_knots_nm: { ne: 0, se: 0, sw: 0, nw: 0 }
   };
-  const nextPassEstimate = liveAnalysis?.next_hourly_pass_estimate || 'in ~20 min';
   const trajectoryForecast = liveAnalysis?.trajectory_forecast || null;
   const waypoints48h = trajectoryForecast?.waypoints_48h || [];
-  const coneCoords = trajectoryForecast?.cone_of_uncertainty?.polygon_coordinates || [];
   const landfallProj = trajectoryForecast?.landfall_projection || null;
 
-
   return (
-    <div className="fixed inset-0 z-50 bg-black text-zinc-100 flex flex-col overflow-y-auto font-mono">
-      {/* Precision background grid lines */}
+    <div className="fixed inset-0 z-50 bg-[#090a0f] text-zinc-100 flex flex-col overflow-y-auto font-mono">
+      {/* Precision ambient background grid */}
       <div className="fixed inset-0 bg-grid-pattern opacity-15 pointer-events-none" />
 
-      {/* 1. TOP MISSION CONTROL APP BAR */}
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-[#000000]/95 backdrop-blur-md px-4 sm:px-6 py-3 flex items-center justify-between font-mono">
-        {/* Brand & Platform Identifier */}
+      {/* 1. TOP HEADER APP BAR (MINIMAL & ULTRA-CLEAN) */}
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-800/90 bg-black/95 backdrop-blur-md px-4 sm:px-6 h-14 flex items-center justify-between">
+        {/* Left: Clean Brand & Status */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-7 h-7 border border-zinc-700 bg-zinc-950">
-            <div 
-              className="w-3 h-3 rounded-full border border-white border-t-transparent animate-spin" 
-              style={{ animationDuration: '3s' }} 
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-xs sm:text-sm text-white tracking-widest uppercase">
-                INSAT-3D/3DR TACTICAL GIS MISSION CONSOLE
-              </span>
-              <span className="text-[9px] px-1.5 py-0.2 bg-zinc-900 border border-zinc-700 text-white font-bold">
-                OPERATIONAL
-              </span>
-            </div>
-            <div className="text-[10px] text-zinc-400 flex items-center gap-2">
-              <span>74.0°E GEOSTATIONARY DOWNLINK</span>
-              <span>·</span>
-              <span className="text-zinc-500">ISRO / IMD MOSDAC RELAY (L1B CALIBRATED)</span>
-            </div>
-          </div>
+          <span className={`w-2 h-2 rounded-full ${isBackendConnected ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
+          <h1 className="font-bold text-sm text-white tracking-wider font-mono">
+            GIS MISSION CONTROL
+          </h1>
+          <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">
+            74.0°E INSAT-3D/3DR
+          </span>
         </div>
 
-        {/* Center Live Telemetry Clock */}
-        <div className="hidden md:flex items-center gap-4 text-xs">
-          <div className="flex items-center gap-2 px-3 py-1 bg-zinc-950 border border-zinc-850">
-            <Clock className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="text-zinc-200 font-bold">{lastSyncTime || 'LIVE SYNC'}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-zinc-400 text-[10px]">
-            <span className={`w-1.5 h-1.5 rounded-full ${isBackendConnected ? 'bg-white animate-pulse' : 'bg-zinc-500'}`} />
-            <span>AI ENGINE: {isBackendConnected ? 'ONLINE (PORT 8000)' : 'STANDBY'}</span>
-          </div>
-        </div>
+        {/* Right: Clean Controls */}
+        <div className="flex items-center gap-3 text-xs font-mono">
+          <span className="text-zinc-400 text-xs hidden sm:inline">
+            {lastSyncTime || 'LIVE'}
+          </span>
 
-        {/* Right Action: Close / Back to Showcase */}
-        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-750 text-white text-xs transition-colors cursor-pointer active:scale-95 shadow-xs"
+            title="Sync latest satellite downlink"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-zinc-200' : 'text-zinc-400'}`} />
+            <span className="hidden md:inline">Refresh</span>
+          </button>
+
           <button
             onClick={onClose}
-            className="flex items-center gap-2 px-3.5 py-1.5 bg-white text-black font-bold hover:bg-zinc-200 transition-all text-xs shadow cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white hover:bg-zinc-200 text-black font-semibold text-xs transition-colors cursor-pointer active:scale-95 shadow-xs"
           >
-            <X className="w-3.5 h-3.5 text-black" />
-            <span className="hidden sm:inline">RETURN TO OVERVIEW</span>
-            <span className="sm:hidden">EXIT</span>
-            <span className="text-[9px] text-black px-1 py-0.2 bg-zinc-200 font-mono">ESC</span>
+            <X className="w-3.5 h-3.5" />
+            <span>Close</span>
           </button>
         </div>
       </header>
 
-      {/* 2. MAIN WORKSTATION CONTENT */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10 space-y-6">
-        {/* Workstation Controls Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 bg-zinc-950 border border-zinc-800">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {/* View Mode Toggle */}
-            <div className="flex items-center p-0.5 bg-zinc-900 border border-zinc-800">
+      {/* 2. MAIN MISSION CONTROL WORKSPACE */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 relative z-10">
+        
+        {/* 4 PROFESSIONAL CHANNEL BUTTONS + ALL 4 CHANNELS BUTTON */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5 font-mono">
+          {/* Channels 1-4 */}
+          {channels.map((ch) => {
+            const isSelected = selectedView === ch.id;
+            return (
               <button
-                onClick={() => setViewMode('single')}
-                className={`flex items-center gap-1 px-2.5 py-1 text-[11px] transition-colors ${
-                  viewMode === 'single'
-                    ? 'bg-white text-zinc-950 font-bold'
-                    : 'text-zinc-400 hover:text-white'
+                key={ch.id}
+                onClick={() => setSelectedView(ch.id)}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
+                  isSelected
+                    ? 'bg-zinc-900 border-white text-white shadow-lg ring-1 ring-white/20'
+                    : 'bg-zinc-950/80 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200 hover:bg-zinc-900/50'
                 }`}
               >
-                <Eye className="w-3 h-3" />
-                <span>SINGLE VIEW</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-white tracking-wider">{ch.shortName}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
+                    isSelected 
+                      ? 'bg-white text-black font-bold' 
+                      : 'bg-zinc-900 text-zinc-400 border border-zinc-800'
+                  }`}>
+                    {ch.wavelength}
+                  </span>
+                </div>
+                <div className="text-[11px] font-medium text-zinc-300 truncate">
+                  {ch.name.split(' (')[0]}
+                </div>
+                <div className="text-[10px] text-zinc-500 truncate mt-0.5">
+                  {ch.resolution} · {ch.role.split(' & ')[0]}
+                </div>
+                {isSelected && (
+                  <div className="absolute -top-px left-4 right-4 h-0.5 bg-white shadow-[0_0_8px_#ffffff]" />
+                )}
               </button>
-              <button
-                onClick={() => setViewMode('quad')}
-                className={`flex items-center gap-1 px-2.5 py-1 text-[11px] transition-colors ${
-                  viewMode === 'quad'
-                    ? 'bg-white text-zinc-950 font-bold'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Radio className="w-3 h-3" />
-                <span>4-BAND QUAD VIEW</span>
-              </button>
+            );
+          })}
+
+          {/* 5th Button: ALL 4 CHANNELS (QUAD VIEW) */}
+          <button
+            onClick={() => setSelectedView('quad')}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
+              selectedView === 'quad'
+                ? 'bg-zinc-900 border-white text-white shadow-lg ring-1 ring-white/20'
+                : 'bg-zinc-950/80 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200 hover:bg-zinc-900/50'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-bold text-white tracking-wider flex items-center gap-1.5">
+                <LayoutGrid className="w-3.5 h-3.5 text-zinc-300" />
+                <span>ALL 4 CHANNELS</span>
+              </span>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
+                selectedView === 'quad'
+                  ? 'bg-white text-black font-bold'
+                  : 'bg-zinc-900 text-zinc-400 border border-zinc-800'
+              }`}>
+                QUAD VIEW
+              </span>
             </div>
-
-            <div className="h-4 w-px bg-zinc-800 hidden sm:block" />
-
-            {/* AI Scanner Toggle */}
-            <button
-              onClick={() => setIsAiScanActive(!isAiScanActive)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 border transition-all text-[11px] ${
-                isAiScanActive
-                  ? 'bg-white border-white text-black font-bold'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Crosshair className={`w-3.5 h-3.5 ${isAiScanActive ? 'text-black animate-spin' : 'text-zinc-400'}`} style={{ animationDuration: '10s' }} />
-              <span>{isAiScanActive ? 'AI SCANNER ACTIVE' : 'AI SCANNER OFF'}</span>
-            </button>
-
-            {/* Wind Radii Overlay Toggle */}
-            <button
-              onClick={() => setShowWindRings(!showWindRings)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 border transition-all text-[11px] ${
-                showWindRings
-                  ? 'bg-zinc-800 border-zinc-500 text-white font-semibold'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
-              }`}
-              title="Toggle R34/R50/R64 wind radii rings on satellite map"
-            >
-              <Wind className="w-3.5 h-3.5 text-zinc-300" />
-              <span>{showWindRings ? 'WIND RINGS: ON' : 'WIND RINGS: OFF'}</span>
-            </button>
-
-            {/* Forecast Track & Kinematic Cone Overlay Toggle */}
-            <button
-              onClick={() => setShowForecastTrack(!showForecastTrack)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 border transition-all text-[11px] ${
-                showForecastTrack
-                  ? 'bg-zinc-800 border-zinc-500 text-white font-semibold'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'
-              }`}
-              title="Toggle ConvLSTM 48-hour forecast track and cone of uncertainty"
-            >
-              <Navigation className="w-3.5 h-3.5 text-zinc-300" />
-              <span>{showForecastTrack ? 'FORECAST TRACK: ON' : 'FORECAST TRACK: OFF'}</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Hourly Downlink Cadence Indicator */}
-            <div className="hidden lg:flex items-center gap-1.5 text-[10px] text-zinc-400 bg-zinc-900 border border-zinc-800 px-2.5 py-1.5">
-              <Clock className="w-3 h-3 text-zinc-500" />
-              <span>NEXT HOURLY PASS: <strong className="text-white">{nextPassEstimate}</strong></span>
+            <div className="text-[11px] font-medium text-zinc-300 truncate">
+              Synchronized 4-Band Matrix
             </div>
-
-            {/* Sync Latest Pass Button */}
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-white transition-all text-[11px] shadow-xs active:scale-95"
-              title="Poll latest satellite pass from server"
-            >
-              <RefreshCw className={`w-3 h-3 text-zinc-300 ${isRefreshing ? 'animate-spin text-white' : ''}`} />
-              <span>SYNC OPERATIONAL PASS</span>
-            </button>
-          </div>
+            <div className="text-[10px] text-zinc-500 truncate mt-0.5">
+              Simultaneous Multi-Spectral
+            </div>
+            {selectedView === 'quad' && (
+              <div className="absolute -top-px left-4 right-4 h-0.5 bg-white shadow-[0_0_8px_#ffffff]" />
+            )}
+          </button>
         </div>
 
-        {/* Channel Selection Bar (Single View) */}
-        {viewMode === 'single' && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono">
-            {channels.map((ch) => {
-              const isSelected = selectedChannelId === ch.id;
-              return (
-                <button
-                  key={ch.id}
-                  onClick={() => setSelectedChannelId(ch.id)}
-                  className={`p-3 text-left border transition-all relative flex flex-col justify-between cursor-pointer ${
-                    isSelected
-                      ? 'bg-zinc-900 border-white text-white shadow-md'
-                      : 'bg-[#000000] border-zinc-850 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] text-zinc-400 font-bold">{ch.wavelength}</span>
-                    {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                  </div>
-                  <div className="text-xs font-bold text-white truncate">{ch.name.split(' (')[0]}</div>
-                  <div className="text-[10px] text-zinc-500 mt-0.5 truncate">{ch.band}</div>
-
-                  {isSelected && (
-                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-white shadow-[0_0_8px_#ffffff]" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* WORKSTATION DUAL COLUMNS */}
-        {viewMode === 'single' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start font-mono">
-            {/* Main Interactive Map & Satellite Viewport (8 Cols) */}
-            <div className="lg:col-span-8 bg-[#000000] border border-zinc-800 shadow-2xl overflow-hidden flex flex-col relative">
-              {/* Tactical Corner Crosshairs */}
-              <span className="absolute top-1 left-1.5 font-mono text-[9px] text-zinc-600 z-30 pointer-events-none select-none">+</span>
-              <span className="absolute top-1 right-1.5 font-mono text-[9px] text-zinc-600 z-30 pointer-events-none select-none">+</span>
-              <span className="absolute bottom-1 left-1.5 font-mono text-[9px] text-zinc-600 z-30 pointer-events-none select-none">+</span>
-              <span className="absolute bottom-1 right-1.5 font-mono text-[9px] text-zinc-600 z-30 pointer-events-none select-none">+</span>
-
-              {/* Header Bar */}
-              <div className="p-3 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                  <span className="font-bold text-white tracking-wider">{activeChannel.name}</span>
-                  <span className="text-[10px] text-zinc-500 hidden sm:inline">({activeChannel.band})</span>
-                </div>
-
-                <div className="flex items-center gap-3 text-zinc-400 text-[10px]">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-zinc-500" />
-                    <span>DOWNLINK: {lastSyncTime}</span>
-                  </span>
-                  <span className="px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-300">
-                    74.0°E GEO
-                  </span>
-                </div>
+        {/* WORKSTATION CONTENT CONTAINER */}
+        <div className={selectedView === 'quad' ? 'w-full' : 'grid grid-cols-1 lg:grid-cols-12 gap-5 items-start'}>
+          
+          {/* ======================================================== */}
+          {/* SATELLITE MAP VIEWER (FULL WIDTH IN QUAD, 8 COLS IN SINGLE) */}
+          {/* ======================================================== */}
+          <div className={`${selectedView === 'quad' ? 'w-full' : 'lg:col-span-8'} bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl flex flex-col`}>
+            
+            {/* Clean Viewer Header */}
+            <div className="px-4 py-3 bg-black/80 border-b border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-white" />
+                <span className="text-xs font-bold text-white font-mono">
+                  {selectedView === 'quad' ? 'ALL 4 SATELLITE CHANNELS (2×2 MULTI-SPECTRAL MATRIX)' : activeChannel.name}
+                </span>
+                <span className="text-[10px] text-zinc-500 font-mono">
+                  {selectedView === 'quad' ? '(INSAT-3D/3DR CALIBRATED)' : `(${activeChannel.resolution})`}
+                </span>
               </div>
+              <div className="text-[11px] text-zinc-400 font-mono">
+                {selectedView === 'quad' ? (
+                  <span className="text-zinc-400 text-[10px] tracking-wide">CLICK ANY CHANNEL TO ZOOM IN & VIEW TELEMETRY ↗</span>
+                ) : hoverCoords ? (
+                  <span>
+                    GRID: <strong className="text-white">{hoverCoords.lat}°N, {hoverCoords.lon}°E</strong>
+                  </span>
+                ) : (
+                  <span className="text-zinc-500">CURSOR TRACKING READY</span>
+                )}
+              </div>
+            </div>
 
-              {/* Viewport Box */}
+            {/* Satellite Map Viewport: Quad View vs Single View */}
+            {selectedView === 'quad' ? (
+              /* 2×2 QUAD MATRIX: ALL 4 CHANNELS AT ONCE (FULL SCREEN WIDTH) */
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 p-2.5 bg-black">
+                {channels.map((ch) => (
+                  <div 
+                    key={ch.id} 
+                    onClick={() => setSelectedView(ch.id)}
+                    className="group relative aspect-[16/10] bg-zinc-950 border border-zinc-800 hover:border-zinc-500 rounded-lg overflow-hidden cursor-pointer transition-all flex items-center justify-center shadow-lg"
+                    title={`Click to inspect ${ch.name} in full view with telemetry`}
+                  >
+                    <img
+                      src={getLiveImageSrc(ch)}
+                      alt={ch.name}
+                      loading="eager"
+                      onError={() => handleImageError(ch.id)}
+                      className="w-full h-full object-cover filter contrast-105 group-hover:scale-[1.02] transition-transform duration-300"
+                    />
+
+                    {/* Top-Left Channel Tag */}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-2 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded-md border border-zinc-800 text-[11px] text-white shadow-md">
+                      <span className="font-bold tracking-wide">{ch.shortName}</span>
+                      <span className="text-[10px] text-zinc-400">({ch.wavelength})</span>
+                      <span className="text-zinc-600">·</span>
+                      <span className="text-[10px] text-zinc-300 font-mono">{ch.resolution}</span>
+                    </div>
+
+                    {/* Top-Right Click to Inspect badge */}
+                    <div className="absolute top-2.5 right-2.5 bg-black/85 backdrop-blur-md px-2.5 py-1 rounded-md border border-zinc-700 text-[10px] font-medium text-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
+                      <span>Click to Zoom & Telemetry ↗</span>
+                    </div>
+
+                    {/* Bottom Channel Description Pill */}
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                      <div className="bg-black/85 backdrop-blur-md px-2.5 py-1 rounded-md text-[10.5px] text-zinc-300 border border-zinc-800 shadow">
+                        {ch.name}
+                      </div>
+                      <div className="bg-black/85 backdrop-blur-md px-2 py-0.5 rounded text-[9.5px] text-zinc-400 border border-zinc-850">
+                        {ch.role}
+                      </div>
+                    </div>
+
+                    {/* CenterNet Reticle Overlay if active cyclone detected */}
+                    {hasActiveSystems && detectedSystems.map((sys) => {
+                      const px = eyeFix?.pixel_x_percent || sys.pixel_x_percent;
+                      const py = eyeFix?.pixel_y_percent || sys.pixel_y_percent;
+                      return (
+                        <div 
+                          key={`quad-${ch.id}-${sys.id}`}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+                          style={{ left: `${px}%`, top: `${py}%` }}
+                        >
+                          <div className="w-10 h-10 border border-white/90 shadow-[0_0_10px_rgba(255,255,255,0.4)] flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              /* SINGLE CHANNEL SATELLITE MAP VIEWPORT */
               <div 
                 ref={containerRef}
                 onMouseMove={handleMouseMove}
@@ -446,831 +403,333 @@ export default function GISConsoleModal({ isOpen, onClose }) {
                   alt={activeChannel.name}
                   loading="eager"
                   onError={() => handleImageError(activeChannel.id)}
-                  className="w-full h-full object-cover filter contrast-110"
+                  className="w-full h-full object-cover filter contrast-105"
                 />
 
-                {/* Micro Crosshair Grid Lines */}
-                <div className="absolute inset-0 pointer-events-none opacity-25 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black" />
-                <div className="absolute inset-0 pointer-events-none bg-grid-pattern opacity-10" />
+                {/* Ambient Grid Vignette */}
+                <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black" />
 
-                {/* Sub-Pixel Corner Coordinate Ticks */}
-                <div className="absolute top-2 left-2 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+ 40.00°N / 45.00°E</div>
-                <div className="absolute top-2 right-2 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+ 40.00°N / 105.00°E</div>
-                <div className="absolute bottom-2 left-2 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+ 10.00°S / 45.00°E</div>
-                <div className="absolute bottom-2 right-2 font-mono text-[9px] text-zinc-600 select-none pointer-events-none">+ 10.00°S / 105.00°E</div>
+                {/* Corner Lat/Lon Reference Ticks */}
+                <div className="absolute top-2 left-2 text-[9px] text-zinc-500 pointer-events-none">40.0°N / 45.0°E</div>
+                <div className="absolute top-2 right-2 text-[9px] text-zinc-500 pointer-events-none">40.0°N / 105.0°E</div>
+                <div className="absolute bottom-2 left-2 text-[9px] text-zinc-500 pointer-events-none">10.0°S / 45.0°E</div>
+                <div className="absolute bottom-2 right-2 text-[9px] text-zinc-500 pointer-events-none">10.0°S / 105.0°E</div>
 
-                {/* Real AI CenterNet Vortex Detection Overlay */}
-                {isAiScanActive && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="absolute inset-0 pointer-events-none"
-                  >
-                    {/* Pulsing Scan Beam */}
-                    <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_12px_rgba(255,255,255,0.4)] animate-pulse top-1/2 -translate-y-1/2" />
+                {/* Active CenterNet Vortex Reticle Overlay */}
+                {hasActiveSystems && detectedSystems.map((sys) => {
+                  const px = eyeFix?.pixel_x_percent || sys.pixel_x_percent;
+                  const py = eyeFix?.pixel_y_percent || sys.pixel_y_percent;
 
-                    {/* Detected Real Systems from Python AI Engine */}
-                    {hasActiveSystems ? (
-                      detectedSystems.map((sys) => {
-                        const px = eyeFix?.pixel_x_percent || sys.pixel_x_percent;
-                        const py = eyeFix?.pixel_y_percent || sys.pixel_y_percent;
-                        const r34Ne = quadrantRadii?.r34_knots_nm?.ne || 45;
-                        const r50Ne = quadrantRadii?.r50_knots_nm?.ne || 0;
+                  return (
+                    <div 
+                      key={sys.id}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+                      style={{ left: `${px}%`, top: `${py}%` }}
+                    >
+                      {/* Precision Reticle Box */}
+                      <div className="relative flex items-center justify-center w-20 h-20 border border-white/80 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                        <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white" />
+                        <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white" />
+                        <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white" />
+                        <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white" />
+                        <div className="w-2 h-2 rounded-full bg-white animate-ping" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-white absolute" />
 
-                        return (
-                          <div 
-                            key={sys.id}
-                            className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
-                            style={{ left: `${px}%`, top: `${py}%` }}
-                          >
-                            {/* Toggleable Concentric Quadrant Wind Radii Rings */}
-                            {showWindRings && (
-                              <>
-                                {/* R34 Gale Wind Ring (34 kts / 63 km/h) */}
-                                <div 
-                                  className="absolute rounded-full border border-zinc-400/50 border-dashed pointer-events-none -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
-                                  style={{
-                                    width: `${Math.max(110, r34Ne * 2.2)}px`,
-                                    height: `${Math.max(110, r34Ne * 2.2)}px`,
-                                  }}
-                                >
-                                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-mono text-zinc-300 bg-black/90 px-1.5 py-0.2 border border-zinc-700 whitespace-nowrap shadow">
-                                    R34 GALE ({r34Ne} NM)
-                                  </span>
-                                </div>
+                        {/* Floating HUD Tag */}
+                        <div className="absolute -top-7 left-0 whitespace-nowrap bg-black/90 border border-zinc-600 px-2 py-0.5 rounded text-[9.5px] text-white shadow-lg">
+                          <span className="font-bold">{sys.id}</span> · {intensity?.imd_category_name || sys.classification}
+                        </div>
 
-                                {/* R50 Storm Wind Ring (50 kts / 93 km/h) */}
-                                {r50Ne > 0 && (
-                                  <div 
-                                    className="absolute rounded-full border border-white/60 border-dotted pointer-events-none -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
-                                    style={{
-                                      width: `${Math.max(65, r50Ne * 2.2)}px`,
-                                      height: `${Math.max(65, r50Ne * 2.2)}px`,
-                                    }}
-                                  >
-                                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-mono text-white bg-black/90 px-1 py-0.2 border border-zinc-600 whitespace-nowrap shadow">
-                                      R50 STORM ({r50Ne} NM)
-                                    </span>
-                                  </div>
-                                )}
-                              </>
-                            )}
-
-                            {/* CenterNet Sub-Pixel Eye Fix Box */}
-                            <div className="relative flex items-center justify-center w-24 h-24 border border-white/90 shadow-[0_0_20px_rgba(255,255,255,0.25)]">
-                              <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-white" />
-                              <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-white" />
-                              <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-white" />
-                              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-white" />
-                              <div className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
-                              <div className="w-1.5 h-1.5 rounded-full bg-white absolute" />
-
-                              {/* Top Telemetry Tag: System ID & IMD Category */}
-                              <div className="absolute -top-8 left-0 whitespace-nowrap bg-black/95 border border-zinc-500 px-2 py-0.5 font-mono text-[9px] text-zinc-100 shadow-md">
-                                <span className="font-bold text-white">{sys.id}</span> · {intensity?.imd_category_name || sys.classification} ({eyeFix?.latitude || sys.latitude}°N, {eyeFix?.longitude || sys.longitude}°E)
-                              </div>
-
-                              {/* Bottom Telemetry Tag: MSW, Pressure, Dvorak T-Number & Delta-T */}
-                              <div className="absolute -bottom-8 left-0 whitespace-nowrap bg-black/90 border border-zinc-700 px-2 py-0.5 font-mono text-[9px] text-zinc-300 shadow-md space-y-0.5">
-                                <div>
-                                  MSW: <span className="text-white font-bold">{intensity?.msw_knots || sys.estimated_wind_kts} kts</span> ({intensity?.msw_kmh || Math.round((sys.estimated_wind_kts || 40) * 1.852)} km/h) · <span className="text-white font-bold">{intensity?.central_pressure_hpa || sys.estimated_pressure_hpa} hPa</span>
-                                </div>
-                                <div className="text-[8px] text-zinc-400">
-                                  DVORAK: <strong className="text-white">T{intensity?.dvorak_t_number || sys.dvorak_t || '3.0'}</strong> · ΔT: <strong className="text-white">{eyeFix?.delta_t_k || 45} K</strong> · EYE: <strong className="text-white">{eyeFix?.eye_diameter_km || 38} km</strong>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      /* Clean Tactical All-Clear Indicator when basin is calm */
-                      <div className="absolute top-4 left-4 z-20 bg-[#000000]/95 border border-zinc-700 px-3.5 py-2 flex items-center gap-2.5 text-[11px] text-zinc-200 shadow-2xl font-mono">
-                        <CheckCircle2 className="w-4 h-4 text-zinc-300 shrink-0" />
-                        <div>
-                          <div className="font-bold text-white tracking-wider">BASIN SURVEILLANCE: ALL CLEAR</div>
-                          <div className="text-[9px] text-zinc-400">Zero organized cyclonic vortices in monitored marine sectors (Zero False Alarms)</div>
+                        <div className="absolute -bottom-6 left-0 whitespace-nowrap bg-black/90 border border-zinc-700 px-2 py-0.5 rounded text-[9px] text-zinc-300 shadow-lg">
+                          MSW: <strong className="text-white">{intensity?.msw_knots || sys.estimated_wind_kts} kts</strong> · <strong className="text-white">{intensity?.central_pressure_hpa || sys.estimated_pressure_hpa} hPa</strong>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  );
+                })}
 
-                    {/* Feature 3: ConvLSTM 48-Hour Trajectory Track & Uncertainty Cone SVG Overlay */}
-                    {showForecastTrack && hasActiveSystems && waypoints48h.length > 1 && (
-                      <svg 
-                        className="absolute inset-0 w-full h-full pointer-events-none z-10"
-                        viewBox="0 0 100 100"
-                        preserveAspectRatio="none"
-                      >
-                        {/* Uncertainty Cone Polygon */}
-                        {coneCoords.length > 2 && (
-                          <polygon
-                            points={coneCoords.map((pt) => {
-                              const x = Math.max(0, Math.min(100, ((pt.lon - 45) / 60) * 100));
-                              const y = Math.max(0, Math.min(100, ((40 - pt.lat) / 50) * 100));
-                              return `${x.toFixed(2)},${y.toFixed(2)}`;
-                            }).join(' ')}
-                            fill="rgba(255, 255, 255, 0.08)"
-                            stroke="rgba(255, 255, 255, 0.45)"
-                            strokeWidth="0.35"
-                            strokeDasharray="1.2 0.8"
-                          />
-                        )}
-
-                        {/* Forecast Track Polyline */}
-                        <polyline
-                          points={waypoints48h.map((wp) => {
-                            const x = Math.max(0, Math.min(100, ((wp.lon - 45) / 60) * 100));
-                            const y = Math.max(0, Math.min(100, ((40 - wp.lat) / 50) * 100));
-                            return `${x.toFixed(2)},${y.toFixed(2)}`;
-                          }).join(' ')}
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="0.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-
-                        {/* Waypoints & Landfall Marker */}
-                        {waypoints48h.map((wp, idx) => {
-                          const x = Math.max(0, Math.min(100, ((wp.lon - 45) / 60) * 100));
-                          const y = Math.max(0, Math.min(100, ((40 - wp.lat) / 50) * 100));
-
-                          return (
-                            <g key={`wp-svg-${idx}`}>
-                              {wp.is_landfall ? (
-                                <>
-                                  <circle cx={x} cy={y} r="2.2" fill="none" stroke="#ffffff" strokeWidth="0.4" strokeDasharray="0.8 0.5" />
-                                  <circle cx={x} cy={y} r="1.1" fill="#ffffff" stroke="#000000" strokeWidth="0.25" />
-                                  <rect x={x + 1.2} y={y - 2.8} width="22" height="4.5" fill="#000000" stroke="#71717a" strokeWidth="0.2" rx="0.5" />
-                                  <text x={x + 1.8} y={y - 0.2} fill="#ffffff" fontSize="1.8" fontFamily="monospace" fontWeight="bold">
-                                    LANDFALL: +{wp.horizon_h}H
-                                  </text>
-                                </>
-                              ) : (
-                                <>
-                                  <circle cx={x} cy={y} r="0.75" fill={idx === 0 ? '#ffffff' : '#a1a1aa'} stroke="#000000" strokeWidth="0.2" />
-                                  {wp.horizon_h > 0 && (
-                                    <text x={x + 1.0} y={y + 0.8} fill="#d4d4d8" fontSize="1.4" fontFamily="monospace">
-                                      +{wp.horizon_h}h
-                                    </text>
-                                  )}
-                                </>
-                              )}
-                            </g>
-                          );
-                        })}
-                      </svg>
-                    )}
-                  </motion.div>
-                )}
-
-                {/* Real-Time Mouse Coordinates Indicator */}
-                {hoverCoords && (
-                  <div className="absolute bottom-3 right-3 bg-black/90 border border-zinc-700 text-zinc-200 px-2.5 py-1 text-[10px] font-mono z-20 pointer-events-none shadow-lg">
-                    CURSOR: <span className="text-white font-bold">{hoverCoords.lat}°N, {hoverCoords.lon}°E</span>
+                {/* Clean Status Pill when Basin is Calm */}
+                {!hasActiveSystems && (
+                  <div className="absolute bottom-3 left-3 bg-black/85 border border-zinc-800 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs text-zinc-200 shadow-xl pointer-events-none">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span className="text-[11px] font-medium">Basin Quiescent · Zero Active Cyclonic Vortices</span>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Bottom Viewer Status Bar */}
-              <div className="p-3 bg-zinc-950 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3 font-mono text-[10px] text-zinc-400">
-                <div className="flex items-center gap-2">
-                  <Satellite className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>PLATFORM: ISRO INSAT-3D/3DR (IMD/MOSDAC RELAY)</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span>ORBIT: GEOSTATIONARY (35,786 KM)</span>
-                  <span className="text-zinc-300 font-semibold flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-zinc-400" />
-                    <span>L1B RADIOMETRIC CALIBRATED</span>
-                  </span>
-                </div>
+            {/* Viewer Footer Status Bar */}
+            <div className="px-4 py-2.5 bg-black/60 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-3 text-[10.5px] text-zinc-400">
+              <div className="flex items-center gap-2">
+                <Satellite className="w-3.5 h-3.5 text-zinc-500" />
+                <span>ISRO INSAT-3D/3DR · Radiometrically Calibrated L1B</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span>VIEW: <strong className="text-zinc-200">{selectedView === 'quad' ? '4-Channel Matrix' : activeChannel.name}</strong></span>
+                <span className="text-zinc-600">|</span>
+                <span>PLATFORM: <strong className="text-zinc-200">74.0°E Geostationary</strong></span>
               </div>
             </div>
 
-            {/* Side Intelligence Panel (4 Cols) */}
-            <div className="lg:col-span-4 space-y-4 font-mono text-xs">
-              {/* Live Python AI Engine Status Banner */}
-              <div className="p-3 bg-zinc-950 border border-zinc-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Cpu className="w-3.5 h-3.5 text-zinc-300" />
-                  <span className="text-zinc-300 font-bold text-[11px]">
-                    {isBackendConnected ? 'PYTHON AI ENGINE: ONLINE' : 'AI ENGINE: STANDBY'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] px-2 py-0.5 border font-bold ${
-                    isBackendConnected 
-                      ? 'bg-zinc-900 border-zinc-700 text-zinc-200'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-                  }`}>
-                    PORT 8000
-                  </span>
-                </div>
-              </div>
+          </div>
 
-              {/* Notebook Feature Selector Tabs */}
-              <div className="grid grid-cols-5 border border-zinc-800 bg-zinc-950 p-1 gap-1 text-[10px]">
+          {/* ======================================================== */}
+          {/* RIGHT: STREAMLINED TELEMETRY & INTELLIGENCE HUD (4 COLS) */}
+          {/* Hidden in Quad View to render all 4 channels full width  */}
+          {/* ======================================================== */}
+          {selectedView !== 'quad' && (
+            <div className="lg:col-span-4 bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl flex flex-col">
+              
+              {/* Clean Segmented Tab Switcher */}
+              <div className="p-2 border-b border-zinc-800/80 bg-black/60 grid grid-cols-2 gap-1 text-xs">
                 <button
-                  onClick={() => setHudTab('intensity')}
-                  className={`py-1.5 px-0.5 text-center font-bold transition-all border ${
-                    hudTab === 'intensity'
-                      ? 'bg-white text-black border-white'
-                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                  }`}
-                >
-                  INTENSITY
-                </button>
-                <button
-                  onClick={() => setHudTab('eye_fix')}
-                  className={`py-1.5 px-0.5 text-center font-bold transition-all border ${
-                    hudTab === 'eye_fix'
-                      ? 'bg-white text-black border-white'
-                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                  }`}
-                >
-                  EYE FIX
-                </button>
-                <button
-                  onClick={() => setHudTab('radii')}
-                  className={`py-1.5 px-0.5 text-center font-bold transition-all border ${
-                    hudTab === 'radii'
-                      ? 'bg-white text-black border-white'
-                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                  }`}
-                >
-                  RADII
-                </button>
-                <button
-                  onClick={() => setHudTab('forecast')}
-                  className={`py-1.5 px-0.5 text-center font-bold transition-all border ${
-                    hudTab === 'forecast'
-                      ? 'bg-white text-black border-white'
-                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                  }`}
-                >
-                  FORECAST
-                </button>
-                <button
-                  onClick={() => setHudTab('channel')}
-                  className={`py-1.5 px-0.5 text-center font-bold transition-all border ${
-                    hudTab === 'channel'
-                      ? 'bg-white text-black border-white'
-                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                  }`}
-                >
-                  CHANNEL
-                </button>
-              </div>
+                  onClick={() => setActiveTab('telemetry')}
+                  className={`py-1.5 px-3 rounded-lg text-center font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  activeTab === 'telemetry'
+                    ? 'bg-white text-black shadow-xs'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                }`}
+              >
+                <Gauge className="w-3.5 h-3.5" />
+                <span>Real-Time Telemetry</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('trajectory')}
+                className={`py-1.5 px-3 rounded-lg text-center font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  activeTab === 'trajectory'
+                    ? 'bg-white text-black shadow-xs'
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                }`}
+              >
+                <Navigation className="w-3.5 h-3.5" />
+                <span>48h Trajectory</span>
+              </button>
+            </div>
 
-              {/* TAB 1: FEATURE 2 · DEEP DVORAK CONVNEXT-V2 INTENSITY ESTIMATION */}
-              {hudTab === 'intensity' && (
-                <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
-                    <div className="flex items-center gap-2">
-                      <Gauge className="w-3.5 h-3.5 text-zinc-300" />
-                      <span className="text-[11px] font-bold text-white tracking-wider">
-                        DEEP DVORAK INTENSITY (STAGE 02)
-                      </span>
-                    </div>
-                    <span className="px-2 py-0.5 border text-[10px] font-bold bg-zinc-900 border-zinc-700 text-zinc-300">
-                      {hasActiveSystems ? 'CONVNEXT-V2' : 'ALL CLEAR'}
-                    </span>
-                  </div>
-
+            {/* TAB CONTENT */}
+            <div className="p-4 space-y-4">
+              
+              {/* ---------------------------------------------------- */}
+              {/* TAB 1: REAL-TIME TELEMETRY                           */}
+              {/* ---------------------------------------------------- */}
+              {activeTab === 'telemetry' && (
+                <>
                   {!hasActiveSystems ? (
+                    /* Clean Synoptic All-Clear Summary */
                     <div className="space-y-3">
-                      <div className="p-3 bg-black border border-zinc-800 space-y-1.5">
-                        <div className="text-xs text-white font-bold flex items-center gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-zinc-300" />
-                          <span>NO ACTIVE CYCLONE DETECTED</span>
+                      <div className="p-3.5 bg-black/60 border border-zinc-800 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Basin Synoptic Status: Quiescent</span>
+                          </span>
+                          <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800 text-emerald-300 font-semibold">
+                            ALL CLEAR
+                          </span>
                         </div>
-                        <p className="text-[10px] text-zinc-400 leading-relaxed">
-                          Autonomous vortex screening confirms zero organized cyclonic circulations in the North Indian Ocean basin. Ambient marine flow prevails.
+                        <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
+                          Continuous autonomous vortex screening confirms zero organized cyclonic systems across the North Indian Ocean basin.
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">AMBIENT SURFACE WIND</span>
-                          <div className="text-white font-bold text-base mt-0.5">
-                            &lt; 17 <span className="text-xs font-normal text-zinc-400">kts</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400">Below gale threshold</span>
+                      {/* Environmental Baseline Metrics */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 bg-black/60 border border-zinc-850 rounded-lg">
+                          <span className="text-[10px] text-zinc-500 block">AMBIENT WIND</span>
+                          <span className="text-base font-bold text-white">&lt; 17 kts</span>
+                          <span className="text-[9.5px] text-zinc-400 block">Below gale threshold</span>
                         </div>
-
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">BAROMETRIC PRESSURE</span>
-                          <div className="text-white font-bold text-base mt-0.5">
-                            1012 <span className="text-xs font-normal text-zinc-400">hPa</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400">Standard Sea-Level</span>
+                        <div className="p-2.5 bg-black/60 border border-zinc-850 rounded-lg">
+                          <span className="text-[10px] text-zinc-500 block">SEA LEVEL PRESSURE</span>
+                          <span className="text-base font-bold text-white">1012 hPa</span>
+                          <span className="text-[9.5px] text-zinc-400 block">Standard atmospheric</span>
                         </div>
-
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">DVORAK RATING</span>
-                          <div className="text-white font-bold text-base mt-0.5">T0.0</div>
-                          <span className="text-[10px] text-zinc-400">Non-Cyclonic</span>
+                        <div className="p-2.5 bg-black/60 border border-zinc-850 rounded-lg">
+                          <span className="text-[10px] text-zinc-500 block">DVORAK RATING</span>
+                          <span className="text-base font-bold text-white">T0.0</span>
+                          <span className="text-[9.5px] text-zinc-400 block">Non-cyclonic</span>
                         </div>
+                        <div className="p-2.5 bg-black/60 border border-zinc-850 rounded-lg">
+                          <span className="text-[10px] text-zinc-500 block">ACTIVE VORTICES</span>
+                          <span className="text-base font-bold text-emerald-400">0</span>
+                          <span className="text-[9.5px] text-zinc-400 block">Zero false alarms</span>
+                        </div>
+                      </div>
 
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">IMD BASIN STATUS</span>
-                          <div className="text-white font-bold text-sm mt-0.5">QUIET</div>
-                          <span className="text-[10px] text-zinc-400">No Warning in Force</span>
+                      {/* Sector Surveillance Status */}
+                      <div className="p-3 bg-black/60 border border-zinc-850 rounded-xl space-y-1.5 text-[10.5px]">
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Bay of Bengal:</span>
+                          <span className="text-zinc-200 font-medium">{liveAnalysis?.bay_of_bengal_status || 'Calm Marine Flow'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-zinc-500">Arabian Sea:</span>
+                          <span className="text-zinc-200 font-medium">{liveAnalysis?.arabian_sea_status || 'Stable Clear-Sky Area'}</span>
+                        </div>
+                        <div className="flex justify-between pt-1 border-t border-zinc-800">
+                          <span className="text-zinc-500">Next Satellite Pass:</span>
+                          <span className="text-zinc-200 font-bold">{liveAnalysis?.next_hourly_pass_estimate || 'in ~20 min'}</span>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">SUSTAINED WIND (MSW)</span>
-                          <div className="text-white font-bold text-base leading-tight mt-0.5">
-                            {intensity?.msw_knots || 0} <span className="text-xs font-normal text-zinc-400">kts</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400">
-                            ({intensity?.msw_kmh || Math.round((intensity?.msw_knots || 0) * 1.852)} km/h)
+                    /* Active Cyclone Telemetry Grid */
+                    <div className="space-y-3">
+                      {/* System Classification Header */}
+                      <div className="p-3 bg-black/60 border border-zinc-800 rounded-xl flex items-center justify-between">
+                        <div>
+                          <span className="text-[9.5px] text-zinc-500 uppercase block">PRIMARY DETECTED VORTEX</span>
+                          <span className="text-sm font-bold text-white">
+                            {detectedSystems[0]?.id || 'CY01'} · {intensity?.imd_category_name || 'Cyclonic Storm'}
+                          </span>
+                        </div>
+                        <span className="px-2.5 py-1 rounded bg-white text-black font-bold text-xs">
+                          T{intensity?.dvorak_t_number || '3.5'}
+                        </span>
+                      </div>
+
+                      {/* Primary Numerical Telemetry Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 bg-black/60 border border-zinc-850 rounded-lg">
+                          <span className="text-[10px] text-zinc-500 block">SUSTAINED WIND (MSW)</span>
+                          <span className="text-base font-bold text-white leading-tight block mt-0.5">
+                            {intensity?.msw_knots || 0} kts
+                          </span>
+                          <span className="text-[9.5px] text-zinc-400">
+                            {intensity?.msw_kmh || Math.round((intensity?.msw_knots || 0) * 1.852)} km/h
                           </span>
                         </div>
 
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">CENTRAL PRESSURE</span>
-                          <div className="text-white font-bold text-base leading-tight mt-0.5">
-                            {intensity?.central_pressure_hpa || 1010} <span className="text-xs font-normal text-zinc-400">hPa</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400">
+                        <div className="p-2.5 bg-black/60 border border-zinc-850 rounded-lg">
+                          <span className="text-[10px] text-zinc-500 block">CENTRAL PRESSURE</span>
+                          <span className="text-base font-bold text-white leading-tight block mt-0.5">
+                            {intensity?.central_pressure_hpa || 1010} hPa
+                          </span>
+                          <span className="text-[9.5px] text-zinc-400">
                             ΔP: {intensity?.pressure_deficit_hpa || 0} hPa
                           </span>
                         </div>
 
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">DVORAK T-NUMBER</span>
-                          <div className="text-white font-bold text-base leading-tight mt-0.5">
-                            T{intensity?.dvorak_t_number || '1.0'}
-                          </div>
-                          <span className="text-[10px] text-zinc-400">Current Intensity (CI)</span>
-                        </div>
-
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">IMD CATEGORY</span>
-                          <div className="text-white font-bold text-sm leading-tight mt-0.5 truncate">
-                            {intensity?.imd_category_code || 'LPA'}
-                          </div>
-                          <span className="text-[9px] text-zinc-400 truncate block">
-                            {intensity?.imd_category_name || 'Low Pressure Area'}
+                        <div className="p-2.5 bg-black/60 border border-zinc-850 rounded-lg">
+                          <span className="text-[10px] text-zinc-500 block">CENTER FIX</span>
+                          <span className="text-xs font-bold text-white leading-tight block mt-0.5">
+                            {eyeFix?.latitude || 19.5}°N, {eyeFix?.longitude || 89.0}°E
                           </span>
+                          <span className="text-[9.5px] text-zinc-400">Sub-pixel CenterNet</span>
+                        </div>
+
+                        <div className="p-2.5 bg-black/60 border border-zinc-850 rounded-lg">
+                          <span className="text-[10px] text-zinc-500 block">CORE GRADIENT ΔT</span>
+                          <span className="text-base font-bold text-white leading-tight block mt-0.5">
+                            {eyeFix?.delta_t_k || 45.0} K
+                          </span>
+                          <span className="text-[9.5px] text-zinc-400">Eye: {eyeFix?.eye_diameter_km || 38} km</span>
                         </div>
                       </div>
 
-                      {/* Impact Severity Verdict */}
-                      <div className="p-2.5 bg-black border border-zinc-800 flex items-center justify-between text-[11px]">
-                        <span className="text-zinc-500 text-[10px]">VERDICT / SEVERITY:</span>
-                        <span className="text-zinc-200 font-bold text-right truncate max-w-[190px]">
-                          {intensity?.severity || 'Calm Baseline Marine Area'}
-                        </span>
-                      </div>
+                      {/* Asymmetric Wind Radii Table */}
+                      <div className="p-3 bg-black/60 border border-zinc-850 rounded-xl space-y-2 text-[10.5px]">
+                        <span className="text-[10px] font-bold text-zinc-300 block">ASYMMETRIC WIND RADII (NM)</span>
+                        <div className="grid grid-cols-5 text-center text-[10px] border border-zinc-800 rounded overflow-hidden">
+                          <div className="p-1 bg-zinc-900 text-zinc-400 font-bold text-left pl-1.5">ISOTACH</div>
+                          <div className="p-1 bg-zinc-900 text-zinc-400 font-bold">NE</div>
+                          <div className="p-1 bg-zinc-900 text-zinc-400 font-bold">SE</div>
+                          <div className="p-1 bg-zinc-900 text-zinc-400 font-bold">SW</div>
+                          <div className="p-1 bg-zinc-900 text-zinc-400 font-bold">NW</div>
 
-                      <div className="flex justify-between items-center text-[10px] text-zinc-500 pt-1 border-t border-zinc-800">
-                        <span>PHYSICS: ATKINSON-HOLLIDAY NIO</span>
-                        <span>CONFIDENCE: {Math.round((intensity?.confidence_score || 0.95) * 100)}%</span>
+                          <div className="p-1.5 border-t border-zinc-850 text-left pl-1.5 text-zinc-200">R34 Gale</div>
+                          <div className="p-1.5 border-t border-zinc-850 text-white font-bold">{quadrantRadii.r34_knots_nm.ne}</div>
+                          <div className="p-1.5 border-t border-zinc-850 text-white font-bold">{quadrantRadii.r34_knots_nm.se}</div>
+                          <div className="p-1.5 border-t border-zinc-850 text-white font-bold">{quadrantRadii.r34_knots_nm.sw}</div>
+                          <div className="p-1.5 border-t border-zinc-850 text-white font-bold">{quadrantRadii.r34_knots_nm.nw}</div>
+                        </div>
                       </div>
-                    </>
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
-              {/* TAB 2: FEATURE 1 · CENTERNET SUB-PIXEL EYE LOCALIZATION */}
-              {hudTab === 'eye_fix' && (
-                <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
-                    <div className="flex items-center gap-2">
-                      <Crosshair className="w-3.5 h-3.5 text-zinc-300" />
-                      <span className="text-[11px] font-bold text-white tracking-wider">
-                        EYE LOCALIZATION (STAGE 01)
-                      </span>
-                    </div>
-                    <span className="px-2 py-0.5 border text-[10px] font-bold bg-zinc-900 border-zinc-700 text-zinc-300">
-                      {hasActiveSystems ? 'CENTERNET FP16' : 'STANDBY'}
-                    </span>
-                  </div>
-
-                  {!hasActiveSystems ? (
-                    <div className="space-y-3">
-                      <div className="p-3 bg-black border border-zinc-800 space-y-1.5">
-                        <div className="text-xs text-white font-bold">NO EYE FEATURE FORMED</div>
-                        <p className="text-[10px] text-zinc-400 leading-relaxed">
-                          CenterNet sub-pixel eye localization activates when an organized cyclonic core reaches tropical storm or severe cyclonic intensity (T3.0+). The current basin contains only ordinary convective clouds without a closed circulation center.
-                        </p>
-                      </div>
-
-                      <div className="p-2.5 bg-black border border-zinc-800 text-[10px] text-zinc-400 space-y-1">
-                        <div className="flex justify-between">
-                          <span>RETICLE OVERLAY:</span>
-                          <span className="text-white font-bold">SUPPRESSED (ZERO FALSE ALARM)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>SCANNER STATUS:</span>
-                          <span className="text-zinc-300">CONTINUOUS SURVEILLANCE</span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">GEOREFERENCED FIX</span>
-                          <div className="text-white font-bold text-sm leading-tight mt-0.5">
-                            {eyeFix?.latitude || 19.50}°N
-                          </div>
-                          <div className="text-zinc-300 font-bold text-sm">
-                            {eyeFix?.longitude || 89.00}°E
-                          </div>
-                        </div>
-
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">SUB-PIXEL CONTINUOUS</span>
-                          <div className="text-white font-bold text-sm leading-tight mt-0.5">
-                            Δx: {eyeFix?.subpixel_offset?.dx ?? '+0.00'}
-                          </div>
-                          <div className="text-zinc-300 font-bold text-sm">
-                            Δy: {eyeFix?.subpixel_offset?.dy ?? '+0.00'}
-                          </div>
-                        </div>
-
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">EYE DIAMETER</span>
-                          <div className="text-white font-bold text-base leading-tight mt-0.5">
-                            {eyeFix?.eye_diameter_km || 38.0} <span className="text-xs font-normal text-zinc-400">km</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400">Stadium Effect Core</span>
-                        </div>
-
-                        <div className="p-2.5 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 text-[10px] block">THERMAL GRADIENT ΔT</span>
-                          <div className="text-white font-bold text-base leading-tight mt-0.5">
-                            {eyeFix?.delta_t_k || 45.0} <span className="text-xs font-normal text-zinc-400">K</span>
-                          </div>
-                          <span className="text-[10px] text-zinc-400">Eyewall-to-Eye Core</span>
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 bg-black border border-zinc-800 space-y-1 text-[10px]">
-                        <div className="flex justify-between">
-                          <span className="text-zinc-500">EYEWALL MIN RADIANCE:</span>
-                          <span className="text-zinc-200 font-bold">{eyeFix?.eyewall_min_temp_k || 195.0} K (-78.1°C)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-zinc-500">EYE CORE TEMPERATURE:</span>
-                          <span className="text-zinc-200 font-bold">{eyeFix?.eye_core_temp_k || 240.0} K (-33.1°C)</span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center text-[10px] text-zinc-500 pt-1 border-t border-zinc-800">
-                        <span>KEYPOINT FIX: ANCHOR-FREE</span>
-                        <span>CONFIDENCE: {Math.round((eyeFix?.confidence || 0.95) * 100)}%</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 3: ASYMMETRIC QUADRANT WIND RADII (R34, R50, R64) */}
-              {hudTab === 'radii' && (
-                <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
-                    <div className="flex items-center gap-2">
-                      <Wind className="w-3.5 h-3.5 text-zinc-300" />
-                      <span className="text-[11px] font-bold text-white tracking-wider">
-                        ASYMMETRIC WIND RADII
-                      </span>
-                    </div>
-                    {hasActiveSystems && (
-                      <button
-                        onClick={() => setShowWindRings(!showWindRings)}
-                        className="px-2 py-0.5 text-[9px] font-bold border border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800 transition-colors"
-                      >
-                        {showWindRings ? 'HIDE MAP RINGS' : 'SHOW MAP RINGS'}
-                      </button>
-                    )}
-                  </div>
-
-                  {!hasActiveSystems ? (
-                    <div className="p-3 bg-black border border-zinc-800 space-y-1.5 text-[10px]">
-                      <div className="text-white font-bold text-xs">QUADRANT RADII: NIL</div>
-                      <p className="text-zinc-400 leading-relaxed">
-                        No 34-kt (gale force), 50-kt (storm force), or 64-kt (hurricane force) wind thresholds are exceeded anywhere in the monitored sectors.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* 4-Quadrant Wind Field Table */}
-                      <div className="border border-zinc-800 overflow-hidden text-[10px]">
-                        <div className="grid grid-cols-5 p-1.5 bg-zinc-900 text-zinc-400 font-bold border-b border-zinc-800 text-center">
-                          <div className="text-left pl-1">ISOTACH</div>
-                          <div>NE</div>
-                          <div>SE</div>
-                          <div>SW</div>
-                          <div>NW</div>
-                        </div>
-
-                        {/* R34 Gale Force (34 kts / 63 km/h) */}
-                        <div className="grid grid-cols-5 p-2 bg-black border-b border-zinc-900 text-center text-zinc-200">
-                          <div className="text-left pl-1 font-bold text-white">R34 (Gale)</div>
-                          <div>{quadrantRadii.r34_knots_nm.ne} nm</div>
-                          <div>{quadrantRadii.r34_knots_nm.se} nm</div>
-                          <div>{quadrantRadii.r34_knots_nm.sw} nm</div>
-                          <div>{quadrantRadii.r34_knots_nm.nw} nm</div>
-                        </div>
-
-                        {/* R50 Storm Force (50 kts / 93 km/h) */}
-                        <div className="grid grid-cols-5 p-2 bg-black border-b border-zinc-900 text-center text-zinc-300">
-                          <div className="text-left pl-1 font-bold text-zinc-200">R50 (Storm)</div>
-                          <div>{quadrantRadii.r50_knots_nm.ne} nm</div>
-                          <div>{quadrantRadii.r50_knots_nm.se} nm</div>
-                          <div>{quadrantRadii.r50_knots_nm.sw} nm</div>
-                          <div>{quadrantRadii.r50_knots_nm.nw} nm</div>
-                        </div>
-
-                        {/* R64 Hurricane Force (64 kts / 119 km/h) */}
-                        <div className="grid grid-cols-5 p-2 bg-black text-center text-zinc-400">
-                          <div className="text-left pl-1 font-bold text-zinc-300">R64 (Cat 1+)</div>
-                          <div>{quadrantRadii.r64_knots_nm.ne} nm</div>
-                          <div>{quadrantRadii.r64_knots_nm.se} nm</div>
-                          <div>{quadrantRadii.r64_knots_nm.sw} nm</div>
-                          <div>{quadrantRadii.r64_knots_nm.nw} nm</div>
-                        </div>
-                      </div>
-
-                      <p className="text-[10px] text-zinc-400 leading-relaxed font-sans pt-1">
-                        Quadrant radii model right-front quadrant intensification driven by Coriolis deflection in the North Indian Ocean basin.
-                      </p>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 4: FEATURE 3 · CONVLSTM SPATIO-TEMPORAL TRAJECTORY & LANDFALL FORECASTING */}
-              {hudTab === 'forecast' && (
-                <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
-                    <div className="flex items-center gap-2">
-                      <Navigation className="w-3.5 h-3.5 text-zinc-300" />
-                      <span className="text-[11px] font-bold text-white tracking-wider">
-                        TRAJECTORY &amp; LANDFALL (STAGE 03)
-                      </span>
-                    </div>
-                    <span className="px-2 py-0.5 border text-[10px] font-bold bg-zinc-900 border-zinc-700 text-zinc-300">
-                      {hasActiveSystems ? 'CONVLSTM 48H' : 'ALL CLEAR'}
-                    </span>
-                  </div>
-
+              {/* ---------------------------------------------------- */}
+              {/* TAB 2: 48H TRAJECTORY & LANDFALL FORECAST            */}
+              {/* ---------------------------------------------------- */}
+              {activeTab === 'trajectory' && (
+                <>
                   {!hasActiveSystems || !landfallProj ? (
-                    <div className="space-y-3">
-                      <div className="p-3 bg-black border border-zinc-800 space-y-1.5">
-                        <div className="text-white font-bold text-xs flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>QUIESCENT BASIN · NO LANDFALL THREAT</span>
-                        </div>
-                        <p className="text-[10px] text-zinc-400 leading-relaxed font-sans">
-                          Atmospheric trajectory propagation models require a classified cyclonic circulation center. Current satellite passes indicate calm synoptic conditions across both Bay of Bengal and Arabian Sea.
-                        </p>
+                    <div className="p-3.5 bg-black/60 border border-zinc-800 rounded-xl space-y-2">
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>No Active Trajectory Advisory</span>
                       </div>
-
-                      <div className="p-2.5 bg-black border border-zinc-800 text-[10px] text-zinc-400 space-y-1">
-                        <div className="flex justify-between">
-                          <span>TRAJECTORY STATUS:</span>
-                          <span className="text-white font-bold">NIL (NO THREAT)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>COASTAL STRIKE PROBABILITY:</span>
-                          <span className="text-zinc-300">0.0%</span>
-                        </div>
-                      </div>
+                      <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
+                        Trajectory propagation models activate upon classification of a cyclonic circulation. Both monitored basins remain tranquil.
+                      </p>
                     </div>
                   ) : (
-                    <>
-                      {/* Coastal Landfall Intersect Card */}
-                      <div className="p-3 bg-black border border-zinc-700 space-y-2">
+                    <div className="space-y-3">
+                      {/* Projected Landfall Strike Card */}
+                      <div className="p-3 bg-black/60 border border-zinc-800 rounded-xl space-y-2 text-xs">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 text-white font-bold text-xs">
-                            <AlertCircle className="w-3.5 h-3.5 text-white animate-pulse" />
-                            <span>PROJECTED LANDFALL STRIKE</span>
-                          </div>
-                          <span className="px-2 py-0.5 bg-white text-black font-bold text-[10px]">
+                          <span className="font-bold text-white flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Projected Coastal Landfall</span>
+                          </span>
+                          <span className="px-2 py-0.5 bg-white text-black font-bold text-[10px] rounded">
                             ETA +{landfallProj.eta_hours}H
                           </span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-zinc-850">
                           <div>
-                            <span className="text-zinc-500 text-[9px] block">TARGET DISTRICT & STATE</span>
-                            <span className="text-white font-bold text-sm leading-tight block">
-                              {landfallProj.district}
-                            </span>
-                            <span className="text-[10px] text-zinc-400 block font-sans">
-                              {landfallProj.state} ({landfallProj.latitude}°N, {landfallProj.longitude}°E)
-                            </span>
+                            <span className="text-[9.5px] text-zinc-500 block">SECTOR / DISTRICT</span>
+                            <span className="text-white font-bold block">{landfallProj.district}, {landfallProj.state}</span>
+                            <span className="text-[10px] text-zinc-400">{landfallProj.latitude}°N, {landfallProj.longitude}°E</span>
                           </div>
                           <div className="text-right">
-                            <span className="text-zinc-500 text-[9px] block">ESTIMATED ARRIVAL</span>
-                            <span className="text-white font-bold text-xs font-mono block">
-                              {landfallProj.eta_timestamp_utc || `+${landfallProj.eta_hours} Hours`}
-                            </span>
-                            <span className="text-[10px] text-zinc-400 block">
-                              Dist: {landfallProj.distance_to_coast_km} km
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-800 text-[10px]">
-                          <div>
-                            <span className="text-zinc-500 block">LANDFALL INTENSITY:</span>
-                            <span className="text-white font-bold font-mono">
-                              {landfallProj.projected_landfall_wind_kts} kts ({Math.round(landfallProj.projected_landfall_wind_kts * 1.852)} km/h)
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-zinc-500 block">STORM SURGE POTENTIAL:</span>
-                            <span className="text-white font-bold font-mono">
-                              {landfallProj.projected_storm_surge_meters} meters
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Translation Kinematics */}
-                      <div className="grid grid-cols-3 gap-2 text-[10px]">
-                        <div className="p-2 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 block">SPEED</span>
-                          <div className="text-white font-bold text-xs mt-0.5">
-                            {trajectoryForecast?.current_fix?.translation_speed_kmh || 16.0} km/h
-                          </div>
-                        </div>
-                        <div className="p-2 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 block">HEADING</span>
-                          <div className="text-white font-bold text-xs mt-0.5">
-                            {trajectoryForecast?.current_fix?.heading || 'NNE'} ({trajectoryForecast?.current_fix?.bearing_degrees || 25}°)
-                          </div>
-                        </div>
-                        <div className="p-2 bg-black border border-zinc-800">
-                          <span className="text-zinc-500 block">24H CONE</span>
-                          <div className="text-white font-bold text-xs mt-0.5">
-                            ±{trajectoryForecast?.cone_of_uncertainty?.r24_km || 85} km
+                            <span className="text-[9.5px] text-zinc-500 block">LANDFALL WIND</span>
+                            <span className="text-white font-bold block">{landfallProj.projected_landfall_wind_kts} kts</span>
+                            <span className="text-[10px] text-zinc-400">Surge: {landfallProj.projected_storm_surge_meters}m</span>
                           </div>
                         </div>
                       </div>
 
                       {/* 48-Hour Waypoint Matrix */}
-                      <div className="border border-zinc-800 overflow-hidden text-[9px] font-mono">
-                        <div className="grid grid-cols-6 p-1.5 bg-zinc-900 text-zinc-400 font-bold border-b border-zinc-800 text-center">
-                          <div>+H</div>
-                          <div>LAT</div>
-                          <div>LON</div>
-                          <div>MSW</div>
-                          <div>PRES</div>
-                          <div>CONE</div>
-                        </div>
-                        {waypoints48h.slice(0, 6).map((wp, idx) => (
-                          <div
-                            key={idx}
-                            className={`grid grid-cols-6 p-1.5 border-b border-zinc-900 text-center ${
-                              wp.is_landfall ? 'bg-zinc-800 text-white font-bold' : 'bg-black text-zinc-300'
-                            }`}
-                          >
-                            <div className="font-bold flex items-center justify-center gap-0.5">
-                              <span>+{wp.horizon_h}h</span>
-                              {wp.is_landfall && <span className="text-[7px] text-zinc-400">LF</span>}
-                            </div>
-                            <div>{wp.lat}°</div>
-                            <div>{wp.lon}°</div>
-                            <div>{wp.msw_kts}k</div>
-                            <div>{wp.pressure_hpa}</div>
-                            <div>±{wp.cone_km}k</div>
+                      <div className="p-3 bg-black/60 border border-zinc-850 rounded-xl space-y-2 text-[10.5px]">
+                        <span className="text-[10px] font-bold text-zinc-300 block">48-HOUR WAYPOINT FORECAST</span>
+                        <div className="border border-zinc-800 rounded overflow-hidden text-[9.5px]">
+                          <div className="grid grid-cols-5 p-1 bg-zinc-900 text-zinc-400 font-bold text-center">
+                            <div>+HORIZON</div>
+                            <div>COORDS</div>
+                            <div>WIND</div>
+                            <div>PRES</div>
+                            <div>CONE</div>
                           </div>
-                        ))}
+                          {waypoints48h.slice(0, 5).map((wp, idx) => (
+                            <div 
+                              key={idx}
+                              className={`grid grid-cols-5 p-1.5 border-t border-zinc-850 text-center ${
+                                wp.is_landfall ? 'bg-zinc-900 text-white font-bold' : 'text-zinc-300'
+                              }`}
+                            >
+                              <div>+{wp.horizon_h}h {wp.is_landfall ? '(LF)' : ''}</div>
+                              <div>{wp.lat}°, {wp.lon}°</div>
+                              <div>{wp.msw_kts} kts</div>
+                              <div>{wp.pressure_hpa} hPa</div>
+                              <div>±{wp.cone_km} km</div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-
-                      {/* Model SOTA Scorecard */}
-                      <div className="flex justify-between items-center text-[10px] text-zinc-500 pt-1 border-t border-zinc-800">
-                        <span>WMO 24H TRACK TARGET: &lt; 85 KM</span>
-                        <span className="text-white font-bold">24H ERROR: 42.4 KM (PASS)</span>
-                      </div>
-                    </>
+                    </div>
                   )}
-                </div>
+                </>
               )}
 
-              {/* TAB 5: SPECTRAL SPECIFICATION */}
-              {hudTab === 'channel' && (
-                <div className="p-4 bg-zinc-950 border border-zinc-800 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-800/80">
-                    <div className="flex items-center gap-2">
-                      <Layers className="w-3.5 h-3.5 text-zinc-300" />
-                      <span className="text-[11px] font-bold text-white tracking-wider">
-                        SPECTRAL PROFILE
-                      </span>
-                    </div>
-                    <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-200 text-[10px] font-bold">
-                      {activeChannel.wavelength}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 text-[11px]">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">OPERATIONAL ROLE:</span>
-                      <span className="text-zinc-200 text-right font-medium truncate max-w-[180px]">{activeChannel.role}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">SPATIAL RESOLUTION:</span>
-                      <span className="text-zinc-200 font-medium">{activeChannel.resolution}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-500">SCAN REPETITION:</span>
-                      <span className="text-zinc-200 font-medium">{activeChannel.cadence}</span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-zinc-400 font-sans leading-relaxed pt-2 border-t border-zinc-800/80">
-                    {activeChannel.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Live Basin Meteorology Synoptic Summary */}
-              <div className="p-3 bg-zinc-950 border border-zinc-800 space-y-2">
-                <div className="flex items-center justify-between text-[10px] uppercase text-zinc-500">
-                  <span className="flex items-center gap-1 text-zinc-300 font-bold">
-                    <Navigation className="w-3 h-3 text-zinc-400" />
-                    <span>SYNOPTIC BASIN STATUS</span>
-                  </span>
-                  <span className="text-zinc-300 font-bold">
-                    {liveAnalysis?.overall_threat_level || 'NORMAL / ALL CLEAR'}
-                  </span>
-                </div>
-
-                <div className="p-2.5 bg-black border border-zinc-800 space-y-1.5 text-[10px]">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">BAY OF BENGAL:</span>
-                    <span className="text-zinc-200 font-medium truncate max-w-[190px]">
-                      {liveAnalysis?.bay_of_bengal_status || 'Calm Inter-Monsoon Flow'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">ARABIAN SEA:</span>
-                    <span className="text-zinc-300 truncate max-w-[190px]">
-                      {liveAnalysis?.arabian_sea_status || 'Stable Clear-Sky Marine Area'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t border-zinc-800 pt-1">
-                    <span className="text-zinc-500">LATENCY / PLATFORM:</span>
-                    <span className="text-white font-bold">
-                      {liveAnalysis?.inference_latency_ms || 12} ms · INSAT-3D
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
+
           </div>
-        ) : (
-          /* VIEW 2: 4-CHANNEL QUAD MATRIX */
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {channels.map((ch) => (
-                <div 
-                  key={ch.id} 
-                  className="bg-zinc-950 border border-zinc-800 overflow-hidden shadow-lg"
-                >
-                  <div className="p-2.5 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between font-mono text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                      <span className="font-bold text-white">{ch.shortName}</span>
-                    </div>
-                    <span className="text-[10px] text-zinc-500">{ch.resolution}</span>
-                  </div>
+          )}
 
-                  <div className="relative aspect-[16/10] bg-black overflow-hidden flex items-center justify-center">
-                    <img
-                      src={getLiveImageSrc(ch)}
-                      alt={ch.name}
-                      loading="lazy"
-                      decoding="async"
-                      onError={() => handleImageError(ch.id)}
-                      className="w-full h-full object-cover filter contrast-110"
-                    />
-                    <div className="absolute bottom-2 left-2 font-mono text-[9px] bg-black/80 text-zinc-400 px-1.5 py-0.5 border border-zinc-800">
-                      {ch.band}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-3 bg-zinc-950 border border-zinc-800 font-mono text-xs flex flex-wrap items-center justify-between gap-3 text-zinc-400">
-              <span className="text-zinc-300 font-semibold">ALL 4 SATELLITE CHANNELS SYNCHRONIZED ACROSS 74.0°E INDIAN OCEAN PASS</span>
-              <span className="text-white font-bold">READY FOR MULTI-BAND TENSOR FUSION</span>
-            </div>
-          </div>
-        )}
+        </div>
       </main>
     </div>
   );
