@@ -1,17 +1,15 @@
 import React, { useState, Component } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-import DatasetSection from './components/DatasetSection';
+import EyeLocalizationWorkbench from './components/EyeLocalizationWorkbench';
+import ResearchNoveltySection from './components/ResearchNoveltySection';
 import PipelineSection from './components/PipelineSection';
 import ModelArchitectureSection from './components/ModelArchitectureSection';
-import DoctorModeSection from './components/DoctorModeSection';
-import DisasterMatrixSection from './components/DisasterMatrixSection';
+import DatasetSection from './components/DatasetSection';
 import BenchmarksSection from './components/BenchmarksSection';
-import EyeLocalizationWorkbench from './components/EyeLocalizationWorkbench';
 import Footer from './components/Footer';
 import GISConsoleModal from './components/GISConsoleModal';
 import PresentationGuideModal from './components/PresentationGuideModal';
-import SynopticSituationRoom from './components/SynopticSituationRoom';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -60,50 +58,50 @@ export default function App() {
 
       <ErrorBoundary>
         <main>
-          {/* 1. Hero Section with Live Animated Radar & Active Storm Telemetry */}
+          {/* 1. Hero Section: Overview of Research & Key Performance Targets */}
           <HeroSection 
             onOpenConsole={() => setIsConsoleOpen(true)} 
             onOpenDemo={() => setIsDemoGuideOpen(true)}
           />
 
-          {/* Real-Time Synoptic Situation Room & Basin Threat Matrix */}
-          <SynopticSituationRoom 
-            onOpenConsole={() => setIsConsoleOpen(true)} 
-          />
-
-          {/* 2. Multi-Spectral Satellite Telemetry & Ground Truth Dataset */}
-          <DatasetSection />
-
-          {/* Interactive Eye Localization Workbench (CenterNet Keypoint & Sub-Pixel Regression) */}
+          {/* 2. Unified Live Cyclone Inference & Eye Localization Workbench (Presets + Upload) */}
           <EyeLocalizationWorkbench />
 
-          {/* 3. End-to-End Operational Pipeline (The 4 Transformations) */}
-          <PipelineSection />
+          {/* 3. Research Novelties & Methodological Breakthroughs (Horizontal Scroll Showcase) */}
+          <ResearchNoveltySection />
 
-          {/* 4. The 4 Scientific AI Pillars (CenterNet, ConvNeXt, ConvLSTM, XGBoost) */}
-          <ModelArchitectureSection />
+          {/* 4. Deep Learning AI Architecture (CenterNet + ConvNeXt-V2) */}
+          <div id="models">
+            <ModelArchitectureSection />
+          </div>
 
-          {/* 5. Explainable AI: Doctor Mode (Interactive Grad-CAM Attention Audit) */}
-          <DoctorModeSection />
+          {/* 5. The 4-Step Operational Feature Cards Pipeline */}
+          <div id="pipeline">
+            <PipelineSection />
+          </div>
 
-          {/* 6. PostGIS Life-Safety & Coastal Evacuation Vulnerability Matrix */}
-          <DisasterMatrixSection />
+          {/* 5. NOAA IBTrACS Ground Truth & Multi-Spectral Satellite Dataset */}
+          <div id="dataset">
+            <DatasetSection />
+          </div>
 
-          {/* 7. Scientific Benchmark Verification (NOAA IBTrACS Gold Standard) */}
-          <BenchmarksSection />
+          {/* 6. Scientific Benchmark Verification & Examiner Defense Guide */}
+          <div id="benchmarks">
+            <BenchmarksSection />
+          </div>
         </main>
       </ErrorBoundary>
 
-      {/* Footer with BibTeX Citation & Documentation Links */}
+      {/* Footer with BibTeX Citation & Project Info */}
       <Footer />
 
-      {/* Interactive GIS Command Center Modal Simulation */}
+      {/* GIS Command Console Modal */}
       <GISConsoleModal
         isOpen={isConsoleOpen}
         onClose={() => setIsConsoleOpen(false)}
       />
 
-      {/* 3-Act Live Audience Presentation & Demo Guide Modal */}
+      {/* 3-Act Presentation Walkthrough Modal */}
       <PresentationGuideModal
         isOpen={isDemoGuideOpen}
         onClose={() => setIsDemoGuideOpen(false)}
