@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Terminal, Menu, X, ShieldAlert, Upload } from 'lucide-react';
+import { Terminal, Menu, X, Upload } from 'lucide-react';
 
 const navItems = [
   { id: 'workbench', label: 'Workbench' },
@@ -119,19 +119,11 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
         {/* Right CTA Actions - Compact and uncluttered */}
         <div className="flex items-center gap-2">
           <button
-            onClick={onOpenDemo}
-            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs border border-zinc-800 hover:border-zinc-700 bg-zinc-950 text-zinc-300 hover:text-white transition-colors font-mono cursor-pointer"
-          >
-            <ShieldAlert className="w-3 h-3 text-zinc-400" />
-            <span>Viva Guide</span>
-          </button>
-
-          <button
             onClick={onOpenConsole}
-            title="Open Console"
-            className="hidden sm:inline-flex items-center justify-center w-7 h-7 border border-zinc-800 hover:border-zinc-700 bg-zinc-950 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 text-xs border border-zinc-800 hover:border-zinc-700 bg-zinc-950 text-zinc-300 hover:text-white transition-colors font-mono cursor-pointer"
           >
-            <Terminal className="w-3.5 h-3.5" />
+            <Terminal className="w-3.5 h-3.5 text-zinc-400" />
+            <span>GIS Console</span>
           </button>
 
           <a
@@ -173,16 +165,17 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
               className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white text-black font-semibold text-xs"
             >
               <Upload className="w-3 h-3" />
-              <span>Upload Demo</span>
+              <span>Upload Pass</span>
             </a>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onOpenDemo();
+                onOpenConsole();
               }}
-              className="py-1.5 px-3 border border-zinc-800 bg-zinc-950 text-zinc-300 text-xs"
+              className="py-1.5 px-3 border border-zinc-800 bg-zinc-950 text-zinc-300 text-xs flex items-center gap-1.5"
             >
-              Viva Guide
+              <Terminal className="w-3 h-3" />
+              <span>GIS Console</span>
             </button>
           </div>
         </div>

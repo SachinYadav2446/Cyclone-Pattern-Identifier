@@ -47,6 +47,22 @@ class ErrorBoundary extends Component {
 export default function App() {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
+  const [selectedWorkbenchStormId, setSelectedWorkbenchStormId] = useState('fani');
+  const [livePassOverride, setLivePassOverride] = useState(null);
+
+  const handleOpenInWorkbench = (liveData) => {
+    setIsConsoleOpen(false);
+    setSelectedWorkbenchStormId('live_insat');
+    if (liveData) {
+      setLivePassOverride(liveData);
+    }
+    setTimeout(() => {
+      const elem = document.getElementById('workbench');
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  };
 
   return (
     <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] antialiased selection:bg-zinc-800 selection:text-white">
@@ -65,7 +81,11 @@ export default function App() {
           />
 
           {/* 2. Unified Live Cyclone Inference & Eye Localization Workbench (Presets + Upload) */}
-          <EyeLocalizationWorkbench />
+          <EyeLocalizationWorkbench 
+            externalStormId={selectedWorkbenchStormId}
+            externalLiveData={livePassOverride}
+            onSelectStormId={(id) => setSelectedWorkbenchStormId(id)}
+          />
 
           {/* 3. Research Novelties & Methodological Breakthroughs (Horizontal Scroll Showcase) */}
           <ResearchNoveltySection />
@@ -99,6 +119,7 @@ export default function App() {
       <GISConsoleModal
         isOpen={isConsoleOpen}
         onClose={() => setIsConsoleOpen(false)}
+        onOpenInWorkbench={handleOpenInWorkbench}
       />
 
       {/* 3-Act Presentation Walkthrough Modal */}
