@@ -178,8 +178,8 @@ class LiveVortexAnalyzer:
 
         # --- 1. Analyze Bay of Bengal ---
         bob_crop = gray[bob_y1:bob_y2, bob_x1:bob_x2]
-        smoothed_bob = gaussian_filter(bob_crop, sigma=4.5)
-        bob_cloud_mask = smoothed_bob > 175
+        smoothed_bob = gaussian_filter(bob_crop, sigma=4.0)
+        bob_cloud_mask = smoothed_bob > 150
         bob_labeled, num_bob_clusters = label(bob_cloud_mask)
 
         bob_activity = "Calm Inter-Monsoon Flow"
@@ -187,8 +187,8 @@ class LiveVortexAnalyzer:
             sizes = [np.sum(bob_labeled == i) for i in range(1, num_bob_clusters + 1)]
             max_size = max(sizes) if sizes else 0
 
-            # Organized convective system threshold (>= 6000 pixels)
-            if max_size >= 6000:
+            # Organized convective system threshold (>= 3500 pixels in marine sector)
+            if max_size >= 3500:
                 # Stage 0 Gatekeeper: Verify cluster exhibits genuine cyclonic circulation
                 patch_img = Image.fromarray(np.clip(bob_crop, 0, 255).astype(np.uint8))
                 buf = io.BytesIO()
@@ -198,12 +198,20 @@ class LiveVortexAnalyzer:
                 if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS":
                     largest_idx = np.argmax(sizes) + 1
                     y_idx, x_idx = np.where(bob_labeled == largest_idx)
-                    cy = bob_y1 + float(np.mean(y_idx))
-                    cx = bob_x1 + float(np.mean(x_idx))
-                    lat, lon = self.pixel_to_latlon(cx, cy)
+                    
+                    eye_info = presence_check.get("predicted_eye")
+                    if eye_info and eye_info.get("pixel_x_percent") is not None:
+                        pred_px = (eye_info["pixel_x_percent"] / 100.0) * bob_crop.shape[1]
+                        pred_py = (eye_info["pixel_y_percent"] / 100.0) * bob_crop.shape[0]
+                        cx = bob_x1 + float(pred_px)
+                        cy = bob_y1 + float(pred_py)
+                    else:
+                        cy = bob_y1 + float(np.mean(y_idx))
+                        cx = bob_x1 + float(np.mean(x_idx))
 
+                    lat, lon = self.pixel_to_latlon(cx, cy)
                     peak_brightness = float(np.max(smoothed_bob[y_idx, x_idx]))
-                    wind_kts = float(np.clip(28.0 + (peak_brightness - 175.0) * 0.45, 25.0, 115.0))
+                    wind_kts = float(np.clip(32.0 + (peak_brightness - 150.0) * 0.42, 28.0, 125.0))
 
                     sys_data = self._diagnose_cyclone_system(
                         sys_id="BOB-SYS-01",
@@ -226,8 +234,8 @@ class LiveVortexAnalyzer:
 
         # --- 2. Analyze Arabian Sea ---
         as_crop = gray[as_y1:as_y2, as_x1:as_x2]
-        smoothed_as = gaussian_filter(as_crop, sigma=4.5)
-        as_cloud_mask = smoothed_as > 180
+        smoothed_as = gaussian_filter(as_crop, sigma=4.0)
+        as_cloud_mask = smoothed_as > 155
         as_labeled, num_as_clusters = label(as_cloud_mask)
 
         as_activity = "Stable Clear-Sky Marine Area"
@@ -235,7 +243,7 @@ class LiveVortexAnalyzer:
             sizes = [np.sum(as_labeled == i) for i in range(1, num_as_clusters + 1)]
             max_size = max(sizes) if sizes else 0
 
-            if max_size >= 6000:
+            if max_size >= 3500:
                 patch_img = Image.fromarray(np.clip(as_crop, 0, 255).astype(np.uint8))
                 buf = io.BytesIO()
                 patch_img.save(buf, format="PNG")
@@ -244,12 +252,20 @@ class LiveVortexAnalyzer:
                 if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS":
                     largest_idx = np.argmax(sizes) + 1
                     y_idx, x_idx = np.where(as_labeled == largest_idx)
-                    cy = as_y1 + float(np.mean(y_idx))
-                    cx = as_x1 + float(np.mean(x_idx))
-                    lat, lon = self.pixel_to_latlon(cx, cy)
+                    
+                    eye_info = presence_check.get("predicted_eye")
+                    if eye_info and eye_info.get("pixel_x_percent") is not None:
+                        pred_px = (eye_info["pixel_x_percent"] / 100.0) * as_crop.shape[1]
+                        pred_py = (eye_info["pixel_y_percent"] / 100.0) * as_crop.shape[0]
+                        cx = as_x1 + float(pred_px)
+                        cy = as_y1 + float(pred_py)
+                    else:
+                        cy = as_y1 + float(np.mean(y_idx))
+                        cx = as_x1 + float(np.mean(x_idx))
 
+                    lat, lon = self.pixel_to_latlon(cx, cy)
                     peak_brightness = float(np.max(smoothed_as[y_idx, x_idx]))
-                    wind_kts = float(np.clip(25.0 + (peak_brightness - 180.0) * 0.42, 22.0, 105.0))
+                    wind_kts = float(np.clip(28.0 + (peak_brightness - 155.0) * 0.40, 25.0, 115.0))
 
                     sys_data = self._diagnose_cyclone_system(
                         sys_id="ARB-SYS-01",

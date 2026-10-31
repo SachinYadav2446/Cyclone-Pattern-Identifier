@@ -260,16 +260,17 @@ class EyeDetector:
             mean_val = float(np.mean(valid_grid))
             std_circ = float(np.std(valid_grid))
             prominence = (peak_val - mean_val) / (std_circ + 1e-6)
-            bright_frac = float(np.mean(gray_np > 130))
+            bright_frac = float(np.mean(gray_np > 115))
 
             # Operational Stage 0 Screening Criterion:
-            # Check for organized cyclonic circulation and convective banding
+            # Calibrated to detect tropical cyclones, depressions, curved-band systems, and CDO patterns
+            # while rejecting non-meteorological scenes (e.g. car photos, buildings, flat terrain, uniform noise).
             is_cyclonic = (
-                std_val >= 35.0 and
-                mean_grad >= 2.0 and
-                prominence >= 3.6 and
-                peak_val >= 3.0 and
-                bright_frac >= 0.12
+                std_val >= 28.0 and
+                mean_grad >= 1.6 and
+                prominence >= 2.7 and
+                peak_val >= 2.6 and
+                bright_frac >= 0.07
             )
 
             if not is_cyclonic:
@@ -297,15 +298,22 @@ class EyeDetector:
 
             circ_grid = gaussian_filter(circ_grid, 8.0)
             circ_norm = (circ_grid - circ_grid.min()) / (circ_grid.max() - circ_grid.min() + 1e-6)
-            circ_norm[:35, :] = 0
-            circ_norm[-35:, :] = 0
-            circ_norm[:, :35] = 0
-            circ_norm[:, -35:] = 0
 
-            peak_y, peak_x = np.unravel_index(np.argmax(circ_norm), circ_norm.shape)
+            # Convective cloud envelope weighting: biases vortex center towards cyclonic cloud shield
+            # and prevents false fixes on dry continental borders or latitude lines
+            cloud_env = gaussian_filter((gray_np > 100).astype(np.float32), 16.0)
+            cloud_norm = (cloud_env - cloud_env.min()) / (cloud_env.max() - cloud_env.min() + 1e-6)
+            combined_score = circ_norm * (0.6 + 0.8 * cloud_norm)
+
+            combined_score[:35, :] = 0
+            combined_score[-35:, :] = 0
+            combined_score[:, :35] = 0
+            combined_score[:, -35:] = 0
+
+            peak_y, peak_x = np.unravel_index(np.argmax(combined_score), combined_score.shape)
             final_px = float(peak_x)
             final_py = float(peak_y)
-            conf = float(circ_norm[peak_y, peak_x])
+            conf = float(combined_score[peak_y, peak_x])
             eye_radius_px = 22.0
 
         x_pct = round((final_px / 512.0) * 100, 2)
