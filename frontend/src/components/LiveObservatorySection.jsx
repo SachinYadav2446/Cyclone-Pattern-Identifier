@@ -517,48 +517,44 @@ export default function LiveObservatorySection() {
                     {/* Pulsing Scan Beam */}
                     <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_12px_rgba(255,255,255,0.4)] animate-pulse top-1/2 -translate-y-1/2" />
 
-                    {/* Render Real Detected Systems from Python AI Engine if available */}
-                    {liveAnalysis?.systems_detected && liveAnalysis.systems_detected.length > 0 ? (
-                      liveAnalysis.systems_detected.map((sys) => (
-                        <div 
-                          key={sys.id}
-                          className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
-                          style={{ left: `${sys.pixel_x_percent}%`, top: `${sys.pixel_y_percent}%` }}
-                        >
-                          <div className="relative flex items-center justify-center w-24 h-24 border border-white/80 shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                            <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white" />
-                            <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white" />
-                            <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white" />
-                            <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white" />
-                            <div className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
-                            <div className="w-1.5 h-1.5 rounded-full bg-white absolute" />
+                    {/* Render Real Detected Cyclone Eye from Python AI Engine if available */}
+                    {liveAnalysis?.has_active_vortex && liveAnalysis?.systems_detected && liveAnalysis.systems_detected.length > 0 && (
+                      liveAnalysis.systems_detected.map((sys) => {
+                        const px = liveAnalysis?.eye_localization?.pixel_x_percent || sys.pixel_x_percent;
+                        const py = liveAnalysis?.eye_localization?.pixel_y_percent || sys.pixel_y_percent;
+                        const lat = liveAnalysis?.eye_localization?.latitude || sys.latitude;
+                        const lon = liveAnalysis?.eye_localization?.longitude || sys.longitude;
 
-                            <div className="absolute -top-7 left-0 whitespace-nowrap bg-black/90 border border-zinc-600 px-2 py-0.5 font-mono text-[9px] text-zinc-200 shadow-md">
-                              <span className="font-bold text-white">{sys.id}</span> · {sys.classification} ({sys.latitude}°N, {sys.longitude}°E)
-                            </div>
-                            <div className="absolute -bottom-6 left-0 whitespace-nowrap bg-black/85 border border-zinc-700 px-1.5 py-0.5 font-mono text-[9px] text-zinc-300">
-                              EST. WIND: <span className="text-white font-bold">{sys.estimated_wind_kts} kts</span> ({Math.round(sys.confidence_score * 100)}% Conf)
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      /* Default Basin Grid Reticles when no severe system is detected */
-                      <>
-                        <div className="absolute top-[46%] left-[67%] border border-zinc-600 w-24 h-24 flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
-                          <div className="w-2 h-2 rounded-full bg-white animate-ping" />
-                          <div className="absolute -top-5 left-0 font-mono text-[9px] bg-black/85 text-zinc-300 px-1 border border-zinc-700 whitespace-nowrap">
-                            BAY OF BENGAL · SEC-01
-                          </div>
-                        </div>
+                        return (
+                          <div 
+                            key={sys.id}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none select-none"
+                            style={{ left: `${px}%`, top: `${py}%` }}
+                          >
+                            {/* Precision Circular Eye Reticle (No square bounding box) */}
+                            <div className="relative flex items-center justify-center">
+                              {/* Eyewall Cavity Ring */}
+                              <div className="w-12 h-12 rounded-full border border-white/80 shadow-[0_0_12px_rgba(255,255,255,0.3)] flex items-center justify-center animate-pulse">
+                                <div className="w-4 h-4 rounded-full border border-white/50" />
+                              </div>
 
-                        <div className="absolute top-[48%] left-[36%] border border-zinc-600/60 border-dashed w-20 h-20 flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-                          <div className="absolute -top-5 left-0 font-mono text-[9px] bg-black/85 text-zinc-400 px-1 border border-zinc-800 whitespace-nowrap">
-                            ARABIAN SEA · SEC-02
+                              {/* Hairline Crosshairs */}
+                              <div className="absolute w-16 h-px bg-white/60" />
+                              <div className="absolute h-16 w-px bg-white/60" />
+                              <div className="absolute w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#ffffff]" />
+
+                              {/* Eye Fix Tag */}
+                              <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/95 border border-zinc-700 px-2 py-0.5 font-mono text-[9px] text-white shadow-md flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                <span className="font-bold">EYE FIX:</span> {lat}°N, {lon}°E
+                              </div>
+                              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/85 border border-zinc-700 px-1.5 py-0.5 font-mono text-[9px] text-zinc-300">
+                                EST. WIND: <span className="text-white font-bold">{sys.estimated_wind_kts} kts</span> ({Math.round(sys.confidence_score * 100)}% Conf)
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </>
+                        );
+                      })
                     )}
                   </motion.div>
                 )}

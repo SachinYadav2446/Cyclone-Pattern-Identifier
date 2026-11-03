@@ -72,8 +72,9 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
   const [failedImages, setFailedImages] = useState({});
   const [hoverCoords, setHoverCoords] = useState(null);
 
-  // Live Python Backend State - Pre-initialized with live satellite pass so detection is INSTANT
-  const [liveAnalysis, setLiveAnalysis] = useState(() => getLiveVortexAnalysis('ir1'));
+  // Live Python Backend State - null initial state so zero dummy default boxes are displayed
+  const [liveAnalysis, setLiveAnalysis] = useState(null);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [isBackendConnected, setIsBackendConnected] = useState(true);
 
   const containerRef = useRef(null);
@@ -105,32 +106,33 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
 
   // Fetch real-time AI inference from Python FastAPI backend with resilient in-browser neural fallback
   const fetchLiveAnalysis = async (channelId = selectedView === 'quad' ? 'ir1' : selectedView, refresh = false) => {
+    setIsLoadingAnalysis(true);
     const activeParam = channelId === 'quad' ? 'ir1' : channelId;
     try {
       const endpoint = `${API_BASE_URL}/api/v1/live/latest-analysis?channel=${activeParam}${refresh ? '&refresh=true' : ''}`;
-      const res = await fetch(endpoint, { signal: AbortSignal.timeout(3500) });
+      const res = await fetch(endpoint, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
         const data = await res.json();
-        if (data && data.has_active_vortex) {
-          setLiveAnalysis(data);
-          setIsBackendConnected(true);
-          if (data.timestamp_utc) {
-            setLastSyncTime(data.timestamp_utc);
-          }
-          return;
+        setLiveAnalysis(data);
+        setIsBackendConnected(true);
+        if (data.timestamp_utc) {
+          setLastSyncTime(data.timestamp_utc);
         }
+        setIsLoadingAnalysis(false);
+        return;
       }
     } catch {
       // Backend unreachable or offline (e.g. on Vercel deployment)
     }
 
-    // Cloud / Vercel Autonomous Neural Engine: Instant real-time vortex pinpointing on live channel
+    // Cloud / Vercel Autonomous Neural Engine fallback (quiescent baseline without dummy boxes)
     const livePass = getLiveVortexAnalysis(activeParam);
     setLiveAnalysis(livePass);
-    setIsBackendConnected(true);
+    setIsBackendConnected(false);
     if (livePass.timestamp_utc) {
       setLastSyncTime(livePass.timestamp_utc);
     }
+    setIsLoadingAnalysis(false);
   };
 
   useEffect(() => {
@@ -180,7 +182,11 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
 
   const activeChannel = channels.find((c) => c.id === selectedView) || channels[0];
   const detectedSystems = liveAnalysis?.systems_detected || [];
-  const hasActiveSystems = detectedSystems.length > 0;
+  const hasActiveSystems = Boolean(
+    liveAnalysis?.has_active_vortex && 
+    detectedSystems.length > 0 && 
+    liveAnalysis?.eye_localization?.has_eye !== false
+  );
   const eyeFix = liveAnalysis?.eye_localization || null;
   const intensity = liveAnalysis?.intensity_analysis || null;
   const quadrantRadii = liveAnalysis?.quadrant_wind_radii || {
@@ -419,26 +425,29 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
                       </div>
                     </div>
 
-                    {/* CenterNet Reticle Overlay if active cyclone detected */}
+                    {/* CenterNet Circular Eye Reticle Overlay (Only when genuine cyclone eye is localized) */}
                     {hasActiveSystems && detectedSystems.map((sys) => {
                       const px = eyeFix?.pixel_x_percent || sys.pixel_x_percent;
                       const py = eyeFix?.pixel_y_percent || sys.pixel_y_percent;
+                      const lat = eyeFix?.latitude || sys.latitude;
+                      const lon = eyeFix?.longitude || sys.longitude;
                       return (
                         <div 
                           key={`quad-${ch.id}-${sys.id}`}
-                          className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+                          className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none select-none"
                           style={{ left: `${px}%`, top: `${py}%` }}
                         >
-                          <div className="relative flex items-center justify-center w-12 h-12 border border-white/90 shadow-[0_0_12px_rgba(255,255,255,0.6)]">
-                            <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white" />
-                            <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white" />
-                            <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white" />
-                            <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white" />
-                            <div className="w-2 h-2 rounded-full bg-white animate-ping" />
-                            <div className="w-1.5 h-1.5 rounded-full bg-white absolute" />
+                          {/* Dedicated Eye Aperture Ring with Hairline Crosshairs */}
+                          <div className="relative flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full border border-white/80 shadow-[0_0_8px_rgba(255,255,255,0.4)] flex items-center justify-center animate-pulse">
+                              <div className="w-2.5 h-2.5 rounded-full border border-white/60" />
+                            </div>
+                            <div className="absolute w-12 h-px bg-white/60" />
+                            <div className="absolute h-12 w-px bg-white/60" />
+                            <div className="absolute w-1 h-1 rounded-full bg-white" />
 
                             <div className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/95 border border-zinc-700 px-1.5 py-0.2 rounded text-[8px] font-mono font-bold text-white shadow">
-                              EYE: {sys.latitude}°N, {sys.longitude}°E
+                              EYE: {lat}°N, {lon}°E
                             </div>
                           </div>
                         </div>
@@ -473,34 +482,41 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
                 <div className="absolute bottom-2 left-2 text-[9px] text-zinc-500 pointer-events-none">10.0°S / 45.0°E</div>
                 <div className="absolute bottom-2 right-2 text-[9px] text-zinc-500 pointer-events-none">10.0°S / 105.0°E</div>
 
-                {/* Active CenterNet Vortex Reticle Overlay */}
+                {/* Active CenterNet Vortex Eye Reticle Overlay (Only when genuine cyclone eye is localized) */}
                 {hasActiveSystems && detectedSystems.map((sys) => {
                   const px = eyeFix?.pixel_x_percent || sys.pixel_x_percent;
                   const py = eyeFix?.pixel_y_percent || sys.pixel_y_percent;
+                  const lat = eyeFix?.latitude || sys.latitude;
+                  const lon = eyeFix?.longitude || sys.longitude;
 
                   return (
                     <div 
                       key={sys.id}
-                      className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+                      className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none select-none"
                       style={{ left: `${px}%`, top: `${py}%` }}
                     >
-                      {/* Precision Reticle Box */}
-                      <div className="relative flex items-center justify-center w-24 h-24 border border-white/80 shadow-[0_0_20px_rgba(255,255,255,0.35)]">
-                        <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-white" />
-                        <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-white" />
-                        <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-white" />
-                        <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-white" />
-                        <div className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
-                        <div className="w-1.5 h-1.5 rounded-full bg-white absolute" />
-
-                        {/* Floating HUD Tag */}
-                        <div className="absolute -top-7 left-0 whitespace-nowrap bg-black/95 border border-zinc-600 px-2.5 py-0.5 rounded text-[10px] text-white shadow-xl flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="font-bold">{sys.name || sys.id}</span> · {intensity?.imd_category_name || sys.classification}
+                      {/* Precision Circular Eye Reticle (No square bounding box) */}
+                      <div className="relative flex items-center justify-center">
+                        {/* Eyewall Cavity Ring */}
+                        <div className="w-12 h-12 rounded-full border border-white/80 shadow-[0_0_12px_rgba(255,255,255,0.3)] flex items-center justify-center animate-pulse">
+                          <div className="w-4 h-4 rounded-full border border-white/50" />
                         </div>
 
-                        <div className="absolute -bottom-6 left-0 whitespace-nowrap bg-black/95 border border-zinc-700 px-2 py-0.5 rounded text-[9.5px] text-zinc-200 shadow-xl">
-                          EYE: <strong className="text-white">{sys.latitude}°N, {sys.longitude}°E</strong> · MSW: <strong className="text-white">{intensity?.msw_knots || sys.estimated_wind_kts} kts</strong> · <strong className="text-white">{intensity?.central_pressure_hpa || sys.estimated_pressure_hpa} hPa</strong>
+                        {/* Fine Precision Hairline Crosshairs */}
+                        <div className="absolute w-16 h-px bg-white/60" />
+                        <div className="absolute h-16 w-px bg-white/60" />
+
+                        {/* Sub-pixel Eye Center Pin */}
+                        <div className="absolute w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#ffffff]" />
+
+                        {/* Floating Eye Fix Tag */}
+                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/95 border border-zinc-700 px-2.5 py-0.5 rounded text-[10px] text-white shadow-xl flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          <span className="font-bold">EYE FIX:</span> {lat}°N, {lon}°E
+                        </div>
+
+                        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-black/95 border border-zinc-800 px-2 py-0.5 rounded text-[9px] text-zinc-300 shadow-xl">
+                          MSW: <strong className="text-white">{intensity?.msw_knots || sys.estimated_wind_kts} kts</strong> · <strong className="text-white">{intensity?.central_pressure_hpa || sys.estimated_pressure_hpa} hPa</strong>
                         </div>
                       </div>
                     </div>
@@ -508,7 +524,12 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
                 })}
 
                 {/* Status Pill on bottom left of map */}
-                {hasActiveSystems ? (
+                {isLoadingAnalysis ? (
+                  <div className="absolute bottom-3 left-3 bg-black/90 border border-zinc-800 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs text-zinc-300 shadow-xl pointer-events-none">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                    <span className="text-[11px] font-medium">Scanning Satellite Pass for Convective Eye...</span>
+                  </div>
+                ) : hasActiveSystems ? (
                   <div className="absolute bottom-3 left-3 bg-black/90 border border-zinc-700 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs text-zinc-100 shadow-xl pointer-events-none">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-[11px] font-bold text-white tracking-wide">

@@ -993,21 +993,23 @@ export default function EyeLocalizationWorkbench({ externalStormId, externalLive
                     style={{ width: `${Math.max(60, eyeDiameter * 2.2)}px`, height: `${Math.max(60, eyeDiameter * 2.2)}px` }}
                   />
 
-                  {/* CenterNet Primary Crosshair Reticle */}
-                  <div className="absolute -translate-x-1/2 -translate-y-1/2 w-16 h-16 border border-white/90 shadow-[0_0_15px_rgba(255,255,255,0.25)] flex items-center justify-center">
-                    <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-white" />
-                    <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-white" />
-                    <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-white" />
-                    <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-white" />
+                  {/* CenterNet Primary Eye Reticle (Dedicated circular eye pinpoint) */}
+                  <div className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+                    {/* Inner Eye Cavity Aperture */}
+                    <div className="w-8 h-8 rounded-full border border-white/90 shadow-[0_0_12px_rgba(255,255,255,0.4)] flex items-center justify-center">
+                      <div className="w-2.5 h-2.5 rounded-full border border-white/60" />
+                    </div>
 
-                    <div className="w-2.5 h-2.5 rounded-full bg-white/70 animate-ping" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-white absolute" />
+                    {/* Hairline Crosshairs */}
+                    <div className="absolute w-12 h-px bg-white/70" />
+                    <div className="absolute h-12 w-px bg-white/70" />
+                    <div className="absolute w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#ffffff]" />
 
                     {/* Sub-Pixel Tag */}
-                    <div className="absolute -top-6 left-0 bg-black/90 border border-zinc-750 px-1.5 py-0.2 font-mono text-[9px] text-zinc-200 whitespace-nowrap shadow">
-                      CENTERNET FIX: ({predLat}°N, {predLon}°E)
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 border border-zinc-750 px-1.5 py-0.2 font-mono text-[9px] text-zinc-200 whitespace-nowrap shadow">
+                      CENTERNET EYE FIX: ({predLat}°N, {predLon}°E)
                     </div>
-                    <div className="absolute -bottom-5 left-0 bg-black/90 border border-zinc-700 px-1 py-0.2 font-mono text-[8px] text-zinc-300 whitespace-nowrap">
+                    <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-black/90 border border-zinc-700 px-1 py-0.2 font-mono text-[8px] text-zinc-300 whitespace-nowrap">
                       OFFSET: Δx={subDx}, Δy={subDy}
                     </div>
                   </div>
