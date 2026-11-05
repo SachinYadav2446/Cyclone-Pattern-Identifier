@@ -181,3 +181,20 @@
   animation: hero-hud-pop 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
   will-change: transform, opacity;
 }
+
+/* 4. Continuous News-Channel Live Telemetry Ticker Ribbon */
+@keyframes ticker-marquee {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.animate-ticker-marquee {
+  display: flex;
+  width: max-content;
+  animation: ticker-marquee 55s linear infinite;
+  will-change: transform;
+}
+
+.animate-ticker-marquee:hover {
+  animation-play-state: paused;
+}

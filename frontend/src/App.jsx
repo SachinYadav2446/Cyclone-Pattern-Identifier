@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Component } from 'react';
 import Navbar from './components/Navbar';
+import LiveTelemetryTicker from './components/LiveTelemetryTicker';
 import HeroSection from './components/HeroSection';
 import DemoWorkbenchModal from './components/DemoWorkbenchModal';
 import ResearchNoveltySection from './components/ResearchNoveltySection';
@@ -71,6 +72,13 @@ export default function App() {
         onOpenConsole={() => setIsConsoleOpen(true)} 
         onOpenDemo={() => setIsDemoOpen(true)}
       />
+
+      {/* Live Continuous News-Channel Calculation & Telemetry Ticker Ribbon */}
+      <LiveTelemetryTicker
+        onOpenConsole={() => setIsConsoleOpen(true)}
+        onOpenDemo={() => setIsDemoOpen(true)}
+      />
+
 
       <ErrorBoundary>
         <main>

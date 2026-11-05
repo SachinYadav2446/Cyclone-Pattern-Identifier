@@ -13,7 +13,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
       <div className="absolute inset-0 bg-grid-pattern opacity-45 pointer-events-none" />
 
       {/* SVG Definitions for the exact Wireframe Fluid L-Curve Shape (Right Border Open) */}
-      <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
+      <svg className="absolute -top-[9999px] -left-[9999px] w-4 h-4 pointer-events-none opacity-0" aria-hidden="true">
         <defs>
           <clipPath id="hero-wireframe-curve" clipPathUnits="objectBoundingBox">
             <path d="M 0.56 0 L 1.02 0 L 1.02 1 L 0.06 1 C 0.025 1 0 0.9583 0 0.9 L 0 0.6833 C 0 0.6 0.03 0.5667 0.07 0.5667 L 0.4 0.5667 C 0.465 0.5667 0.5 0.4917 0.5 0.3833 L 0.5 0.1 C 0.5 0.0417 0.525 0 0.56 0 Z" />
@@ -185,7 +185,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
                 {/* Thumbnail Card matching wireframe image placeholder with hills/sun */}
                 <button
                   onClick={onOpenDemo}
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border border-[#64104E]/70 bg-[#120a1c] overflow-hidden relative shadow-md shrink-0 group cursor-pointer hover:border-[#E04A31] transition-all active:scale-95"
+                  className="w-24 h-24 sm:w-28 sm:h-28 min-w-[96px] sm:min-w-[112px] max-w-[96px] sm:max-w-[112px] min-h-[96px] sm:min-h-[112px] max-h-[96px] sm:max-h-[112px] rounded-2xl border border-[#64104E]/70 bg-[#120a1c] overflow-hidden relative shadow-md shrink-0 group cursor-pointer hover:border-[#E04A31] transition-all active:scale-95"
                   title="Click to launch Interactive Demo & Sub-Pixel Eye Workbench"
                 >
                   <img
