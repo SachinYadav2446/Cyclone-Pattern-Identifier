@@ -1,22 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Terminal, Menu, X, Upload } from 'lucide-react';
+import { Terminal, Menu, X, Upload, Radio, Sparkles } from 'lucide-react';
 
 const navItems = [
-  { id: 'workbench', label: 'Workbench' },
   { id: 'novelty', label: 'Novelties' },
   { id: 'models', label: 'Architecture' },
-  { id: 'pipeline', label: 'Features' },
+  { id: 'pipeline', label: 'Pipeline' },
   { id: 'dataset', label: 'Dataset' },
-  { id: 'benchmarks', label: 'Benchmarks' },
 ];
 
 export default function Navbar({ onOpenConsole, onOpenDemo }) {
-  const [activeSection, setActiveSection] = useState('workbench');
+  const [activeSection, setActiveSection] = useState('novelty');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
   const lastScrollYRef = useRef(0);
 
-  // Auto-hide navbar on scroll down, reveal on scroll up + Scrollspy
   useEffect(() => {
     const sectionIds = navItems.map((item) => item.id);
     let ticking = false;
@@ -26,24 +24,22 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
 
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          // 1. Show/hide logic
           const lastScrollY = lastScrollYRef.current;
           const diff = currentScrollY - lastScrollY;
 
+          // Track whether user scrolled past the hero header baseline
+          setIsScrolled(currentScrollY > 20);
+
           if (currentScrollY <= 60) {
-            // At the top of page, always show
             setIsVisible(true);
           } else if (diff > 6) {
-            // Scrolling down -> hide navbar
             setIsVisible(false);
             setMobileMenuOpen(false);
           } else if (diff < -6) {
-            // Scrolling up -> reveal navbar
             setIsVisible(true);
           }
           lastScrollYRef.current = currentScrollY;
 
-          // 2. Scrollspy active section
           const scrollPosition = currentScrollY + 140;
           let newActive = '';
           if (currentScrollY >= 200) {
@@ -70,74 +66,69 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
   }, []);
 
   return (
-    <header className={`sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-black/90 backdrop-blur-md transition-transform duration-300 ease-in-out ${
+    <header className={`sticky top-0 z-50 w-full transition-all duration-300 ease-in-out ${
       isVisible ? 'translate-y-0' : '-translate-y-full'
+    } ${
+      isScrolled
+        ? 'border-b border-[#64104E]/50 bg-[#08050c]/95 backdrop-blur-xl shadow-[0_4px_25px_rgba(0,0,0,0.7)]'
+        : 'border-b border-transparent bg-[#08050c] shadow-none'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
-        {/* Brand Logo - Minimal and clean */}
-        <a href="#" className="flex items-center gap-2.5 group shrink-0">
-          <div className="relative flex items-center justify-center w-7 h-7 rounded border border-zinc-800 bg-zinc-950 group-hover:border-zinc-600 transition-colors">
-            <div 
-              className="w-3.5 h-3.5 rounded-full border border-white border-t-transparent animate-spin" 
-              style={{ animationDuration: '3.5s' }} 
-            />
-            <div className="absolute w-1 h-1 rounded-full bg-white shadow-[0_0_4px_#ffffff]" />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm tracking-tight text-white font-mono">
-              DeepCyclone
-            </span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded font-mono text-zinc-400 border border-zinc-800 bg-zinc-900/60">
-              v2.0
-            </span>
-          </div>
+        {/* Brand Logo - Clean Typography Without Circle */}
+        <a href="#" className="flex items-center group shrink-0">
+          <span className="font-black text-lg tracking-tight font-mono text-white group-hover:text-[#E04A31] transition-colors">
+            vortex<span className="text-[#E04A31]">AI</span>
+          </span>
         </a>
 
-        {/* Desktop Nav Links - Clean without noisy badges */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-mono">
+        {/* Desktop Nav Links - Clean Pill Capsule matching wireframe */}
+        <nav className="hidden md:flex items-center gap-6 px-6 py-1.5 rounded-full border border-[#64104E]/50 bg-[#140b1e]/85 shadow-lg text-xs font-mono">
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
             return (
               <a
                 key={item.id}
                 href={`#${item.id}`}
-                className={`relative py-1 transition-colors ${
+                className={`relative py-0.5 transition-colors ${
                   isActive
-                    ? 'text-white font-semibold'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'text-[#E04A31] font-bold tracking-wide'
+                    : 'text-slate-300 hover:text-white font-medium'
                 }`}
               >
                 <span>{item.label}</span>
                 {isActive && (
-                  <span className="absolute -bottom-3.5 left-0 right-0 h-0.5 bg-white shadow-[0_0_6px_rgba(255,255,255,0.4)]" />
+                  <span className="absolute -bottom-1 left-0 right-0 h-[2px] bg-[#E04A31] rounded-full shadow-[0_0_8px_#E04A31]" />
                 )}
               </a>
             );
           })}
         </nav>
 
-        {/* Right CTA Actions - Compact and uncluttered */}
-        <div className="flex items-center gap-2">
+        {/* Right CTA Actions - Sleek Pill Buttons matching wireframe */}
+        <div className="flex items-center gap-2.5 font-mono">
+          {/* Demo Pill (formerly Interactive Demo) */}
           <button
-            onClick={onOpenConsole}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 text-xs border border-zinc-800 hover:border-zinc-700 bg-zinc-950 text-zinc-300 hover:text-white transition-colors font-mono cursor-pointer"
+            onClick={onOpenDemo}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs bg-[#1a0f28] hover:bg-[#251538] text-slate-200 border border-[#B43067]/40 hover:border-[#B43067] font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            title="Launch Cyclone Inference & Localization Demo"
           >
-            <Terminal className="w-3.5 h-3.5 text-zinc-400" />
-            <span>GIS Console</span>
+            <Upload className="w-3.5 h-3.5 text-[#B43067]" />
+            <span>Demo</span>
           </button>
 
-          <a
-            href="#workbench"
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs bg-white hover:bg-zinc-200 text-black font-semibold transition-colors font-mono cursor-pointer"
+          {/* GIS Console Pill without Arrow or gradient */}
+          <button
+            onClick={onOpenConsole}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-[#E04A31] hover:bg-[#CF2F4B] text-white shadow-[0_0_20px_rgba(224,74,49,0.35)] transition-all cursor-pointer active:scale-95"
+            title="Launch Real-Time 4-Band Satellite GIS Mission Control"
           >
-            <Upload className="w-3 h-3 text-black" />
-            <span>Upload</span>
-          </a>
+            <span>GIS Console</span>
+          </button>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white transition-colors"
+            className="md:hidden p-1.5 rounded-lg border border-[#64104E]/50 bg-[#140b1e] text-slate-300 hover:text-white transition-colors"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -147,34 +138,36 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-zinc-800 bg-black/98 px-4 py-3 space-y-1 font-mono text-xs shadow-2xl">
+        <div className="md:hidden border-t border-[#64104E]/40 bg-[#0e0717]/98 px-4 py-3 space-y-1 font-mono text-xs shadow-2xl">
           {navItems.map((item) => (
             <a
               key={item.id}
               href={`#${item.id}`}
               onClick={() => setMobileMenuOpen(false)}
-              className="block py-2 px-2 text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors"
+              className="block py-2 px-2 rounded text-slate-300 hover:text-[#E04A31] hover:bg-[#64104E]/30 transition-colors"
             >
               {item.label}
             </a>
           ))}
-          <div className="pt-2 flex items-center gap-2 border-t border-zinc-850">
-            <a
-              href="#workbench"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white text-black font-semibold text-xs"
+          <div className="pt-2.5 flex items-center gap-2 border-t border-[#64104E]/40">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenDemo();
+              }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#1a0f28] border border-[#B43067]/50 text-slate-200 font-bold text-xs"
             >
-              <Upload className="w-3 h-3" />
-              <span>Upload Pass</span>
-            </a>
+              <Upload className="w-3.5 h-3.5 text-[#B43067]" />
+              <span>Demo</span>
+            </button>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 onOpenConsole();
               }}
-              className="py-1.5 px-3 border border-zinc-800 bg-zinc-950 text-zinc-300 text-xs flex items-center gap-1.5"
+              className="flex-1 py-2 px-3 rounded-lg bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white text-xs font-bold flex items-center justify-center gap-2 shadow"
             >
-              <Terminal className="w-3 h-3" />
+              <Radio className="w-3.5 h-3.5 text-white" />
               <span>GIS Console</span>
             </button>
           </div>
