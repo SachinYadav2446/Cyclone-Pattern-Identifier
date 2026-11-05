@@ -1,4 +1,3 @@
-/* Stage 1: Carousel Structure */
 import React, { useRef, useState, useEffect } from 'react';
 import { 
   Target, 
