@@ -1,4 +1,3 @@
-/* Stage 1: Benchmark Matrix */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Award, TrendingUp, BarChart3, Check, Filter, ShieldCheck, Zap } from 'lucide-react';
