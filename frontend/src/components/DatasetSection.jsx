@@ -238,7 +238,7 @@ export default function DatasetSection() {
             </div>
 
             {/* Bottom Hover Telemetry Drawer in Theme Glass Styling */}
-            <div className="relative z-10 bg-white/95 backdrop-blur-md border-t border-slate-200 transition-all duration-300 overflow-hidden text-slate-200 shadow-2xl">
+            <div className="relative z-10 bg-[#0c0714]/95 backdrop-blur-xl border-t border-[#64104E]/80 transition-all duration-300 overflow-hidden text-slate-200 shadow-2xl">
               {/* Default Bar */}
               <div className="px-4 py-2.5 flex items-center justify-between font-mono text-xs text-slate-200">
                 <span className="font-bold text-white flex items-center gap-2">
