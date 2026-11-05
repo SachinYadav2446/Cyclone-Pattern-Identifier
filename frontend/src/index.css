@@ -4,47 +4,54 @@
 
 @layer base {
   body {
-    @apply bg-black text-[#ededed] antialiased selection:bg-zinc-800 selection:text-white;
+    @apply bg-[#08050c] text-[#f8fafc] antialiased selection:bg-[#E04A31] selection:text-white;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
-/* Custom scientific grid backgrounds in monochrome */
+/* Precision Dark Aerospace Grid Background with Spacious Grid Cells */
 .bg-grid-pattern {
-  background-size: 32px 32px;
+  background-size: 64px 64px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
 }
 
 .bg-radial-gradient {
-  background: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 40%, transparent 75%);
+  background: radial-gradient(circle at 50% 20%, rgba(100, 16, 78, 0.4) 0%, rgba(180, 48, 103, 0.15) 45%, transparent 75%);
 }
 
-/* Atmospheric cyclone subtle monochrome gradients */
-.bg-aurora {
+/* Atmospheric Thermal Cyclone Aurora on Deep Obsidian/Plum Base */
+.bg-cyclone-aurora {
   background: 
-    radial-gradient(ellipse 60% 50% at 20% 0%, rgba(255, 255, 255, 0.03) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 80% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 50% at 50% 100%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+    radial-gradient(ellipse 70% 50% at 20% 0%, rgba(224, 74, 49, 0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 45% at 85% 15%, rgba(180, 48, 103, 0.14) 0%, transparent 60%),
+    radial-gradient(ellipse 65% 55% at 50% 100%, rgba(100, 16, 78, 0.20) 0%, transparent 70%);
 }
 
-/* Glassmorphism border styles with crisp monochrome edges */
+/* Dark Plum Glassmorphic Panels */
 .glass-panel {
-  background: rgba(12, 12, 14, 0.85);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  background: rgba(18, 10, 28, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(100, 16, 78, 0.45);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+}
+
+.glass-panel-coral {
+  background: rgba(22, 12, 34, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(224, 74, 49, 0.45);
+  box-shadow: 0 4px 24px -2px rgba(224, 74, 49, 0.25);
 }
 
 .glass-panel-glow {
-  background: rgba(14, 14, 16, 0.9);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 25px -5px rgba(255, 255, 255, 0.05);
+  background: rgba(26, 14, 40, 0.90);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(180, 48, 103, 0.50);
+  box-shadow: 0 0 25px -4px rgba(180, 48, 103, 0.35);
 }
 
-/* Atmospheric radar scan lines */
+/* Atmospheric Radar Scan Lines */
 @keyframes radar-scan {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(1000%); }
@@ -54,28 +61,30 @@
   animation: radar-scan 3.5s linear infinite;
 }
 
-/* Precision dark obsidian scrollbar matching monochrome theme */
+/* Precision Dark Aerospace Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #050505;
+  background: #08050c;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: rgba(100, 16, 78, 0.6);
   border-radius: 3px;
+  border: 1px solid rgba(100, 16, 78, 0.4);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: #E04A31;
+  box-shadow: 0 0 8px rgba(224, 74, 49, 0.5);
 }
 
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #27272a #050505;
+  scrollbar-color: rgba(100, 16, 78, 0.6) #08050c;
 }
 
