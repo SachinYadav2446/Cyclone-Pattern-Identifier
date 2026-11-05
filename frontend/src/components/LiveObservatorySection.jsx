@@ -756,7 +756,7 @@ export default function LiveObservatorySection() {
 
                 <div className="text-[10px] text-zinc-500 leading-normal flex items-start gap-1.5">
                   <Info className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
-                  <span>DeepCyclone autonomously processes each incoming 30-min pass to detect nascent cyclonic circulations before official warnings.</span>
+                  <span>vortexAI autonomously processes each incoming 30-min pass to detect nascent cyclonic circulations before official warnings.</span>
                 </div>
               </div>
 
