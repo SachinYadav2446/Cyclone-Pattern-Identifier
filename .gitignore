@@ -60,3 +60,7 @@ frontend/dist/
 frontend/dist-ssr/
 frontend/.local
 scratch/
+
+# Temporary assets
+*.png
+!frontend/public/**
