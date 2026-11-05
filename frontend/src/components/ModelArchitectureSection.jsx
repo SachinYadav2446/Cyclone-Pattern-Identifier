@@ -1,4 +1,3 @@
-/* Stage 1: Architecture Stack */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
