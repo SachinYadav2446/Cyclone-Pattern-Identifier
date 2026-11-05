@@ -1,379 +1,501 @@
+/* Stage 1: Architecture Stack */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Target, Gauge, GitBranch, Zap, Binary, 
-  Check, Cpu, ShieldCheck, Layers, Terminal, ChevronRight
+  Target, Gauge, GitBranch, Zap, ShieldCheck, 
+  Layers, Terminal, Scale, Copy, CheckCheck, ArrowRight
 } from 'lucide-react';
+import {
+  AiBrain05Icon,
+  AiChipIcon,
+  Target02Icon,
+  Layers01Icon,
+  FlashIcon,
+  Route01Icon,
+  Activity01Icon,
+  ChartHistogramIcon,
+} from '@hugeicons/core-free-icons';
+import BranchedMenu from './BranchedMenu';
 
-const models = [
-  {
-    id: 1,
+const models = {
+  centernet: {
     key: 'centernet',
-    stepNum: 'STAGE 01 // 04',
+    stageNum: '01 / 04',
     name: 'CenterNet Keypoint Locator',
-    shortName: 'CenterNet',
     role: 'Vortex Eye Pinpointing',
     framework: 'PyTorch · ConvNeXt-Tiny + DCNv2',
     icon: Target,
-    latency: '11.8 ms',
-    memory: '1.2 GB VRAM',
-    flops: '14.2 GFLOPs',
     benchmarkBadge: '8.7 km Haversine Error',
-    inputTensor: '(B, 4, 512, 512) Multi-Spectral L1B',
-    outputTensor: 'Heatmap (B, 1, 128, 128) + Offset (dx, dy)',
+    stats: [
+      { label: 'GPU LATENCY', value: '11.8 ms', sub: 'FP16 TensorRT', color: 'text-[#E04A31]' },
+      { label: 'MEMORY VRAM', value: '1.2 GB', sub: 'Batch Size = 1', color: 'text-white' },
+      { label: 'COMPUTE FLOPS', value: '14.2 GFLOPs', sub: 'Single Frame', color: 'text-[#C3864D]' },
+      { label: 'THROUGHPUT', value: '84.7 FPS', sub: 'Streaming Ingestion', color: 'text-emerald-400' }
+    ],
+    layers: [
+      { 
+        name: '4-Channel Radiance Stem', 
+        shape: '512×512×4 ➔ 128×128×96', 
+        desc: 'Ingests calibrated Planck brightness temperatures (TIR-1, TIR-2, WV, VIS) without destroying fine vortex eye structure.' 
+      },
+      { 
+        name: 'ConvNeXt Inverted Bottlenecks', 
+        shape: 'Stage 1-4 Feature Hierarchy', 
+        desc: '7×7 depthwise convolutions extract broad cyclonic curvature across multi-resolution spatial scales.' 
+      },
+      { 
+        name: 'Deformable Conv (DCNv2)', 
+        shape: 'Spiral Rainband Offsets', 
+        desc: 'Dynamically shifts 2D spatial sampling points to conform precisely along asymmetric spiral rainbands.' 
+      },
+      { 
+        name: 'Sub-Pixel Keypoint Head', 
+        shape: '128×128 Heatmap + (dx, dy)', 
+        desc: 'Outputs continuous floating-point geographic coordinate offsets, restoring exact center fixes without discrete anchor boxes.' 
+      }
+    ],
     loss: 'L_total = L_focal + 1.0·L_offset + 0.1·L_size',
     formula: 'Center = argmax(Heatmap) + (δx, δy) · Stride',
-    handoff: 'Outputs stabilized 256×256 vortex center crop to Deep Dvorak',
-    layers: [
-      { name: '4-Channel Radiance Stem', shape: '512×512×4 ➔ 128×128×96', type: 'Stem Conv' },
-      { name: 'ConvNeXt Inverted Bottlenecks', shape: 'Stage 1-4 Feature Hierarchy', type: 'Backbone' },
-      { name: 'Deformable Conv (DCNv2)', shape: 'Spiral Rainband Deformable Sampling', type: 'Neck' },
-      { name: 'Sub-Pixel Keypoint Head', shape: '128×128 Heatmap + Continuous Float (dx, dy)', type: 'Head' }
-    ],
-    details: [
-      'Eliminates anchor box tuning and NMS computational bottlenecks',
-      'Modified focal loss actively resolves 99.99% background ocean pixel imbalance',
-      'Continuous sub-pixel float offsets restore exact geometric vortex coordinates',
-      'Feeds eye-stabilized 256×256 radiance crop to downstream intensity models'
-    ]
+    handoff: 'Outputs stabilized 256×256 vortex center crop to Deep Dvorak ConvNeXt'
   },
-  {
-    id: 2,
+  dvorak: {
     key: 'dvorak',
-    stepNum: 'STAGE 02 // 04',
-    name: 'Deep Dvorak ConvNeXt-V2',
-    shortName: 'Deep Dvorak',
-    role: 'Automated Intensity Estimation',
-    framework: 'PyTorch · ConvNeXt-V2 + GRN',
+    stageNum: '02 / 04',
+    name: 'Deep Dvorak ConvNeXt',
+    role: 'Automated Intensity Estimation & Thermal Contrast (ΔT)',
+    framework: 'PyTorch · ConvNeXt + GRN',
     icon: Gauge,
-    latency: '16.4 ms',
-    memory: '1.6 GB VRAM',
-    flops: '28.6 GFLOPs',
     benchmarkBadge: '4.8 kts MAE · 0.89 Kappa',
-    inputTensor: '(B, 4, 256, 256) Eye-Centered Crop',
-    outputTensor: 'MSW (kts), Central Pressure (hPa), 7 IMD Stages',
+    stats: [
+      { label: 'GPU LATENCY', value: '16.4 ms', sub: 'FP16 TensorRT', color: 'text-[#E04A31]' },
+      { label: 'MEMORY VRAM', value: '1.6 GB', sub: 'Batch Size = 1', color: 'text-white' },
+      { label: 'COMPUTE FLOPS', value: '28.6 GFLOPs', sub: 'Single Frame', color: 'text-[#C3864D]' },
+      { label: 'THROUGHPUT', value: '61.0 FPS', sub: 'Streaming Ingestion', color: 'text-emerald-400' }
+    ],
+    layers: [
+      { 
+        name: 'Eye-Centered Radiance Stem', 
+        shape: '256×256×4 ➔ 64×64×128', 
+        desc: 'Receives the stabilized 256×256 storm core patch centered on the CenterNet circulation fix.' 
+      },
+      { 
+        name: '7×7 Depthwise Convolutions', 
+        shape: 'Thermal Contrast Extraction', 
+        desc: 'Quantifies temperature contrast (ΔT) between the warm central eye and the dense convective eyewall ring.' 
+      },
+      { 
+        name: 'Global Response Normalization', 
+        shape: 'GRN Redundancy Suppression', 
+        desc: 'Eliminates redundant atmospheric spectral activations and prevents dead-neuron channel saturation.' 
+      },
+      { 
+        name: 'Dual Regression & Classifier', 
+        shape: 'Wind + Pressure + 7 Classes', 
+        desc: 'Jointly outputs continuous wind speed, central pressure deficit, and official 7-stage IMD classification.' 
+      }
+    ],
     loss: 'L_intensity = L_MSE(wind, pres) + 0.4·L_CE(category)',
     formula: 'ΔT = T_eye - T_eyewall ➔ MSW = W_reg · FeatureVector + b',
-    handoff: 'Passes 1024-D spatial vortex embedding to ConvLSTM temporal queue',
-    layers: [
-      { name: 'Eye-Centered Radiance Stem', shape: '256×256×4 ➔ 64×64×128', type: 'Input Stem' },
-      { name: '7×7 Depthwise Convolutions', shape: 'Broad Curvature Feature Extraction', type: 'Backbone' },
-      { name: 'Global Response Normalization', shape: 'Suppresses Inter-Channel Redundancy', type: 'GRN Block' },
-      { name: 'Dual Regression & Classifier', shape: 'Wind (kts) + Pressure (hPa) + 7 Classes', type: 'Multi-Head' }
-    ],
-    details: [
-      '7×7 depthwise convolutions model broad spiral rainband curvature',
-      'Automates Vernon Dvorak subjective gradient analysis (Warm Eye vs Cold Eyewall)',
-      '1024-dimensional shared latent representation simultaneously outputs speed & pressure',
-      'Trained on 10+ years of INSAT-3D radiances coupled with NOAA IBTrACS consensus'
-    ]
+    handoff: 'Passes 1024-D spatial vortex embedding to ConvLSTM temporal queue'
   },
-  {
-    id: 3,
+  convlstm: {
     key: 'convlstm',
-    stepNum: 'STAGE 03 // 04',
+    stageNum: '03 / 04',
     name: 'ConvLSTM Spatiotemporal Forecaster',
-    shortName: 'ConvLSTM',
-    role: '48-Hour Track Forecasting',
+    role: '48-Hour Kinematic Track & Uncertainty Cones',
     framework: 'PyTorch · Recurrent 2D Convolutions',
     icon: GitBranch,
-    latency: '22.1 ms',
-    memory: '2.1 GB VRAM',
-    flops: '44.8 GFLOPs',
     benchmarkBadge: '88.4 km 24h Track Error',
-    inputTensor: '(B, 4, 4, 256, 256) 4 Sequential 6h Timesteps',
-    outputTensor: '+6h, +12h, +24h, +48h Coordinates & Cone Polygons',
+    stats: [
+      { label: 'GPU LATENCY', value: '22.1 ms', sub: 'FP16 TensorRT', color: 'text-[#E04A31]' },
+      { label: 'MEMORY VRAM', value: '2.1 GB', sub: 'Batch Size = 1', color: 'text-white' },
+      { label: 'COMPUTE FLOPS', value: '44.8 GFLOPs', sub: 'Single Frame', color: 'text-[#C3864D]' },
+      { label: 'THROUGHPUT', value: '45.2 FPS', sub: 'Streaming Ingestion', color: 'text-emerald-400' }
+    ],
+    layers: [
+      { 
+        name: 'Temporal Sequence Queue', 
+        shape: '4× (256×256×4) Past 24h', 
+        desc: 'Queues 4 sequential 6-hourly observation frames (T-18h, T-12h, T-6h, T0) to model atmospheric steering momentum.' 
+      },
+      { 
+        name: 'Bidirectional ConvLSTM Cells', 
+        shape: 'Hidden State H_t & Cell C_t', 
+        desc: 'Maintains 2D spatial feature representations inside recurrent memory gates across temporal transitions.' 
+      },
+      { 
+        name: 'Vortex Kinematic Autoencoder', 
+        shape: 'Gyre Angular Momentum', 
+        desc: 'Encodes steering currents and seasonal monsoon trough interactions into invariant motion vectors.' 
+      },
+      { 
+        name: 'Haversine Multi-Step Projector', 
+        shape: '+6h, +12h, +24h, +48h Vectors', 
+        desc: 'Projects future coordinate trajectories and generates expanding cone of uncertainty polygons.' 
+      }
+    ],
     loss: 'L_track = Σ Haversine(predicted_coords, true_coords)',
     formula: 'H_t = ConvLSTM(X_t, H_t-1) ➔ LinearDecoder(H_4)',
-    handoff: 'Outputs kinematic steering momentum vectors to XGBoost ensemble',
-    layers: [
-      { name: 'Temporal Sequence Queue', shape: '4× (256×256×4) Past 24h Windows', type: 'Temporal In' },
-      { name: 'Bidirectional Spatiotemporal Cells', shape: 'Hidden State H_t & Cell State C_t', type: 'Recurrent Conv' },
-      { name: 'Vortex Kinematic Autoencoder', shape: 'Preserves Internal Gyre Angular Momentum', type: 'Bottleneck' },
-      { name: 'Haversine Multi-Step Projector', shape: '+6h, +12h, +24h, +48h Lat/Lon Vectors', type: 'Decoder' }
+    handoff: 'Outputs kinematic steering momentum vectors to XGBoost ensemble'
+  },
+  xgboost: {
+    key: 'xgboost',
+    stageNum: '04 / 04',
+    name: 'Rapid Intensification Predictor',
+    role: 'RI Probability & Coastal Landfall Risk',
+    framework: 'XGBoost · SHAP Interpretable Trees',
+    icon: Zap,
+    benchmarkBadge: '91.2% RI Detection POD',
+    stats: [
+      { label: 'GPU LATENCY', value: '2.4 ms', sub: 'CPU / TensorRT', color: 'text-[#E04A31]' },
+      { label: 'MEMORY VRAM', value: '80 MB', sub: 'RAM Allocation', color: 'text-white' },
+      { label: 'COMPUTE FLOPS', value: '0.02 GFLOPs', sub: 'Single Frame', color: 'text-[#C3864D]' },
+      { label: 'THROUGHPUT', value: '416 FPS', sub: 'Streaming Ingestion', color: 'text-emerald-400' }
     ],
-    details: [
-      '2D convolutions replace flat matrix ops, preserving vortex rotation across time',
-      'Retains internal atmospheric steering momentum throughout monsoon transitions',
-      'Computes expanding cone of uncertainty polygons (+12h, +24h, +48h)',
-      'Automates PostGIS ST_Intersects district landfall alerts in < 4.0 seconds'
+    layers: [
+      { 
+        name: 'Multi-Modal Ingestion', 
+        shape: '28-D Ocean & Atmospheric Features', 
+        desc: 'Ingests Sea Surface Temperature (>28°C), Vertical Wind Shear (<15 kt), Ocean Heat Content, and radiance stats.' 
+      },
+      { 
+        name: 'Gradient Boosted Forest', 
+        shape: '120 Depth-6 Tree Ensembles', 
+        desc: 'Evaluates non-linear thermodynamic tipping points that trigger explosive storm intensification.' 
+      },
+      { 
+        name: 'SHAP Feature Attribution', 
+        shape: 'Real-Time Explainability', 
+        desc: 'Calculates exact additive Shapley values for all 28 covariates in < 1.0 ms for transparent AI explanations.' 
+      },
+      { 
+        name: 'Civil Defense Risk Calibrator', 
+        shape: 'NDMA Levels 1-4 + Coastal ETA', 
+        desc: 'Maps model probabilities directly to NDMA 4-tier district disaster warning protocols and sirens.' 
+      }
+    ],
+    loss: 'Binary Cross-Entropy with Scale Pos Weight = 3.2',
+    formula: 'RI_Prob = σ(Σ Trees(SST, VWS, OHC, Eyewall_Temp, Core_ΔT))',
+    handoff: 'Generates NDMA Civil Defense evacuation alert matrix and sirens'
+  }
+};
+
+const theoreticalFormulations = {
+  math_focal: {
+    key: 'math_focal',
+    stageNum: 'THEORY 01',
+    title: 'Continuous Sub-Pixel Offset Fix',
+    subtitle: 'CenterNet Floating-Point Keypoint Heatmap Regression',
+    benchmarkBadge: '8.7 km Haversine Error',
+    lossFormula: 'L_det = L_focal(p̂, p) + 1.0 · |δ̂ - (p/R - ⌊p/R⌋)| + 0.1 · |ŝ - s|',
+    rationale: 'Bounding boxes are fundamentally designed for rigid rectangular objects, not diffuse meteorological vortices. Continuous sub-pixel regression eliminates grid quantization error completely.',
+    conventionalApproach: 'YOLO and Faster-RCNN apply integer bounding boxes, producing ±25 to 35 km spatial quantization step-error.',
+    vortexaiMethodology: 'Anchor-free CenterNet regresses continuous floating-point offsets (dx, dy) on keypoint feature heatmaps.'
+  },
+  math_balance: {
+    key: 'math_balance',
+    stageNum: 'THEORY 02',
+    title: 'Physically-Constrained Cyclostrophic Balance',
+    subtitle: 'Atkinson-Holliday Wind-Pressure Thermodynamic Loss',
+    benchmarkBadge: '0% Physical Balance Violations',
+    lossFormula: 'V_max = 6.7 · (1010 - P_min)^0.644  ➔  L_phys = |V_pred - 6.7 · (1010 - P_pred)^0.644|',
+    rationale: 'Pure black-box models frequently hallucinate non-physical states. By embedding empirical cyclostrophic balance into the multi-task loss, wind speed and central pressure deficit strictly obey atmospheric physics.',
+    conventionalApproach: 'Standard neural networks predict wind and pressure as decoupled independent heads, often predicting non-physical states.',
+    vortexaiMethodology: 'Embedded Atkinson-Holliday loss penalizes thermodynamic decoupling during training, binding wind to central pressure.'
+  },
+  math_convlstm: {
+    key: 'math_convlstm',
+    stageNum: 'THEORY 03',
+    title: 'Spatiotemporal Kinematic Trajectory Memory',
+    subtitle: 'Recurrent 2D Convolutions with Haversine Path Loss',
+    benchmarkBadge: '88.4 km 24h Track Error',
+    lossFormula: 'L_track = Σ_{k ∈ {6,12,24,48}} Haversine(Coord̂_{t+k}, Coord_{t+k})',
+    rationale: 'Flattened 1D sequence models destroy 2D vortex morphology. Recurrent 2D convolutional memory preserves internal rotational gyre angular momentum through monsoon transitions.',
+    conventionalApproach: 'Standard RNNs and transformers destroy 2D spatial vortex morphology, losing internal cyclonic rotation and steering physics.',
+    vortexaiMethodology: 'Bidirectional ConvLSTM cells retain 2D spatial feature maps inside recurrent hidden state gates across 4 sequential 6h observation frames.'
+  },
+  math_shap: {
+    key: 'math_shap',
+    stageNum: 'THEORY 04',
+    title: 'SHAP Feature Risk Attribution Trees',
+    subtitle: 'Real-Time Rapid Intensification Explainability Matrix',
+    benchmarkBadge: '91.2% POD · 28 Covariates',
+    lossFormula: 'φ_i(x) = Σ_{S ⊆ F \\ {i}} [|S|!(|F| - |S| - 1)! / |F|!] · [f(S ∪ {i}) - f(S)]',
+    rationale: 'Civil defense evacuations demand explainable AI. Real-time Shapley additive explanations decompose rapid intensification risk into physical covariates, giving commanders transparent early warning lead time.',
+    conventionalApproach: 'Black-box deep neural networks give probability scores without explaining the underlying thermodynamic causes.',
+    vortexaiMethodology: 'Shapley additive explanations calculate exact additive contributions for every atmospheric factor in real time (< 2.4 ms).'
+  }
+};
+
+const menuItems = [
+  {
+    label: 'Vision & Perception',
+    children: [
+      { value: 'centernet', label: '01 · CenterNet Locator', icon: Target02Icon },
+      { value: 'dvorak', label: '02 · Deep Dvorak ConvNeXt', icon: Activity01Icon },
     ]
   },
   {
-    id: 4,
-    key: 'xgboost',
-    stepNum: 'STAGE 04 // 04',
-    name: 'XGBoost Rapid Intensification (RI)',
-    shortName: 'XGBoost RI',
-    role: 'Sudden Burst Warning',
-    framework: 'XGBoost · Gradient Boosted Ensemble',
-    icon: Zap,
-    latency: '1.9 ms',
-    memory: '120 MB RAM',
-    flops: '0.04 GFLOPs',
-    benchmarkBadge: '0.78 F1-Score · 0.91 AUC-ROC',
-    inputTensor: '7 Tabular Environmental & Thermal Radiance Features',
-    outputTensor: 'RI Event Probability: 0% to 100% (High Risk Alert)',
-    loss: 'Second-Order Gradient Boosted Binary Logloss',
-    formula: 'P(RI) = σ(Σ Trees(ΔT, SST, VWS, Coriolis, Div850))',
-    handoff: 'Generates final coastal evacuation alert trigger for disaster authority',
-    layers: [
-      { name: 'Thermal & Dynamic Feature Fusion', shape: 'Cloud-Top Cooling + SST + Shear Vectors', type: 'Feature Store' },
-      { name: 'Scale-Weight Gradient Boosters', shape: '250 Trees, Max Depth 6, Learning Rate 0.05', type: 'Tree Ensemble' },
-      { name: 'Class Imbalance Calibrator', shape: '10:1 Scale-Pos-Weight Compensation', type: 'Weighting' },
-      { name: 'Sigmoidal Probability Gate', shape: 'Binary RI Threshold Trigger (≥ 30 kts / 24h)', type: 'Output' }
-    ],
-    details: [
-      'Identifies critical rapid intensification bursts (≥ 30 knots jump within 24 hours)',
-      'Fuses multi-spectral cloud-top cooling rates with ECMWF ERA5 Sea Surface Temp',
-      'scale_pos_weight parameter counteracts the extreme 10:1 class rarity imbalance',
-      'Provides emergency response commanders with critical early evacuation lead time'
+    label: 'Forecasting & Kinematics',
+    children: [
+      { value: 'convlstm', label: '03 · ConvLSTM 48h Track', icon: Route01Icon },
+      { value: 'xgboost', label: '04 · XGBoost RI Predictor', icon: FlashIcon },
+    ]
+  },
+  {
+    label: 'Theoretical Objectives',
+    children: [
+      { value: 'math_focal', label: 'Sub-Pixel Offset Fix', icon: Layers01Icon },
+      { value: 'math_balance', label: 'Atkinson-Holliday Balance', icon: AiBrain05Icon },
+      { value: 'math_convlstm', label: 'Haversine Path Loss', icon: AiChipIcon },
+      { value: 'math_shap', label: 'SHAP Feature Trees', icon: ChartHistogramIcon },
     ]
   }
 ];
 
 export default function ModelArchitectureSection() {
-  const [selectedModelId, setSelectedModelId] = useState(1);
+  const [activeKey, setActiveKey] = useState('centernet');
+  const [hasCopied, setHasCopied] = useState(false);
 
-  const activeModel = models.find(m => m.id === selectedModelId) || models[0];
-  const ActiveIcon = activeModel.icon;
+  const isModel = Boolean(models[activeKey]);
+  const activeModel = models[activeKey] || models.centernet;
+  const activeTheory = theoreticalFormulations[activeKey];
+  const ActiveIcon = isModel ? activeModel.icon : Scale;
+
+  const handleCopyFormula = (text) => {
+    navigator.clipboard?.writeText(text);
+    setHasCopied(true);
+    setTimeout(() => setHasCopied(false), 2000);
+  };
 
   return (
     <section 
       id="models" 
-      className="relative py-20 border-y border-zinc-200 bg-[#fafafa] text-zinc-900 overflow-hidden"
+      className="relative py-20 border-y border-[#64104E]/40 bg-[#08050c] text-white"
     >
-      {/* Precision Blueprint Grid Pattern (Light Theme) */}
-      <div 
-        className="absolute inset-0 opacity-40 pointer-events-none" 
-        style={{
-          backgroundImage: 'radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px)',
-          backgroundSize: '24px 24px'
-        }}
-      />
-      
+      {/* Background ambient lighting */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-grid-pattern opacity-45" />
+        <div className="absolute top-1/4 -left-20 w-[450px] h-[450px] bg-[#64104E]/20 rounded-full blur-[160px]" />
+        <div className="absolute bottom-10 right-10 w-[450px] h-[450px] bg-[#E04A31]/12 rounded-full blur-[160px]" />
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Clean Section Header */}
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-white border border-zinc-300 text-[10px] font-mono tracking-widest text-zinc-700 shadow-2xs mb-2.5">
-            <Binary className="w-3.5 h-3.5 text-zinc-900" />
-            <span>THE 4 SCIENTIFIC PILLARS · END-TO-END PIPELINE</span>
+        
+        {/* Clean, Direct Section Header (No noisy subheadings) */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 pb-6 border-b border-[#64104E]/30 gap-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-mono tracking-tight text-white">
+              Modular Deep Learning Stack
+            </h2>
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-400 font-sans max-w-2xl leading-relaxed">
+              Four specialized neural architectures chained into an automated meteorological pipeline. Select any stage from the tree to inspect.
+            </p>
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-zinc-950 font-mono">
-            Modular Deep Learning Stack.
-          </h2>
-          <p className="mt-2 text-xs sm:text-sm text-zinc-600 max-w-2xl leading-relaxed font-sans">
-            Four specialized neural architectures chained into a synchronized meteorological pipeline.
-          </p>
+
+          <div className="font-mono text-xs text-slate-400 shrink-0">
+            <span className="text-[#E04A31] font-bold">52.7 ms</span> End-to-End Pipeline Latency
+          </div>
         </div>
 
-        {/* 4 Pipeline Stages in One Clean Compact Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 relative mb-6">
-          {models.map((m, idx) => {
-            const isSelected = selectedModelId === m.id;
-            const MIcon = m.icon;
-            return (
-              <div key={m.id} className="relative flex flex-col">
-                <button
-                  onClick={() => setSelectedModelId(m.id)}
-                  className={`text-left px-3.5 py-2.5 transition-all relative border flex items-center justify-between gap-2.5 h-full group cursor-pointer ${
-                    isSelected
-                      ? 'bg-zinc-950 text-white border-zinc-950 shadow-md'
-                      : 'bg-white text-zinc-900 border-zinc-200 hover:border-zinc-350 hover:bg-zinc-50/80 shadow-2xs'
-                  }`}
-                >
-                  {/* Left: Icon + Stage 0X + Name */}
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-7 h-7 flex items-center justify-center shrink-0 border transition-colors ${
-                      isSelected 
-                        ? 'bg-white text-zinc-950 border-white' 
-                        : 'bg-zinc-100 text-zinc-600 border-zinc-200 group-hover:border-zinc-300'
-                    }`}>
-                      <MIcon className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-[10px] font-mono font-bold ${
-                          isSelected ? 'text-zinc-400' : 'text-zinc-500'
-                        }`}>
-                          0{m.id}
-                        </span>
-                        <span className={`text-xs font-bold truncate ${
-                          isSelected ? 'text-white' : 'text-zinc-950'
-                        }`}>
-                          {m.name}
-                        </span>
-                      </div>
-                      <div className={`text-[10px] truncate ${
-                        isSelected ? 'text-zinc-300' : 'text-zinc-500'
-                      }`}>
-                        {m.role}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: Latency badge */}
-                  <div className="text-right shrink-0 font-mono text-[10px]">
-                    <span className={`px-1.5 py-0.5 border text-[10px] ${
-                      isSelected 
-                        ? 'bg-zinc-800 border-zinc-700 text-zinc-200 font-semibold' 
-                        : 'bg-zinc-100 border-zinc-200 text-zinc-600'
-                    }`}>
-                      {m.latency}
-                    </span>
-                  </div>
-
-                  {/* Active Indicator Bar */}
-                  {isSelected && (
-                    <div className="absolute -bottom-[1px] inset-x-0 h-0.5 bg-zinc-950" />
-                  )}
-                </button>
-
-                {/* Flow Connector Arrow to next stage (Desktop) */}
-                {idx < models.length - 1 && (
-                  <div className="hidden lg:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-20 items-center justify-center w-5 h-5 bg-white border border-zinc-300 rounded-full text-zinc-500 shadow-2xs">
-                    <ChevronRight className="w-3 h-3 text-zinc-500" />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Detailed Architecture Inspection Bay for Selected Node */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeModel.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18 }}
-            className="p-6 bg-white border border-zinc-200 shadow-md relative text-zinc-900"
-          >
-            {/* Tactical Corner Crosshairs */}
-            <span className="absolute top-1 left-1.5 font-mono text-[9px] text-zinc-400 pointer-events-none select-none">+</span>
-            <span className="absolute top-1 right-1.5 font-mono text-[9px] text-zinc-400 pointer-events-none select-none">+</span>
-            <span className="absolute bottom-1 left-1.5 font-mono text-[9px] text-zinc-400 pointer-events-none select-none">+</span>
-            <span className="absolute bottom-1 right-1.5 font-mono text-[9px] text-zinc-400 pointer-events-none select-none">+</span>
-
-            {/* Model Title & Tags Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-zinc-200">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-zinc-950 text-white flex items-center justify-center font-bold shadow-xs">
-                  <ActiveIcon className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider">
-                    {activeModel.stepNum} · {activeModel.role}
-                  </div>
-                  <h3 className="text-xl font-bold text-zinc-950 tracking-tight font-mono">
-                    {activeModel.name}
-                  </h3>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 font-mono text-xs">
-                <span className="px-2.5 py-1 bg-zinc-100 border border-zinc-200 text-zinc-700 text-[11px] font-medium">
-                  {activeModel.framework}
-                </span>
-                <span className="px-2.5 py-1 bg-zinc-100 border border-zinc-300 text-zinc-950 font-semibold text-[11px] flex items-center gap-1.5 shadow-2xs">
-                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-700" />
-                  <span>{activeModel.benchmarkBadge}</span>
-                </span>
-              </div>
+        {/* Master Workstation: Tree on Left, Clean Divider, Free Open Content on Right (NO BOXES) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          
+          {/* Left Column: Free-Floating BranchedMenu Tree (No box) */}
+          <div className="lg:col-span-4 pr-0 lg:pr-4">
+            <div className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider mb-3">
+              NEURAL ARCHITECTURE TOPOLOGY
             </div>
 
-            {/* Two-Column Deep Inspection Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-6 items-start">
-              {/* Left Column: Layer Hierarchy Anatomy */}
-              <div className="lg:col-span-6 space-y-4">
-                <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider flex items-center gap-1.5 font-semibold">
-                  <Layers className="w-3 h-3 text-zinc-900" />
-                  <span>NEURAL LAYER BREAKDOWN &amp; TENSOR FLOW</span>
-                </div>
+            <div className="py-1">
+              <BranchedMenu
+                items={menuItems}
+                defaultOpen={[0, 1, 2]}
+                defaultActive={activeKey}
+                onSelect={(val) => setActiveKey(val)}
+                color="#f8fafc"
+                accentColor="#E04A31"
+                lineColor="#64104E"
+                width={320}
+                rowHeight={38}
+                indent={38}
+                trunk={14}
+                radius={10}
+                lineWidth={1.5}
+                fontSize={13}
+                drawDuration={320}
+                foldDuration={260}
+              />
+            </div>
+          </div>
 
-                <div className="space-y-2 font-mono text-xs">
-                  {activeModel.layers.map((layer, lIdx) => (
-                    <div 
-                      key={lIdx}
-                      className="p-3 bg-zinc-50/90 border border-zinc-200 flex items-center justify-between gap-3 hover:border-zinc-300 transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-[10px] text-zinc-400 font-bold">0{lIdx + 1}</span>
-                        <div>
-                          <div className="text-zinc-950 font-bold">{layer.name}</div>
-                          <div className="text-[10px] text-zinc-500">{layer.type}</div>
-                        </div>
+          {/* Right Column: Free Open Content with Single Vertical Divider (NO BOXES) */}
+          <div className="lg:col-span-8 pl-0 lg:pl-10 border-t lg:border-t-0 lg:border-l border-[#64104E]/30 pt-6 lg:pt-0">
+            <AnimatePresence mode="wait">
+              {isModel ? (
+                /* Single Active Model View (Clean, open, breathable, NO nested boxes) */
+                <motion.div
+                  key={activeModel.key}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18 }}
+                  className="space-y-6"
+                >
+                  {/* Model Header */}
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                      <div className="text-xs font-mono font-bold text-[#E04A31] tracking-wider uppercase">
+                        STAGE {activeModel.stageNum} · {activeModel.role}
                       </div>
-                      <span className="text-[11px] text-zinc-800 bg-white px-2.5 py-0.5 border border-zinc-200 font-mono shadow-2xs truncate max-w-[200px]">
-                        {layer.shape}
+                      <div className="flex items-center gap-2 font-mono text-xs">
+                        <span className="px-2.5 py-0.5 bg-[#170c24] text-slate-300 text-[11px] rounded border border-[#64104E]/40">
+                          {activeModel.framework}
+                        </span>
+                        <span className="px-2.5 py-0.5 bg-[#241026] text-[#fbcfe8] font-bold text-[11px] rounded border border-[#B43067]/50 flex items-center gap-1">
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#E04A31]" />
+                          <span>{activeModel.benchmarkBadge}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <h3 className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-white">
+                      {activeModel.name}
+                    </h3>
+                  </div>
+
+                  {/* Open Telemetry Stats Row (Clean hairline dividers, NO BOXES) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-4 border-y border-[#64104E]/25 font-mono">
+                    {activeModel.stats.map((s, idx) => (
+                      <div key={idx} className={idx > 0 ? 'sm:border-l sm:border-[#64104E]/25 sm:pl-4' : ''}>
+                        <div className="text-[10px] text-slate-400 font-semibold uppercase">{s.label}</div>
+                        <div className={`text-xl font-bold mt-0.5 ${s.color}`}>{s.value}</div>
+                        <div className="text-[10px] text-slate-400">{s.sub}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Neural Layers Pipeline (Connected Vertical Spine, NO BOXES) */}
+                  <div className="space-y-3 pt-1">
+                    <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-bold flex items-center gap-2">
+                      <Layers className="w-3.5 h-3.5 text-[#E04A31]" />
+                      <span>NEURAL LAYER HIERARCHY &amp; TENSOR TRANSFORMATIONS</span>
+                    </div>
+
+                    <div className="relative pl-6 space-y-4 before:content-[''] before:absolute before:left-2 before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-[#E04A31] before:via-[#B43067] before:to-[#64104E]">
+                      {activeModel.layers.map((layer, lIdx) => (
+                        <div key={lIdx} className="relative group">
+                          <span className="absolute -left-[23px] top-1.5 w-3 h-3 rounded-full bg-[#08050c] border-2 border-[#E04A31]" />
+                          <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold text-[#E04A31]">0{lIdx + 1}</span>
+                              <span className="text-sm font-mono font-bold text-white">{layer.name}</span>
+                            </div>
+                            <span className="text-xs font-mono text-[#C3864D] font-semibold">{layer.shape}</span>
+                          </div>
+                          <p className="text-xs text-slate-300 font-sans mt-0.5 leading-relaxed">
+                            {layer.desc}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Mathematical Loss Formulation (Clean left-accent bar, NO BOXES) */}
+                  <div className="pl-4 border-l-2 border-[#E04A31] space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold">
+                        OBJECTIVE LOSS CRITERION &amp; FORMULATION
+                      </span>
+                      <button 
+                        onClick={() => handleCopyFormula(activeModel.loss)}
+                        className="text-[11px] font-mono text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        {hasCopied ? <CheckCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{hasCopied ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    
+                    <div className="text-sm font-mono font-semibold text-white tracking-tight">
+                      {activeModel.loss}
+                    </div>
+                    <div className="text-xs font-mono text-[#C3864D]">
+                      {activeModel.formula}
+                    </div>
+                  </div>
+
+                  {/* Downstream Handoff */}
+                  <div className="pt-3 border-t border-[#64104E]/25 flex items-center justify-between text-xs font-mono text-slate-400">
+                    <div>
+                      <span className="text-[#C3864D] font-bold text-[10px] uppercase mr-2">HANDOFF:</span>
+                      <span className="text-slate-200">{activeModel.handoff}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                /* Single Active Theoretical Formulation View */
+                <motion.div
+                  key={activeTheory.key}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18 }}
+                  className="space-y-6"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                      <div className="text-xs font-mono font-bold text-[#E04A31] tracking-wider uppercase">
+                        {activeTheory.stageNum} · ATMOSPHERIC PHYSICS FOUNDATION
+                      </div>
+                      <span className="px-2.5 py-0.5 bg-[#241026] text-[#fbcfe8] font-bold text-[11px] rounded border border-[#B43067]/50">
+                        {activeTheory.benchmarkBadge}
                       </span>
                     </div>
-                  ))}
-                </div>
 
-                <div className="p-3 bg-zinc-50 border border-zinc-200 font-mono text-xs flex items-center justify-between text-zinc-600">
-                  <span className="font-bold text-zinc-800 text-[10px]">DOWNSTREAM HANDOFF:</span>
-                  <span className="text-zinc-950 text-right text-[11px] max-w-sm truncate font-medium">{activeModel.handoff}</span>
-                </div>
-              </div>
-
-              {/* Right Column: Mathematical Formulation & Telemetry */}
-              <div className="lg:col-span-6 space-y-4">
-                <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider flex items-center gap-1.5 font-semibold">
-                  <Terminal className="w-3 h-3 text-zinc-900" />
-                  <span>MATHEMATICAL LOSS &amp; HARDWARE FOOTPRINT</span>
-                </div>
-
-                {/* Math Formula Card */}
-                <div className="p-4 bg-zinc-50/90 border border-zinc-200 font-mono text-xs space-y-3">
-                  <div>
-                    <div className="text-[10px] text-zinc-500 uppercase font-semibold">OBJECTIVE LOSS FUNCTION:</div>
-                    <code className="block mt-1 text-zinc-950 text-xs bg-white p-2.5 border border-zinc-200 shadow-2xs font-semibold">
-                      {activeModel.loss}
-                    </code>
-                  </div>
-
-                  <div>
-                    <div className="text-[10px] text-zinc-500 uppercase font-semibold">MATHEMATICAL FORMULATION:</div>
-                    <code className="block mt-1 text-zinc-800 text-xs bg-white p-2.5 border border-zinc-200 shadow-2xs font-semibold">
-                      {activeModel.formula}
-                    </code>
-                  </div>
-                </div>
-
-                {/* Hardware Profiler Matrix */}
-                <div className="grid grid-cols-3 gap-2 font-mono text-xs text-center">
-                  <div className="p-2.5 bg-zinc-50 border border-zinc-200">
-                    <div className="text-[9px] text-zinc-500 uppercase font-semibold">GPU LATENCY</div>
-                    <div className="text-zinc-950 font-bold text-sm mt-0.5">{activeModel.latency}</div>
-                    <div className="text-[9px] text-zinc-500">FP16 TensorRT</div>
-                  </div>
-                  <div className="p-2.5 bg-zinc-50 border border-zinc-200">
-                    <div className="text-[9px] text-zinc-500 uppercase font-semibold">MEMORY VRAM</div>
-                    <div className="text-zinc-950 font-bold text-sm mt-0.5">{activeModel.memory}</div>
-                    <div className="text-[9px] text-zinc-500">Batch Size = 1</div>
-                  </div>
-                  <div className="p-2.5 bg-zinc-50 border border-zinc-200">
-                    <div className="text-[9px] text-zinc-500 uppercase font-semibold">COMPUTE FLOPs</div>
-                    <div className="text-zinc-950 font-bold text-sm mt-0.5">{activeModel.flops}</div>
-                    <div className="text-[9px] text-zinc-500">Per Frame Pass</div>
-                  </div>
-                </div>
-
-                {/* Scientific Highlights */}
-                <div className="space-y-2">
-                  {activeModel.details.slice(0, 2).map((detail, dIdx) => (
-                    <div key={dIdx} className="flex items-start gap-2 text-xs text-zinc-800 bg-zinc-50 border border-zinc-200 p-2.5 font-sans leading-relaxed">
-                      <Check className="w-3.5 h-3.5 text-zinc-950 shrink-0 mt-0.5" />
-                      <span>{detail}</span>
+                    <h3 className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-white">
+                      {activeTheory.title}
+                    </h3>
+                    <div className="text-xs font-sans text-[#C3864D] font-medium mt-0.5">
+                      {activeTheory.subtitle}
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+                  </div>
+
+                  {/* Mathematical Loss Formula */}
+                  <div className="pl-4 border-l-2 border-[#B43067] space-y-1.5 py-1">
+                    <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold">
+                      PHYSICALLY-CONSTRAINED LOSS FORMULATION
+                    </div>
+                    <div className="text-sm font-mono font-semibold text-white">
+                      {activeTheory.lossFormula}
+                    </div>
+                  </div>
+
+                  {/* Intuition & Rationale */}
+                  <p className="text-xs sm:text-sm text-slate-300 font-sans leading-relaxed">
+                    {activeTheory.rationale}
+                  </p>
+
+                  {/* Comparative Contrast */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-xs font-sans border-t border-[#64104E]/25">
+                    <div>
+                      <span className="text-rose-400 font-mono font-bold block text-[10px] uppercase mb-1">
+                        ✕ Conventional Approach
+                      </span>
+                      <span className="text-slate-400 leading-relaxed">{activeTheory.conventionalApproach}</span>
+                    </div>
+                    <div>
+                      <span className="text-emerald-400 font-mono font-bold block text-[10px] uppercase mb-1">
+                        ✓ VortexAI Methodology
+                      </span>
+                      <span className="text-slate-200 leading-relaxed">{activeTheory.vortexaiMethodology}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+        </div>
       </div>
     </section>
   );
