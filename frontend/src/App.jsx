@@ -1,4 +1,3 @@
-/* Root App Stage 1 */
 import React, { useState, useEffect, Component } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
