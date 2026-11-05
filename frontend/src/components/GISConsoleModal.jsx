@@ -1,4 +1,4 @@
-/* Stage 1: Geostationary Grid */
+/* Stage 2: On-Map Controls */
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   RefreshCw, 
