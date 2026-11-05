@@ -1,4 +1,4 @@
-/* Stage 2: On-Map Controls */
+/* Stage 3: Dynamic Streamlines */
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   RefreshCw, 
