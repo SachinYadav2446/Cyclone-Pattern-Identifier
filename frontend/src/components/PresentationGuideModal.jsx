@@ -86,7 +86,7 @@ export default function PresentationGuideModal({ isOpen, onClose }) {
                 </span>
               </div>
               <p className="text-xs text-zinc-400 font-sans">
-                Interactive step-by-step walkthrough to present DeepCyclone to judges and evaluators.
+                Interactive step-by-step walkthrough to present vortexAI to judges and evaluators.
               </p>
             </div>
           </div>
