@@ -97,6 +97,14 @@ def get_atmospheric_point(lat: float = 19.35, lon: float = 85.69):
     """
     return get_point_atmospheric_data(lat=lat, lon=lon)
 
+@app.get("/api/v1/live/atmospheric-stations")
+def get_atmospheric_stations():
+    """
+    Returns real-time atmospheric readings (Temperature, Humidity, Wind, SST)
+    for all meteorological reference stations across South Asia (Zoom Earth style).
+    """
+    return get_all_stations_atmospheric_data()
+
 @app.post("/api/v1/live/trigger-scan")
 def trigger_live_scan(channel: str = "ir1", mode: str = "storm"):
     """Force an immediate satellite downlink pull and re-analyze."""
