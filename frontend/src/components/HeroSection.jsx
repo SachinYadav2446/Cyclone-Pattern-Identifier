@@ -31,7 +31,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
           {/* ============================================================== */}
           {/* 1. DESKTOP: EXACT FLUID CURVED MEDIA BACKDROP FROM WIREFRAME   */}
           {/* ============================================================== */}
-          <div className="hidden lg:block absolute inset-0 z-0">
+          <div className="hidden lg:block absolute inset-0 z-0 animate-hero-earth">
             <div 
               className="w-full h-full bg-[#06040a] transition-colors overflow-hidden relative"
               style={{ clipPath: 'url(#hero-wireframe-curve)' }}
@@ -73,7 +73,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
 
           {/* Crisp Hairline Contour Stroke: Right border removed, top & bottom borders fading away */}
           <svg 
-            className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-10" 
+            className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-10 animate-hero-earth" 
             viewBox="0 0 1000 600" 
             preserveAspectRatio="none"
           >
@@ -123,7 +123,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
           {/* ============================================================== */}
           {/* 2. BOTTOM-RIGHT ANGLED HUD CARD WITH 3D ISOMETRIC CYLINDER     */}
           {/* ============================================================== */}
-          <div className="hidden lg:flex absolute bottom-5 right-5 xl:bottom-7 xl:right-7 bg-[#0d0714]/95 backdrop-blur-xl border border-[#64104E]/80 rounded-2xl p-4 text-white shadow-2xl items-center gap-4 z-30 select-none">
+          <div className="hidden lg:flex absolute bottom-5 right-5 xl:bottom-7 xl:right-7 bg-[#0d0714]/95 backdrop-blur-xl border border-[#64104E]/80 rounded-2xl p-4 text-white shadow-2xl items-center gap-4 z-30 select-none animate-hero-hud">
             {/* 3D Isometric Cylinder matching the wireframe */}
             <div className="w-12 h-14 shrink-0 flex items-center justify-center">
               <svg className="w-full h-full text-[#E04A31]" viewBox="0 0 48 56" fill="none">
@@ -155,7 +155,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
           <div className="relative z-20 w-full lg:max-w-[48%] pt-2 pb-6 lg:py-4 flex flex-col justify-between">
             
             {/* Top Row: Main Headline & Product Model / Spec Divider (Drops with bounce) */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-[#64104E]/50">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-[#64104E]/50 animate-hero-drop">
               <div className="flex-1">
                 <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-black tracking-tight text-white leading-[1.14] font-mono">
                   Autonomous Sub-Pixel{' '}
@@ -180,7 +180,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
             </div>
 
             {/* Middle Row: Visual Thumbnail Box + Clear Description + Action Buttons (Drops with bounce) */}
-            <div className="my-6-delayed">
+            <div className="my-6 animate-hero-drop-delayed">
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                 {/* Thumbnail Card matching wireframe image placeholder with hills/sun */}
                 <button
@@ -233,7 +233,7 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
             </div>
 
             {/* Mobile/Tablet View for Media: Shown below content on smaller screens */}
-            <div className="lg:hidden mt-4 relative rounded-3xl bg-[#060a12] border border-[#64104E]/60 min-h-[320px] overflow-hidden flex items-center justify-center">
+            <div className="lg:hidden mt-4 relative rounded-3xl bg-[#060a12] border border-[#64104E]/60 min-h-[320px] overflow-hidden flex items-center justify-center animate-hero-earth">
               <img
                 src="/images/cyclone_earth_globe.png"
                 alt="Cyclone Vortex Over Earth"
