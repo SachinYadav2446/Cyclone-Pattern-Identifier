@@ -1,3 +1,4 @@
+/* Stage 1: Benchmark Matrix */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Award, TrendingUp, BarChart3, Check, Filter, ShieldCheck, Zap } from 'lucide-react';
@@ -106,35 +107,32 @@ export default function BenchmarksSection() {
     : comparisons.filter(c => c.category === selectedCategory);
 
   return (
-    <section id="benchmarks" className="relative py-20 border-y border-zinc-800/80 bg-black text-zinc-100 overflow-hidden">
+    <section id="benchmarks" className="relative py-20 border-y border-[#64104E]/40 bg-[#08050c] text-white overflow-hidden">
       {/* Precision ambient background elements */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-45 pointer-events-none" />
+      <div className="absolute top-1/2 right-10 w-[450px] h-[450px] bg-[#64104E]/20 rounded-full blur-[160px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 mb-2">
-              <Award className="w-3.5 h-3.5 text-zinc-300" />
-              <span>VALIDATION AGAINST NOAA IBTRACS GOLD STANDARD</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-white">
               Scientific Benchmark Verification.
             </h2>
-            <p className="mt-1.5 text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed font-sans">
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed font-sans">
               Rigorous empirical evaluation benchmarked across 35 years of held-out North Indian Ocean tropical cyclone best-track records and multi-agency consensus datasets.
             </p>
           </div>
 
           <div className="flex items-center gap-3 font-mono text-xs">
-            <div className="px-3.5 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center gap-2 shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              <span>AUDIT BENCHMARK: <strong className="text-white">NOAA IBTrACS v04r00</strong></span>
+            <div className="px-3.5 py-1.5 bg-[#130b1c] border border-[#64104E]/50 text-slate-300 flex items-center gap-2 shadow-lg rounded-lg">
+              <span className="w-2 h-2 rounded-full bg-[#E04A31] animate-pulse" />
+              <span>AUDIT BENCHMARK: <strong className="text-white font-bold">NOAA IBTrACS v04r00</strong></span>
             </div>
           </div>
         </div>
 
-        {/* Top 5 Key Metric Cards with Elevated Slate Surface & Glowing Tip Gauges */}
+        {/* Top 5 Key Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 mb-10 font-mono">
           {stats.map((s, i) => (
             <motion.div
@@ -143,42 +141,42 @@ export default function BenchmarksSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.25, delay: i * 0.05 }}
-              whileHover={{ y: -3, borderColor: '#52525b' }}
-              className="relative p-4 bg-zinc-950 border border-zinc-800 shadow-xl flex flex-col justify-between transition-all overflow-hidden group"
+              whileHover={{ y: -3, borderColor: '#E04A31' }}
+              className="relative p-4 bg-[#120a1c] border border-[#64104E]/50 hover:border-[#E04A31] shadow-xl flex flex-col justify-between transition-all overflow-hidden group rounded-xl"
             >
               {/* Micro Corner Plus Marks */}
-              <div className="absolute top-1.5 left-1.5 text-[8px] text-zinc-700 select-none pointer-events-none">+</div>
-              <div className="absolute top-1.5 right-1.5 text-[8px] text-zinc-700 select-none pointer-events-none">+</div>
+              <div className="absolute top-1.5 left-1.5 text-[8px] text-slate-600 select-none pointer-events-none">+</div>
+              <div className="absolute top-1.5 right-1.5 text-[8px] text-slate-600 select-none pointer-events-none">+</div>
 
               <div>
-                <div className="text-[10px] text-zinc-400 uppercase tracking-wider truncate mb-1">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider truncate mb-1 font-semibold">
                   {s.label}
                 </div>
-                <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                   {s.value}
                 </div>
-                <div className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-zinc-200 font-semibold bg-zinc-900 border border-zinc-700 px-2 py-0.5">
-                  <TrendingUp className="w-2.5 h-2.5 text-zinc-400" />
+                <div className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] text-[#E04A31] font-bold bg-[#E04A31]/15 border border-[#E04A31]/30 px-2 py-0.5 rounded">
+                  <TrendingUp className="w-2.5 h-2.5 text-[#E04A31]" />
                   <span>{s.gain}</span>
                 </div>
               </div>
 
-              {/* Progress Gauge Bar with Clean Hairline */}
-              <div className="mt-4 pt-3 border-t border-zinc-800/80 space-y-1.5">
+              {/* Progress Gauge Bar */}
+              <div className="mt-4 pt-3 border-t border-[#64104E]/30 space-y-1.5">
                 <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-zinc-500">OPERATIONAL TARGET:</span>
-                  <span className="text-zinc-300 font-bold">{s.target}</span>
+                  <span className="text-slate-400 font-semibold">TARGET:</span>
+                  <span className="text-[#C3864D] font-bold">{s.target}</span>
                 </div>
-                <div className="w-full h-1.5 bg-zinc-900 border border-zinc-800 overflow-hidden">
+                <div className="w-full h-1.5 bg-[#1b0f27] border border-[#64104E]/40 overflow-hidden rounded-full">
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: `${s.progress}%` }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6, delay: 0.2 + i * 0.08 }}
-                    className="h-full bg-gradient-to-r from-zinc-500 via-zinc-300 to-white"
+                    className="h-full bg-gradient-to-r from-[#E04A31] to-[#CF2F4B]"
                   />
                 </div>
-                <div className="text-[9px] text-zinc-500 truncate pt-0.5">
+                <div className="text-[9px] text-slate-400 truncate pt-0.5">
                   {s.metric}
                 </div>
               </div>
@@ -186,63 +184,63 @@ export default function BenchmarksSection() {
           ))}
         </div>
 
-        {/* Side-by-Side Comparison Matrix Table (Engineering Mission-Control Terminal) */}
+        {/* Side-by-Side Comparison Matrix Table */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.3 }}
-          className="border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden"
+          className="border border-[#64104E]/60 bg-[#120a1c] shadow-2xl overflow-hidden rounded-2xl"
         >
-          {/* Terminal Header Bar with Interactive Category Tabs */}
-          <div className="p-3.5 sm:p-4 bg-zinc-900 border-b border-zinc-800 font-mono text-xs flex flex-wrap items-center justify-between gap-3">
+          {/* Terminal Header Bar */}
+          <div className="p-3.5 sm:p-4 bg-[#0d0714] border-b border-[#64104E]/50 font-mono text-xs flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-zinc-600" />
-              <span className="w-2 h-2 bg-zinc-600" />
-              <span className="w-2 h-2 bg-zinc-600" />
+              <span className="w-2 h-2 rounded-full bg-slate-700" />
+              <span className="w-2 h-2 rounded-full bg-[#B43067]" />
+              <span className="w-2 h-2 rounded-full bg-[#E04A31]" />
               <span className="ml-1.5 font-bold text-white tracking-wider">
-                HEAD-TO-HEAD CAPABILITY MATRIX: DEEPCYCLONE vs LEGACY METHODS
+                CAPABILITY MATRIX: VORTEXAI vs LEGACY METHODS
               </span>
             </div>
 
             {/* Interactive Filter Pills */}
-            <div className="flex items-center gap-1 bg-black/60 border border-zinc-800 p-0.5 text-[11px]">
+            <div className="flex items-center gap-1 bg-[#1a0f28] border border-[#64104E]/50 p-0.5 text-[11px] rounded-lg shadow-sm">
               <button
                 onClick={() => setSelectedCategory('all')}
-                className={`px-2.5 py-0.5 transition-all ${
+                className={`px-2.5 py-0.5 transition-all rounded cursor-pointer ${
                   selectedCategory === 'all'
-                    ? 'bg-white text-zinc-950 font-bold shadow'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white font-bold shadow-xs'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 ALL (5)
               </button>
               <button
                 onClick={() => setSelectedCategory('accuracy')}
-                className={`px-2.5 py-0.5 transition-all ${
+                className={`px-2.5 py-0.5 transition-all rounded cursor-pointer ${
                   selectedCategory === 'accuracy'
-                    ? 'bg-white text-zinc-950 font-bold shadow'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white font-bold shadow-xs'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 ACCURACY
               </button>
               <button
                 onClick={() => setSelectedCategory('speed')}
-                className={`px-2.5 py-0.5 transition-all ${
+                className={`px-2.5 py-0.5 transition-all rounded cursor-pointer ${
                   selectedCategory === 'speed'
-                    ? 'bg-white text-zinc-950 font-bold shadow'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white font-bold shadow-xs'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 LATENCY
               </button>
               <button
                 onClick={() => setSelectedCategory('xai')}
-                className={`px-2.5 py-0.5 transition-all ${
+                className={`px-2.5 py-0.5 transition-all rounded cursor-pointer ${
                   selectedCategory === 'xai'
-                    ? 'bg-white text-zinc-950 font-bold shadow'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white font-bold shadow-xs'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 XAI
@@ -253,31 +251,31 @@ export default function BenchmarksSection() {
           {/* Responsive Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-left font-mono text-xs">
-              <thead className="bg-zinc-900/50 border-b border-zinc-800 text-[11px] text-zinc-400">
+              <thead className="bg-[#0a050f] border-b border-[#64104E]/50 text-[11px] text-slate-400">
                 <tr>
-                  <th className="px-5 py-3 font-semibold uppercase tracking-wider w-[24%]">
+                  <th className="px-5 py-3 font-bold uppercase tracking-wider w-[24%]">
                     METEOROLOGICAL CAPABILITY
                   </th>
-                  <th className="px-5 py-3 font-bold text-white bg-zinc-900 border-x border-zinc-800 w-[30%]">
+                  <th className="px-5 py-3 font-bold text-white bg-[#1c0e27]/90 border-x border-[#B43067]/40 w-[30%]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                        <span>DEEPCYCLONE AI (OURS)</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-pulse" />
+                        <span>vortexAI (OURS)</span>
                       </div>
-                      <span className="text-[9px] px-1.5 py-0.2 bg-white text-black font-bold font-mono">
+                      <span className="text-[9px] px-1.5 py-0.2 bg-[#E04A31] text-white font-bold font-mono rounded shadow-xs">
                         SOTA
                       </span>
                     </div>
                   </th>
-                  <th className="px-5 py-3 font-semibold uppercase tracking-wider w-[23%]">
+                  <th className="px-5 py-3 font-semibold uppercase tracking-wider w-[23%] text-slate-400">
                     CLASSICAL HUMAN DVORAK
                   </th>
-                  <th className="px-5 py-3 font-semibold uppercase tracking-wider w-[23%]">
+                  <th className="px-5 py-3 font-semibold uppercase tracking-wider w-[23%] text-slate-400">
                     DYNAMICAL NWP (WRF/GFS)
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/70 text-zinc-300">
+              <tbody className="divide-y divide-[#64104E]/30 text-slate-300">
                 <AnimatePresence mode="popLayout">
                   {filteredComparisons.map((c, i) => (
                     <motion.tr 
@@ -286,19 +284,19 @@ export default function BenchmarksSection() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.15 }}
-                      className="hover:bg-white/[0.02] transition-colors group"
+                      className="hover:bg-[#1a0f26]/60 transition-colors group"
                     >
                       <td className="px-5 py-3.5 font-sans font-medium text-white text-xs">
                         <div>{c.feature}</div>
-                        <div className="font-mono text-[10px] text-zinc-400 mt-0.5">
+                        <div className="font-mono text-[10px] text-[#C3864D] font-semibold mt-0.5">
                           ➔ {c.impact}
                         </div>
                       </td>
 
-                      {/* DeepCyclone AI Column (Elevated Slate Highlight) */}
-                      <td className="px-5 py-3.5 font-bold text-white bg-zinc-900/60 border-x border-zinc-800 group-hover:bg-zinc-900 transition-colors">
+                      {/* vortexAI Column */}
+                      <td className="px-5 py-3.5 font-bold text-white bg-[#1a0d24]/70 border-x border-[#B43067]/30 group-hover:bg-[#20102d]/80 transition-colors">
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white shrink-0">
+                          <div className="w-4 h-4 bg-[#E04A31] flex items-center justify-center text-white shrink-0 rounded shadow-[0_0_8px_#E04A31]">
                             <Check className="w-2.5 h-2.5" />
                           </div>
                           <span className="leading-snug">{c.deepcyclone}</span>
@@ -306,12 +304,12 @@ export default function BenchmarksSection() {
                       </td>
 
                       {/* Human Dvorak Column */}
-                      <td className="px-5 py-3.5 text-zinc-400 font-mono text-[11px] leading-snug">
+                      <td className="px-5 py-3.5 text-slate-400 font-mono text-[11px] leading-snug">
                         {c.humanDvorak}
                       </td>
 
                       {/* NWP Column */}
-                      <td className="px-5 py-3.5 text-zinc-400 font-mono text-[11px] leading-snug">
+                      <td className="px-5 py-3.5 text-slate-400 font-mono text-[11px] leading-snug">
                         {c.nwp}
                       </td>
                     </motion.tr>
@@ -322,10 +320,10 @@ export default function BenchmarksSection() {
           </div>
 
           {/* Table Footer Bar */}
-          <div className="px-5 py-2.5 bg-zinc-950 border-t border-zinc-800 font-mono text-[10px] text-zinc-400 flex flex-wrap items-center justify-between gap-3">
-            <span>AUDIT CONSENSUS: HELD-OUT 2014-2024 CYCLONE SEASONS BENCHMARKED AGAINST NOAA IBTRACS & IMD ARCHIVES</span>
-            <div className="flex items-center gap-2 text-white font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 font-mono text-[10px] text-slate-500 flex flex-wrap items-center justify-between gap-3">
+            <span>AUDIT CONSENSUS: HELD-OUT 2014-2024 CYCLONE SEASONS BENCHMARKED AGAINST NOAA IBTRACS &amp; IMD ARCHIVES</span>
+            <div className="flex items-center gap-2 text-orange-700 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-600 animate-pulse" />
               <span>SUPERIOR BENCHMARK ACHIEVED ACROSS ALL 5 OPERATIONAL VECTORS</span>
             </div>
           </div>
