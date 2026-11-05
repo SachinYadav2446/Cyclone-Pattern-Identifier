@@ -88,3 +88,25 @@
   scrollbar-color: rgba(100, 16, 78, 0.6) #08050c;
 }
 
+/* Dynamic Wind Particle Flow Streamlines (Zoom Earth Style) */
+@keyframes wind-flow {
+  0% { stroke-dashoffset: 120; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.animate-wind-flow {
+  stroke-dasharray: 6 3;
+  animation: wind-flow 3.5s linear infinite;
+}
+
+.animate-wind-flow-fast {
+  stroke-dasharray: 8 4;
+  animation: wind-flow 2.2s linear infinite;
+}
+
+.animate-wind-flow-slow {
+  stroke-dasharray: 5 3;
+  animation: wind-flow 5s linear infinite;
+}
+
+/* ========================================================================== */
