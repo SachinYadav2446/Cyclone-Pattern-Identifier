@@ -1,15 +1,14 @@
-import React, { useState, Component } from 'react';
+/* Root App Stage 1 */
+import React, { useState, useEffect, Component } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
-import EyeLocalizationWorkbench from './components/EyeLocalizationWorkbench';
+import DemoWorkbenchModal from './components/DemoWorkbenchModal';
 import ResearchNoveltySection from './components/ResearchNoveltySection';
 import PipelineSection from './components/PipelineSection';
 import ModelArchitectureSection from './components/ModelArchitectureSection';
 import DatasetSection from './components/DatasetSection';
-import BenchmarksSection from './components/BenchmarksSection';
 import Footer from './components/Footer';
 import GISConsoleModal from './components/GISConsoleModal';
-import PresentationGuideModal from './components/PresentationGuideModal';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -46,7 +45,7 @@ class ErrorBoundary extends Component {
 
 export default function App() {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
-  const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
   const [selectedWorkbenchStormId, setSelectedWorkbenchStormId] = useState('fani');
   const [livePassOverride, setLivePassOverride] = useState(null);
 
@@ -56,20 +55,22 @@ export default function App() {
     if (liveData) {
       setLivePassOverride(liveData);
     }
-    setTimeout(() => {
-      const elem = document.getElementById('workbench');
-      if (elem) {
-        elem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
+    setIsDemoOpen(true);
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] antialiased selection:bg-zinc-800 selection:text-white">
+    <div className="min-h-screen bg-[#08050c] text-[#f8fafc] antialiased selection:bg-[#E04A31] selection:text-white relative">
+      {/* Precision ambient background grid with deep thermal plum, coral and berry atmospheric lighting */}
+      <div className="fixed inset-0 bg-grid-pattern opacity-45 pointer-events-none" />
+      <div className="fixed top-1/2 left-1/4 w-[650px] h-[450px] bg-[#64104E]/20 rounded-full blur-[180px] pointer-events-none" />
+      <div className="fixed top-3/4 -right-10 w-[450px] h-[450px] bg-[#E04A31]/15 rounded-full blur-[160px] pointer-events-none" />
+      <div className="fixed bottom-0 right-1/4 w-[500px] h-[400px] bg-[#B43067]/15 rounded-full blur-[160px] pointer-events-none" />
+      <div className="fixed bottom-1/3 left-10 w-[450px] h-[450px] bg-[#C3864D]/10 rounded-full blur-[150px] pointer-events-none" />
+
       {/* Top Navbar */}
       <Navbar 
         onOpenConsole={() => setIsConsoleOpen(true)} 
-        onOpenDemo={() => setIsDemoGuideOpen(true)}
+        onOpenDemo={() => setIsDemoOpen(true)}
       />
 
       <ErrorBoundary>
@@ -77,25 +78,18 @@ export default function App() {
           {/* 1. Hero Section: Overview of Research & Key Performance Targets */}
           <HeroSection 
             onOpenConsole={() => setIsConsoleOpen(true)} 
-            onOpenDemo={() => setIsDemoGuideOpen(true)}
+            onOpenDemo={() => setIsDemoOpen(true)}
           />
 
-          {/* 2. Unified Live Cyclone Inference & Eye Localization Workbench (Presets + Upload) */}
-          <EyeLocalizationWorkbench 
-            externalStormId={selectedWorkbenchStormId}
-            externalLiveData={livePassOverride}
-            onSelectStormId={(id) => setSelectedWorkbenchStormId(id)}
-          />
-
-          {/* 3. Research Novelties & Methodological Breakthroughs (Horizontal Scroll Showcase) */}
+          {/* 2. Research Novelties & Methodological Breakthroughs (Horizontal Scroll Showcase) */}
           <ResearchNoveltySection />
 
-          {/* 4. Deep Learning AI Architecture (CenterNet + ConvNeXt-V2) */}
+          {/* 3. Deep Learning AI Architecture (CenterNet + ConvNeXt) */}
           <div id="models">
             <ModelArchitectureSection />
           </div>
 
-          {/* 5. The 4-Step Operational Feature Cards Pipeline */}
+          {/* 4. The 4-Step Operational Feature Cards Pipeline */}
           <div id="pipeline">
             <PipelineSection />
           </div>
@@ -104,28 +98,35 @@ export default function App() {
           <div id="dataset">
             <DatasetSection />
           </div>
-
-          {/* 6. Scientific Benchmark Verification & Examiner Defense Guide */}
-          <div id="benchmarks">
-            <BenchmarksSection />
-          </div>
         </main>
       </ErrorBoundary>
 
       {/* Footer with BibTeX Citation & Project Info */}
       <Footer />
 
+      {/* Dedicated Interactive Cyclone Inference & Localization Demo Modal */}
+      <DemoWorkbenchModal
+        isOpen={isDemoOpen}
+        onClose={() => {
+          setIsDemoOpen(false);
+          if (window.location.hash === '#demo') {
+            history.replaceState(null, '', window.location.pathname);
+          }
+        }}
+        onOpenConsole={() => {
+          setIsDemoOpen(false);
+          setIsConsoleOpen(true);
+        }}
+        externalStormId={selectedWorkbenchStormId}
+        externalLiveData={livePassOverride}
+        onSelectStormId={(id) => setSelectedWorkbenchStormId(id)}
+      />
+
       {/* GIS Command Console Modal */}
       <GISConsoleModal
         isOpen={isConsoleOpen}
         onClose={() => setIsConsoleOpen(false)}
         onOpenInWorkbench={handleOpenInWorkbench}
-      />
-
-      {/* 3-Act Presentation Walkthrough Modal */}
-      <PresentationGuideModal
-        isOpen={isDemoGuideOpen}
-        onClose={() => setIsDemoGuideOpen(false)}
       />
     </div>
   );
