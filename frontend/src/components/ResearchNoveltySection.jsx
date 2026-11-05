@@ -1,3 +1,4 @@
+/* Stage 1: Carousel Structure */
 import React, { useRef, useState, useEffect } from 'react';
 import { 
   Target, 
@@ -21,7 +22,7 @@ import {
 const novelties = [
   {
     id: 1,
-    tag: 'INNOVATION 01 // GEOMETRY',
+    tag: 'Innovation 01 · Geometry',
     category: 'Vortex Eye Pinpointing',
     title: 'Continuous Sub-Pixel Regression vs Discrete Boxes',
     icon: Target,
@@ -35,7 +36,7 @@ const novelties = [
   },
   {
     id: 2,
-    tag: 'INNOVATION 02 // THERMODYNAMICS',
+    tag: 'Innovation 02 · Thermodynamics',
     category: 'Atmospheric Physics',
     title: 'Physically-Constrained Atkinson-Holliday Balance',
     icon: Activity,
@@ -49,7 +50,7 @@ const novelties = [
   },
   {
     id: 3,
-    tag: 'INNOVATION 03 // RADIOMETRY',
+    tag: 'Innovation 03 · Radiometry',
     category: 'Multi-Spectral Ingestion',
     title: '24/7 Multi-Spectral Planck Blackbody Calibration',
     icon: Thermometer,
@@ -63,7 +64,7 @@ const novelties = [
   },
   {
     id: 4,
-    tag: 'INNOVATION 04 // OPERATIONAL TRIAGE',
+    tag: 'Innovation 04 · Operational Triage',
     category: 'False Alarm Suppression',
     title: 'Zero False-Alarm Vortex Presence Gatekeeper',
     icon: ShieldCheck,
@@ -77,7 +78,7 @@ const novelties = [
   },
   {
     id: 5,
-    tag: 'INNOVATION 05 // EDGE ACCELERATION',
+    tag: 'Innovation 05 · Edge Latency',
     category: 'Computational Latency',
     title: 'Sub-35ms Real-Time Inference vs 6h NWP Clusters',
     icon: Zap,
@@ -87,63 +88,156 @@ const novelties = [
     baselineText: 'Numerical fluid dynamical simulations take 4 to 6 hours on supercomputers, while human Dvorak analysis requires 30 to 45 minutes.',
     innovationText: 'Dual-stage deep neural architecture executes end-to-end on consumer GPU hardware in under 35 milliseconds with FP16 precision.',
     formula: 'T_e2e = T_CenterNet (11.8ms) + T_ConvNeXt (16.4ms)',
-    rationale: 'Traditional forecasting cycles take hours. DeepCyclone produces sub-pixel eye coordinates and calibrated intensity ratings instantaneously upon raw satellite downlink.',
+    rationale: 'Traditional forecasting cycles take hours. vortexAI produces sub-pixel eye coordinates and calibrated intensity ratings instantaneously upon raw satellite downlink.',
+  }
+];
+
+const allCards = [
+  {
+    stageId: '00',
+    type: 'overview',
+    category: 'Paradigm Shift',
+    tag: 'Stage 00 · Overview',
+    gainBadge: '5 PILLARS',
+    title: 'Differentiable Physics vs Heuristic Rules',
+    icon: Layers,
+    summary: 'Standard neural architectures treat cyclonic vortexes as generic rigid bounding boxes, leading to ±35 km quantization errors, unphysical wind-pressure decoupling, and nighttime sensor blindness.',
+    pillars: [
+      { id: '01', title: 'Continuous Sub-Pixel CenterNet Regression' },
+      { id: '02', title: 'Atkinson-Holliday Physical Balance Loss' },
+      { id: '03', title: '24/7 Multi-Spectral Planck Inversion Radiometry' },
+      { id: '04', title: 'Stage-0 Zero False-Alarm Vortex Gatekeeper' },
+      { id: '05', title: 'Sub-35ms Dual-Stage GPU Edge Latency' },
+    ]
+  },
+  ...novelties.map((item) => ({
+    stageId: `0${item.id}`,
+    type: 'novelty',
+    ...item
+  })),
+  {
+    stageId: '06',
+    type: 'synthesis',
+    category: 'Benchmark Synthesis',
+    tag: 'Stage 06 · Empirical Validation',
+    gainBadge: 'VALIDATED',
+    title: 'Empirically Verified Benchmarks',
+    icon: Cpu,
+    summary: 'All 5 novelties benchmarked against official NOAA IBTrACS & IMD ground truth across 2019–2024 North Indian Ocean severe storms (Fani, Amphan, Biparjoy, Mocha).',
+    metrics: [
+      { label: 'CENTER ERROR', value: '8.7 km' },
+      { label: 'INTENSITY MAE', value: '±5.2 kt' },
+      { label: 'FALSE ALARMS', value: '0.0%' },
+      { label: 'GPU LATENCY', value: '28.4 ms' }
+    ]
   }
 ];
 
 export default function ResearchNoveltySection() {
   const storyRef = useRef(null);
-  const trackRef = useRef(null);
+  const cardRefs = useRef([]);
   const parallaxRef = useRef(null);
   const progressBarRef = useRef(null);
   
   const [activeIndex, setActiveIndex] = useState(0);
   const [progressPercent, setProgressPercent] = useState(0);
 
-  // Smooth scroll glide animation adapted from Sachin's portfolio (SachinYadav2446/My-Portfolio)
-  // Uses requestAnimationFrame + lerp ease (SCROLL_EASE = 0.085) for aerodynamic wheel glide
+  // Pinned Scrollytelling Engine: Screen stays pinned until all cards are scrolled horizontally
   useEffect(() => {
     let frame = 0;
     let current = -1;
-    const SCROLL_EASE = 0.085;
+    let lastActiveIdx = -1;
+    let lastPercent = -1;
+    const SCROLL_EASE = 0.09;
 
     const tick = () => {
       const section = storyRef.current;
-      const track = trackRef.current;
 
-      if (section && track && window.innerWidth >= 768) {
+      if (section && window.innerWidth >= 768) {
         const rect = section.getBoundingClientRect();
-        const distance = section.offsetHeight - window.innerHeight;
+        const totalDistance = section.offsetHeight - window.innerHeight;
 
-        if (distance > 0) {
-          // Progress through this section from 0.0 to 1.0
-          const target = Math.min(1, Math.max(0, -rect.top / distance));
+        if (totalDistance > 0) {
+          const target = Math.min(1, Math.max(0, -rect.top / totalDistance));
           const next = current < 0 || Math.abs(target - current) < 0.0001
             ? target
             : current + (target - current) * SCROLL_EASE;
 
-          if (next !== current) {
+          if (next !== current || current < 0) {
             current = next;
+            const progressFloat = current * (allCards.length - 1);
+            const stageWidth = window.innerWidth;
+            const R = Math.max(680, Math.min(920, stageWidth * 0.58));
+            const ANGLE_STEP = 34; // degrees per card along the horizontal circular carousel
 
-            // Maximum horizontal translate distance
-            const maxTranslate = Math.max(0, track.scrollWidth - window.innerWidth + 80);
-            track.style.transform = `translate3d(-${current * maxTranslate}px, 0, 0)`;
+            // True 3D Horizontal Circular Carousel: strictly Right to Left (X and Z only, zero translateY)
+            allCards.forEach((_, i) => {
+              const cardEl = cardRefs.current[i];
+              if (!cardEl) return;
 
-            // Subtle parallax background shift
+              const delta = i - progressFloat;
+              const absDelta = Math.abs(delta);
+              const angleDeg = delta * ANGLE_STEP;
+              const angleRad = (angleDeg * Math.PI) / 180;
+
+              if (Math.abs(angleDeg) <= 85) {
+                // Card is visible on the front arc of the horizontal 3D circle
+                const X = R * Math.sin(angleRad);
+                const Z = R * (Math.cos(angleRad) - 1);
+                const rotateY = -angleDeg;
+                const scale = Math.max(0.68, 1 - absDelta * 0.13);
+
+                let opacity = 1;
+                if (absDelta <= 1.0) {
+                  opacity = 1 - absDelta * 0.28;
+                } else {
+                  opacity = Math.max(0, 0.72 - (absDelta - 1.0) * 0.52);
+                }
+
+                const brightness = Math.max(0.35, 1 - absDelta * 0.32);
+                const blur = Math.min(3, Math.max(0, absDelta - 0.2) * 1.5);
+                const zIndex = Math.round(50 - absDelta * 12);
+                const pointerEvents = absDelta <= 1.35 ? 'auto' : 'none';
+                const cursor = absDelta < 0.25 ? 'default' : (absDelta <= 1.35 ? 'pointer' : 'default');
+
+                cardEl.style.transform = `translate3d(${X}px, 0px, ${Z}px) rotateY(${rotateY}deg) scale(${scale})`;
+                cardEl.style.opacity = opacity;
+                cardEl.style.filter = `brightness(${brightness}) blur(${blur}px)`;
+                cardEl.style.zIndex = zIndex;
+                cardEl.style.pointerEvents = pointerEvents;
+                cardEl.style.cursor = cursor;
+              } else {
+                // Behind the circle / out of view
+                const sign = Math.sign(delta) || 1;
+                const X = sign * R * 1.05;
+                const Z = -R * 1.2;
+                cardEl.style.transform = `translate3d(${X}px, 0px, ${Z}px) rotateY(${-sign * 85}deg) scale(0.6)`;
+                cardEl.style.opacity = 0;
+                cardEl.style.zIndex = 0;
+                cardEl.style.pointerEvents = 'none';
+              }
+            });
+
             if (parallaxRef.current) {
-              parallaxRef.current.style.transform = `translate3d(-${current * 140}px, 0, 0)`;
+              parallaxRef.current.style.transform = `translate3d(-${current * 80}px, 0, 0)`;
             }
 
-            // Progress bar
             if (progressBarRef.current) {
               progressBarRef.current.style.width = `${current * 100}%`;
             }
 
-            // Active card tracking
-            const rawIdx = Math.round(current * (novelties.length + 0.6) - 0.2);
-            const clampedIdx = Math.min(novelties.length - 1, Math.max(0, rawIdx));
-            setActiveIndex(clampedIdx);
-            setProgressPercent(Math.round(current * 100));
+            const rawIdx = Math.round(progressFloat);
+            const clampedIdx = Math.min(allCards.length - 1, Math.max(0, rawIdx));
+            if (clampedIdx !== lastActiveIdx) {
+              lastActiveIdx = clampedIdx;
+              setActiveIndex(clampedIdx);
+            }
+
+            const newPercent = Math.round(current * 100);
+            if (newPercent !== lastPercent) {
+              lastPercent = newPercent;
+              setProgressPercent(newPercent);
+            }
           }
         }
       }
@@ -154,19 +248,18 @@ export default function ResearchNoveltySection() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // Jump to specific card by smoothly scrolling the vertical document
   const jumpToCard = (index) => {
     const section = storyRef.current;
     if (!section) return;
-    const distance = section.offsetHeight - window.innerHeight;
-    const fraction = (index + 0.55) / (novelties.length + 0.9);
-    const targetY = section.offsetTop + fraction * distance;
+    const totalDistance = section.offsetHeight - window.innerHeight;
+    const fraction = index / (allCards.length - 1);
+    const targetY = section.offsetTop + fraction * totalDistance;
     window.scrollTo({ top: targetY, behavior: 'smooth' });
   };
 
   const stepCard = (direction) => {
     const nextIdx = direction === 'next'
-      ? Math.min(novelties.length - 1, activeIndex + 1)
+      ? Math.min(allCards.length - 1, activeIndex + 1)
       : Math.max(0, activeIndex - 1);
     jumpToCard(nextIdx);
   };
@@ -179,62 +272,59 @@ export default function ResearchNoveltySection() {
     <section 
       id="novelty" 
       ref={storyRef}
-      className="relative md:h-[360vh] bg-[#fafaf9] text-zinc-900 border-b border-zinc-200"
+      className="relative md:h-[380vh] bg-[#08050c] text-white border-b border-[#64104E]/40"
     >
       {/* ============================================================== */}
-      {/* DESKTOP VIEW: CLEAN WHITE PINNED HORIZONTAL CAROUSEL           */}
+      {/* DESKTOP PINNED VIEWPORT: Locks screen until all cards scroll   */}
       {/* ============================================================== */}
-      <div className="sticky top-0 hidden h-screen overflow-hidden md:flex md:flex-col md:justify-between py-4 px-6 lg:px-12 relative z-10 select-none">
+      <div className="sticky top-0 hidden h-screen overflow-hidden md:flex md:flex-col md:justify-between py-5 px-6 lg:px-12 relative z-10 select-none">
         
-        {/* Parallax Background Grid in Warm Alabaster White */}
+        {/* Parallax Background Grid */}
         <div 
           ref={parallaxRef} 
           className="absolute inset-0 pointer-events-none will-change-transform z-0"
-          style={{ width: '150vw' }}
+          style={{ width: '130vw' }}
         >
-          {/* Subtle architectural dot-grid pattern */}
-          <div 
-            className="absolute inset-0 opacity-[0.22]" 
-            style={{
-              backgroundImage: 'radial-gradient(circle, #71717a 1px, transparent 1px), linear-gradient(to right, #e4e4e7 1px, transparent 1px), linear-gradient(to bottom, #e4e4e7 1px, transparent 1px)',
-              backgroundSize: '36px 36px, 108px 108px, 108px 108px'
-            }}
-          />
-          {/* Soft ambient concentric rings */}
-          <div className="absolute left-[25vw] top-[30vh] h-[500px] w-[500px] rounded-full border border-zinc-200/50 -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute left-[80vw] top-[50vh] h-[600px] w-[600px] rounded-full border border-zinc-200/50 -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute left-[135vw] top-[35vh] h-[520px] w-[520px] rounded-full border border-zinc-200/50 -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute inset-0 bg-grid-pattern opacity-40" />
+          <div className="absolute left-[20vw] top-[30vh] h-[520px] w-[520px] rounded-full border border-[#64104E]/25 -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute left-[70vw] top-[50vh] h-[650px] w-[650px] rounded-full border border-[#B43067]/20 -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute left-[110vw] top-[35vh] h-[550px] w-[550px] rounded-full border border-[#E04A31]/15 -translate-x-1/2 -translate-y-1/2" />
         </div>
 
         {/* Top Header & Interactive Progress Bar */}
-        <div className="relative z-10 border-b border-zinc-200/80 pb-3 pt-1 shrink-0">
+        <div className="relative z-20 border-b border-[#64104E]/40 pb-3 pt-1 shrink-0">
           <div className="flex items-center justify-between gap-6 mb-2.5">
-            {/* Title & Tag */}
+            {/* Title & Active Stage Tag */}
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-zinc-100 border border-zinc-200/80 text-zinc-700 rounded-full text-[9.5px] font-mono tracking-wider uppercase mb-1 shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
-                <span>CORE SCIENTIFIC INNOVATIONS · ARCHITECTURAL REPORT</span>
-              </div>
-              <h2 className="text-xl lg:text-2xl font-bold tracking-tight text-zinc-950 font-serif flex items-center gap-2">
-                <span>Research Novelties & Methodological Breakthroughs</span>
+              <h2 className="text-xl lg:text-2xl font-bold tracking-tight text-white font-mono flex items-center gap-2">
+                <span>Research Novelties &amp; Methodological Breakthroughs</span>
               </h2>
+              <div className="flex items-center gap-2 mt-0.5 text-xs font-mono">
+                <span className="text-[#C3864D] font-bold">
+                  STAGE {allCards[activeIndex]?.stageId || '00'} / 06
+                </span>
+                <span className="text-slate-600">·</span>
+                <span className="text-slate-300 font-medium">
+                  {allCards[activeIndex]?.category || 'Paradigm Shift'}
+                </span>
+              </div>
             </div>
 
             {/* Step Indicators & Directional Controls */}
             <div className="flex items-center gap-3 font-mono text-xs">
-              {/* Step Navigation Dots */}
-              <div className="flex items-center gap-1 bg-white border border-zinc-200/90 rounded-lg p-1 shadow-2xs">
-                {novelties.map((item, idx) => (
+              {/* Step Navigation Pills (00 to 06) */}
+              <div className="flex items-center gap-1 bg-[#120a1c] border border-[#64104E]/50 rounded-lg p-1 shadow-md">
+                {allCards.map((card, idx) => (
                   <button
-                    key={item.id}
+                    key={card.stageId}
                     onClick={() => jumpToCard(idx)}
-                    className={`px-2.5 py-0.5 text-[10px] font-mono font-medium rounded transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded transition-all cursor-pointer ${
                       activeIndex === idx
-                        ? 'bg-zinc-900 text-white shadow-2xs'
-                        : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100'
+                        ? 'bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white shadow-sm'
+                        : 'text-slate-400 hover:text-white hover:bg-[#1a0f28]'
                     }`}
                   >
-                    0{item.id}
+                    {card.stageId}
                   </button>
                 ))}
               </div>
@@ -244,10 +334,10 @@ export default function ResearchNoveltySection() {
                 <button
                   onClick={() => stepCard('prev')}
                   disabled={activeIndex === 0}
-                  className={`p-1 border border-zinc-200/90 rounded-lg transition-all cursor-pointer ${
+                  className={`p-1.5 border border-[#64104E]/50 rounded-lg transition-all cursor-pointer ${
                     activeIndex > 0
-                      ? 'bg-white text-zinc-800 hover:bg-zinc-100 shadow-2xs'
-                      : 'bg-zinc-100 text-zinc-400 opacity-40 cursor-not-allowed'
+                      ? 'bg-[#120a1c] text-slate-300 hover:bg-[#1e0e2c] hover:border-[#B43067]/60 shadow-sm'
+                      : 'bg-[#0a050f] text-slate-600 opacity-40 cursor-not-allowed border-[#64104E]/20'
                   }`}
                   aria-label="Previous novelty"
                 >
@@ -255,11 +345,11 @@ export default function ResearchNoveltySection() {
                 </button>
                 <button
                   onClick={() => stepCard('next')}
-                  disabled={activeIndex === novelties.length - 1}
-                  className={`p-1 border border-zinc-200/90 rounded-lg transition-all cursor-pointer ${
-                    activeIndex < novelties.length - 1
-                      ? 'bg-white text-zinc-800 hover:bg-zinc-100 shadow-2xs'
-                      : 'bg-zinc-100 text-zinc-400 opacity-40 cursor-not-allowed'
+                  disabled={activeIndex === allCards.length - 1}
+                  className={`p-1.5 border border-[#64104E]/50 rounded-lg transition-all cursor-pointer ${
+                    activeIndex < allCards.length - 1
+                      ? 'bg-[#120a1c] text-slate-300 hover:bg-[#1e0e2c] hover:border-[#B43067]/60 shadow-sm'
+                      : 'bg-[#0a050f] text-slate-600 opacity-40 cursor-not-allowed border-[#64104E]/20'
                   }`}
                   aria-label="Next novelty"
                 >
@@ -268,337 +358,260 @@ export default function ResearchNoveltySection() {
               </div>
 
               {/* Counter Display */}
-              <div className="text-[11px] text-zinc-600 px-2.5 py-0.5 bg-white border border-zinc-200/90 rounded-lg shadow-2xs">
-                ITEM <span className="text-zinc-900 font-bold">0{activeIndex + 1}</span> / 0{novelties.length}
+              <div className="text-[11px] text-slate-300 px-3 py-1 bg-[#120a1c] border border-[#64104E]/50 rounded-lg shadow-sm font-bold">
+                STAGE <span className="text-[#E04A31]">{allCards[activeIndex]?.stageId || '00'}</span> / 06
               </div>
             </div>
           </div>
 
-          {/* Smooth Horizontal Progress Bar Line */}
-          <div className="w-full bg-zinc-200/80 h-1 rounded-full relative overflow-hidden">
+          {/* Smooth Horizontal Progress Bar Line in Coral-Plum Gradient */}
+          <div className="w-full bg-[#180e24] h-1.5 rounded-full relative overflow-hidden border border-[#64104E]/40">
             <div 
-              ref={progressBarRef} 
-              className="h-full bg-zinc-800 rounded-full transition-all duration-75"
-              style={{ width: '0%' }}
+              ref={progressBarRef}
+              className="h-full bg-gradient-to-r from-[#B43067] via-[#CF2F4B] to-[#E04A31] rounded-full transition-all duration-75 shadow-[0_0_8px_#E04A31]"
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
 
-        {/* Center Moving Horizontal Track (Sized to fit 100% in viewport) */}
-        <div className="relative z-10 my-auto py-2 overflow-visible shrink-0">
-          <div 
-            ref={trackRef} 
-            className="flex items-stretch gap-6 will-change-transform"
-            style={{ width: 'fit-content' }}
+        {/* ------------------------------------------------------------ */}
+        {/* CENTER 3D HORIZONTAL CIRCULAR STAGE (Left, Center, Right)     */}
+        {/* ------------------------------------------------------------ */}
+        <div className="relative z-10 my-auto w-full max-w-7xl mx-auto flex items-center justify-center h-[520px]">
+          {/* Left Flanking Arrow */}
+          <button
+            onClick={() => stepCard('prev')}
+            disabled={activeIndex === 0}
+            aria-label="Previous novelty"
+            className={`hidden md:flex absolute left-2 lg:left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full items-center justify-center border transition-all z-50 cursor-pointer ${
+              activeIndex > 0
+                ? 'bg-[#140a1d]/90 border-[#64104E]/70 text-slate-200 hover:text-white hover:border-[#B43067] hover:bg-[#1f0e2b] shadow-2xl hover:scale-105 backdrop-blur-md'
+                : 'bg-[#0a0510]/50 border-[#64104E]/20 text-slate-600 opacity-25 cursor-not-allowed'
+            }`}
           >
-            {/* -------------------------------------------------------- */}
-            {/* STAGE 00: PARADIGM SHIFT OVERVIEW CARD                    */}
-            {/* -------------------------------------------------------- */}
-            <div className="w-[380px] lg:w-[400px] shrink-0 bg-white rounded-2xl border border-zinc-200/80 p-5 flex flex-col justify-between shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-zinc-300 transition-all duration-300">
-              <div>
-                <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-zinc-100 border border-zinc-200/80 text-zinc-800 flex items-center justify-center">
-                      <Layers className="w-4 h-4 text-zinc-900" />
-                    </div>
-                    <div>
-                      <span className="text-[9.5px] font-mono tracking-widest text-zinc-500 uppercase font-semibold block">
-                        PARADIGM SHIFT
-                      </span>
-                      <span className="text-[11px] font-mono font-bold text-zinc-900 block">
-                        STAGE 00 // OVERVIEW
-                      </span>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-zinc-100 border border-zinc-200/80 text-zinc-700 font-mono font-medium text-[9px]">
-                    5 PILLARS
-                  </span>
-                </div>
+            <ChevronLeft className="w-5 h-5" />
+          </button>
 
-                <h3 className="text-lg font-serif font-bold text-zinc-950 tracking-tight leading-snug mb-2">
-                  Differentiable Physics vs Heuristic Rules
-                </h3>
+          {/* 3D Circular Perspective Stage */}
+          <div 
+            className="relative w-full h-[480px] flex items-center justify-center"
+            style={{ perspective: '1400px', transformStyle: 'preserve-3d' }}
+          >
+            {allCards.map((card, i) => {
+              const ItemIcon = card.icon;
 
-                <p className="text-[11.5px] text-zinc-600 leading-relaxed font-sans mb-3">
-                  Standard neural architectures treat cyclonic vortexes as generic rigid bounding boxes, leading to ±35 km quantization errors, unphysical wind-pressure decoupling, and nighttime sensor blindness.
-                </p>
-
-                <div className="space-y-1.5 border-t border-zinc-100 pt-3 text-xs font-mono text-zinc-700">
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                    <span className="px-1.5 py-0.2 bg-zinc-200 text-zinc-800 font-bold text-[8.5px] rounded">01</span>
-                    <span className="text-[10.5px] font-medium text-zinc-800">Continuous Sub-Pixel CenterNet</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                    <span className="px-1.5 py-0.2 bg-zinc-200 text-zinc-800 font-bold text-[8.5px] rounded">02</span>
-                    <span className="text-[10.5px] font-medium text-zinc-800">Atkinson-Holliday Balance Loss</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                    <span className="px-1.5 py-0.2 bg-zinc-200 text-zinc-800 font-bold text-[8.5px] rounded">03</span>
-                    <span className="text-[10.5px] font-medium text-zinc-800">24/7 Planck Inversion Radiometry</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                    <span className="px-1.5 py-0.2 bg-zinc-200 text-zinc-800 font-bold text-[8.5px] rounded">04</span>
-                    <span className="text-[10.5px] font-medium text-zinc-800">Stage-0 Vortex Gatekeeper</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-1.5 rounded-lg bg-zinc-50 border border-zinc-100">
-                    <span className="px-1.5 py-0.2 bg-zinc-200 text-zinc-800 font-bold text-[8.5px] rounded">05</span>
-                    <span className="text-[10.5px] font-medium text-zinc-800">Sub-35ms FP16 Edge Latency</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-zinc-100 mt-3 flex items-center justify-between text-[10.5px] font-mono text-zinc-500">
-                <span className="flex items-center gap-1.5 text-zinc-900 font-medium">
-                  <span>SCROLL DOWN TO ADVANCE</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </span>
-                <span className="px-2 py-0.5 bg-zinc-100 rounded text-zinc-600 text-[9.5px]">
-                  5 NOVELTIES
-                </span>
-              </div>
-            </div>
-
-            {/* -------------------------------------------------------- */}
-            {/* THE 5 RESEARCH NOVELTY CARDS                              */}
-            {/* -------------------------------------------------------- */}
-            {novelties.map((item) => {
-              const ItemIcon = item.icon;
               return (
-                <div 
-                  key={item.id}
-                  className="w-[440px] lg:w-[470px] shrink-0 bg-white rounded-2xl border border-zinc-200/80 p-5 flex flex-col justify-between shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-zinc-300 transition-all duration-300 relative group"
+                <div
+                  key={card.stageId}
+                  ref={el => cardRefs.current[i] = el}
+                  onClick={() => {
+                    if (i !== activeIndex) jumpToCard(i);
+                  }}
+                  className="absolute w-[88vw] max-w-[560px] lg:max-w-[580px] h-[470px] bg-gradient-to-b from-[#140a1d]/98 via-[#0e0616]/98 to-[#09040e]/98 backdrop-blur-2xl rounded-2xl border border-[#64104E]/50 p-6 sm:p-7 flex flex-col justify-between shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),_0_0_35px_-5px_rgba(100,16,78,0.25)] hover:border-[#B43067]/80 overflow-hidden will-change-transform select-none"
+                  style={{
+                    transformOrigin: '50% 50%',
+                    backfaceVisibility: 'hidden',
+                    transform: i === 0 
+                      ? 'translate3d(0,0,0) rotateY(0deg) scale(1)' 
+                      : (i === 1 ? 'translate3d(460px,0,-140px) rotateY(-34deg) scale(0.88)' : 'translate3d(900px,0,-450px) scale(0.6)'),
+                    opacity: i === 0 ? 1 : (i === 1 ? 0.72 : 0),
+                    zIndex: i === 0 ? 50 : (i === 1 ? 38 : 0),
+                  }}
                 >
+                  {/* Specular Rim Light & Ambient Accent Glow */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#B43067]/80 to-transparent pointer-events-none" />
+                  <div className="absolute -top-16 right-0 w-48 h-48 bg-[#B43067]/15 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-16 left-0 w-48 h-48 bg-[#E04A31]/10 rounded-full blur-3xl pointer-events-none" />
+
                   <div>
                     {/* Top Row: Category + Gain Badge */}
-                    <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-zinc-100 border border-zinc-200/80 text-zinc-800 flex items-center justify-center">
-                          <ItemIcon className="w-4 h-4 text-zinc-900" />
+                    <div className="flex items-center justify-between pb-3 border-b border-[#64104E]/30 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#240e2b] to-[#14071b] border border-[#B43067]/50 text-[#E04A31] flex items-center justify-center shadow-md">
+                          <ItemIcon className="w-4 h-4" />
                         </div>
                         <div>
-                          <span className="text-[9.5px] font-mono uppercase tracking-wider text-zinc-500 font-semibold block">
-                            {item.category}
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#C3864D] font-bold block">
+                            {card.category}
                           </span>
-                          <span className="text-[11px] font-mono font-bold text-zinc-900 block">
-                            {item.tag}
+                          <span className="text-xs font-mono font-bold text-slate-200 block">
+                            {card.tag}
                           </span>
                         </div>
                       </div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-zinc-100 border border-zinc-200/80 text-zinc-800 font-semibold text-[9.5px] font-mono tracking-wide shadow-2xs">
-                        {item.gainBadge}
+                      <span className="px-2.5 py-1 rounded-full bg-[#CF2F4B]/15 border border-[#CF2F4B]/50 text-[#fbcfe8] font-bold text-[9.5px] font-mono tracking-wider shadow-sm">
+                        {card.gainBadge}
                       </span>
                     </div>
 
                     {/* Card Title */}
-                    <h3 className="text-base font-serif font-bold text-zinc-950 tracking-tight leading-snug mb-2.5">
-                      {item.title}
+                    <h3 className="text-lg font-mono font-bold text-white tracking-tight leading-snug mb-3">
+                      {card.title}
                     </h3>
 
-                    {/* Unified Primary Benchmark & Formulation (Clean, Light Theme) */}
-                    <div className="p-2.5 bg-zinc-50/90 border border-zinc-200/80 rounded-xl mb-2.5 flex items-center justify-between shadow-2xs">
+                    {/* STAGE 00: PARADIGM SHIFT OVERVIEW */}
+                    {card.type === 'overview' && (
                       <div>
-                        <span className="text-[8.5px] font-mono text-zinc-500 uppercase block font-semibold">PRIMARY BENCHMARK</span>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-black text-zinc-950 tracking-tight font-mono">{item.highlightMetric}</span>
-                          <span className="text-[10.5px] font-mono font-medium text-zinc-700">{item.highlightLabel}</span>
+                        <p className="text-xs text-slate-300 leading-relaxed font-sans mb-3">
+                          {card.summary}
+                        </p>
+                        <div className="space-y-1.5 border-t border-[#64104E]/30 pt-3 font-mono">
+                          {card.pillars.map((p) => (
+                            <div key={p.id} className="flex items-center gap-3 py-0.5 group/item">
+                              <span className="w-5 h-5 rounded-md bg-[#240e2b] border border-[#B43067]/40 text-[#fbcfe8] font-bold text-[9px] flex items-center justify-center shrink-0">
+                                {p.id}
+                              </span>
+                              <span className="text-xs font-medium text-slate-300 group-hover/item:text-white transition-colors">
+                                {p.title}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[8.5px] font-mono text-zinc-500 uppercase block font-semibold mb-0.5">FORMULATION</span>
-                        <span className="text-[10px] font-mono font-semibold px-2.5 py-1 rounded-md bg-white text-zinc-900 border border-zinc-200 shadow-2xs inline-block">
-                          {item.formula}
-                        </span>
-                      </div>
-                    </div>
+                    )}
 
-                    {/* Professional Architectural Comparison */}
-                    <div className="space-y-1.5 text-xs font-sans mb-2.5">
-                      {/* Conventional Baseline */}
-                      <div className="p-2 rounded-lg bg-zinc-50 border border-zinc-200/70 flex items-start gap-2">
-                        <XCircle className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-mono text-[9px] text-zinc-500 font-bold uppercase block">CONVENTIONAL APPROACH:</span>
-                          <p className="text-zinc-600 text-[11px] leading-relaxed mt-0.5">{item.baselineText}</p>
+                    {/* NOVELTIES 01 TO 05 */}
+                    {card.type === 'novelty' && (
+                      <div>
+                        {/* De-boxed Primary Benchmark & Formulation */}
+                        <div className="flex items-end justify-between py-1 mb-3.5">
+                          <div>
+                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-semibold block mb-0.5">
+                              PRIMARY BENCHMARK
+                            </span>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-3xl font-black font-mono text-white tracking-tight">
+                                {card.highlightMetric}
+                              </span>
+                              <span className="text-xs font-mono font-bold text-[#C3864D]">
+                                {card.highlightLabel}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider font-semibold block mb-1">
+                              FORMULATION
+                            </span>
+                            <code className="inline-block px-2.5 py-1 rounded-md bg-[#180a22]/80 border border-[#64104E]/60 text-slate-200 font-mono text-[10.5px] shadow-inner">
+                              {card.formula}
+                            </code>
+                          </div>
                         </div>
-                      </div>
 
-                      {/* DeepCyclone Methodology */}
-                      <div className="p-2 rounded-lg bg-zinc-100/70 border border-zinc-200/90 flex items-start gap-2 shadow-2xs">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-zinc-900 shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-mono text-[9px] text-zinc-900 font-bold uppercase block">DEEPCYCLONE METHODOLOGY:</span>
-                          <p className="text-zinc-900 text-[11px] font-medium leading-relaxed mt-0.5">{item.innovationText}</p>
+                        {/* De-boxed Architectural Comparison */}
+                        <div className="space-y-2 mb-3">
+                          {/* Conventional Baseline */}
+                          <div className="flex items-start gap-2.5 px-0.5 text-slate-400">
+                            <XCircle className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                            <div className="text-[11.5px] leading-relaxed">
+                              <span className="font-mono text-[9.5px] font-bold uppercase tracking-wider text-slate-500 mr-1.5">
+                                Conventional:
+                              </span>
+                              <span>{card.baselineText}</span>
+                            </div>
+                          </div>
+
+                          {/* vortexAI Methodology */}
+                          <div className="relative pl-3.5 pr-2.5 py-2 rounded-r-xl border-l-2 border-[#E04A31] bg-gradient-to-r from-[#220c2a]/80 to-transparent flex items-start gap-2.5">
+                            <CheckCircle2 className="w-4 h-4 text-[#E04A31] shrink-0 mt-0.5" />
+                            <div className="text-[11.5px] leading-relaxed">
+                              <span className="font-mono text-[9.5px] font-bold uppercase tracking-wider text-[#fbcfe8] mr-1.5">
+                                vortexAI:
+                              </span>
+                              <span className="text-white font-medium">{card.innovationText}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* STAGE 06: BENCHMARK SYNTHESIS */}
+                    {card.type === 'synthesis' && (
+                      <div>
+                        <p className="text-xs text-slate-300 leading-relaxed font-sans mb-3">
+                          {card.summary}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2.5 border-t border-[#64104E]/30 pt-3 text-center font-mono">
+                          {card.metrics.map((m, idx) => (
+                            <div key={idx} className="py-2.5 px-2 rounded-xl bg-[#160a20]/60 border border-[#64104E]/30">
+                              <span className="text-[9px] text-[#C3864D] uppercase tracking-wider block font-semibold mb-0.5">
+                                {m.label}
+                              </span>
+                              <span className="text-lg font-black text-white">{m.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Operational & Theoretical Rationale */}
-                  <div className="pt-2 border-t border-zinc-100 bg-zinc-50/80 rounded-xl p-2.5 border border-zinc-200/70">
-                    <div className="flex items-center gap-1.5 text-[8.5px] text-zinc-600 font-bold uppercase mb-0.5 font-mono">
-                      <Compass className="w-3.5 h-3.5 text-zinc-700" />
-                      <span>THEORETICAL & OPERATIONAL RATIONALE:</span>
+                  {/* Footers */}
+                  {card.type === 'overview' && (
+                    <div className="pt-3 border-t border-[#64104E]/30 mt-auto flex items-center justify-between text-[10.5px] font-mono text-slate-400">
+                      <span className="flex items-center gap-1.5 text-[#E04A31] font-bold">
+                        <span>SCROLL DOWN TO ADVANCE DECK</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                      <span className="px-2 py-0.5 bg-[#1e0e29] text-[#fbcfe8] border border-[#B43067]/40 rounded text-[9.5px] font-bold">
+                        5 NOVELTIES
+                      </span>
                     </div>
-                    <p className="text-[10.5px] text-zinc-700 font-sans leading-relaxed">
-                      {item.rationale}
-                    </p>
-                  </div>
+                  )}
+
+                  {card.type === 'novelty' && (
+                    <div className="pt-3 border-t border-[#64104E]/30 mt-auto">
+                      <div className="flex items-center gap-1.5 text-[9px] font-mono text-[#C3864D] uppercase font-bold tracking-wider mb-1">
+                        <Compass className="w-3.5 h-3.5 text-[#E04A31]" />
+                        <span>Physical Rationale</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                        {card.rationale}
+                      </p>
+                    </div>
+                  )}
+
+                  {card.type === 'synthesis' && (
+                    <div className="pt-3 border-t border-[#64104E]/30 mt-auto">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); goToModels(); }}
+                        className="w-full py-2.5 px-4 bg-gradient-to-r from-[#E04A31] via-[#CF2F4B] to-[#B43067] hover:brightness-110 text-white font-mono font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#E04A31]/25 active:scale-[0.98]"
+                      >
+                        <span>Explore Modular Deep Learning Stack</span>
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
-
-            {/* -------------------------------------------------------- */}
-            {/* STAGE 06: EMPIRICAL BENCHMARK SYNTHESIS CARD             */}
-            {/* -------------------------------------------------------- */}
-            <div className="w-[380px] lg:w-[400px] shrink-0 bg-white rounded-2xl border border-zinc-200/80 p-5 flex flex-col justify-between shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] hover:border-zinc-300 transition-all duration-300">
-              <div>
-                <div className="flex items-center justify-between pb-2.5 border-b border-zinc-100 mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-zinc-100 border border-zinc-200/80 text-zinc-800 flex items-center justify-center">
-                      <Cpu className="w-4 h-4 text-zinc-900" />
-                    </div>
-                    <div>
-                      <span className="text-[9.5px] font-mono tracking-widest text-zinc-500 uppercase font-semibold block">
-                        BENCHMARK SYNTHESIS
-                      </span>
-                      <span className="text-[11px] font-mono font-bold text-zinc-900 block">
-                        STAGE 06 // VALIDATION
-                      </span>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full bg-zinc-100 border border-zinc-200/80 text-zinc-800 font-mono font-medium text-[9px]">
-                    VALIDATED
-                  </span>
-                </div>
-
-                <h3 className="text-lg font-serif font-bold text-zinc-950 tracking-tight leading-snug mb-2">
-                  Empirically Verified Benchmarks
-                </h3>
-
-                <p className="text-[11.5px] text-zinc-600 leading-relaxed font-sans mb-3">
-                  All 5 novelties benchmarked against official NOAA IBTrACS & IMD ground truth across 2019–2024 North Indian Ocean severe storms (Fani, Amphan, Biparjoy, Mocha).
-                </p>
-
-                <div className="grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 text-center font-mono">
-                  <div className="p-2 rounded-xl bg-zinc-50 border border-zinc-200/80 shadow-2xs">
-                    <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">CENTER ERROR</span>
-                    <span className="text-base font-bold text-zinc-950">8.7 km</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-zinc-50 border border-zinc-200/80 shadow-2xs">
-                    <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">INTENSITY MAE</span>
-                    <span className="text-base font-bold text-zinc-950">±5.2 kt</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-zinc-50 border border-zinc-200/80 shadow-2xs">
-                    <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">FALSE ALARMS</span>
-                    <span className="text-base font-bold text-zinc-950">0.0%</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-zinc-50 border border-zinc-200/80 shadow-2xs">
-                    <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">GPU LATENCY</span>
-                    <span className="text-base font-bold text-zinc-950">28.4 ms</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-zinc-100 mt-3">
-                <button
-                  onClick={goToModels}
-                  className="w-full py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 text-white font-mono font-medium text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-[0.98]"
-                >
-                  <span>Explore Modular Deep Learning Stack</span>
-                  <ArrowDown className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
           </div>
+
+          {/* Right Flanking Arrow */}
+          <button
+            onClick={() => stepCard('next')}
+            disabled={activeIndex === allCards.length - 1}
+            aria-label="Next novelty"
+            className={`hidden md:flex absolute right-2 lg:right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full items-center justify-center border transition-all z-50 cursor-pointer ${
+              activeIndex < allCards.length - 1
+                ? 'bg-[#140a1d]/90 border-[#64104E]/70 text-slate-200 hover:text-white hover:border-[#B43067] hover:bg-[#1f0e2b] shadow-2xl hover:scale-105 backdrop-blur-md'
+                : 'bg-[#0a0510]/50 border-[#64104E]/20 text-slate-600 opacity-25 cursor-not-allowed'
+            }`}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Bottom Horizontal Timeline Status Bar */}
-        <div className="relative z-10 border-t border-zinc-200/80 pt-2.5 flex items-center justify-between text-[10.5px] font-mono text-zinc-500 shrink-0">
+        {/* Bottom 3D Horizon Status Bar */}
+        <div className="relative z-20 border-t border-[#64104E]/40 pt-2.5 flex items-center justify-between text-[10.5px] font-mono text-slate-400 shrink-0">
           <div className="flex items-center gap-2.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-zinc-800" />
-            <span className="font-medium text-zinc-600">HORIZONTAL TIMELINE · SCROLL VERTICALLY TO ADVANCE</span>
+            <span className="inline-block w-2 h-2 rounded-full bg-[#E04A31] shadow-[0_0_8px_#E04A31]" />
+            <span className="font-semibold text-slate-300">HORIZONTAL 3D CAROUSEL · SCREEN PINNED UNTIL ALL CARDS ARE SCROLLED</span>
           </div>
           <div className="flex items-center gap-3">
-            <span>PROGRESS: <span className="text-zinc-900 font-bold">{progressPercent}%</span></span>
-            <span className="text-zinc-300">|</span>
-            <span className="text-zinc-500">USE MOUSE WHEEL OR STEP BUTTONS</span>
+            <span>PROGRESS: <span className="text-[#E04A31] font-bold">{progressPercent}%</span></span>
+            <span className="text-slate-600">|</span>
+            <span className="text-slate-400">CLICK LEFT / RIGHT OR ARROW KEYS</span>
           </div>
-        </div>
-
-      </div>
-
-      {/* ============================================================== */}
-      {/* MOBILE VIEW: CLEAN WHITE TOUCH CAROUSEL (< 768px)               */}
-      {/* ============================================================== */}
-      <div className="md:hidden py-10 px-4 space-y-5">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-zinc-100 border border-zinc-200/80 text-zinc-700 rounded-full text-[9.5px] font-mono tracking-wider uppercase mb-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-zinc-500" />
-            <span>RESEARCH INNOVATIONS</span>
-          </div>
-          <h2 className="text-xl font-bold font-serif text-zinc-950 tracking-tight">
-            Research Novelties & Methodological Breakthroughs
-          </h2>
-          <p className="mt-1 text-xs text-zinc-600 leading-relaxed font-sans">
-            Swipe horizontally to review the 5 core scientific contributions and validation metrics.
-          </p>
-        </div>
-
-        {/* Mobile Swipe Container */}
-        <div className="flex items-stretch gap-4 overflow-x-auto pb-4 snap-x snap-mandatory [scrollbar-width:none]">
-          {novelties.map((item) => {
-            const ItemIcon = item.icon;
-            return (
-              <div 
-                key={item.id}
-                className="w-[85vw] max-w-[340px] shrink-0 snap-center bg-white rounded-2xl border border-zinc-200/80 p-4 font-mono flex flex-col justify-between shadow-md"
-              >
-                <div>
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-100 mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-zinc-100 border border-zinc-200 text-zinc-800 flex items-center justify-center">
-                        <ItemIcon className="w-4 h-4 text-zinc-900" />
-                      </div>
-                      <span className="text-[10.5px] font-bold text-zinc-900">{item.tag}</span>
-                    </div>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-800 font-medium">
-                      {item.gainBadge}
-                    </span>
-                  </div>
-
-                  <h3 className="text-sm font-serif font-bold text-zinc-950 mb-2 leading-snug">
-                    {item.title}
-                  </h3>
-
-                  <div className="p-2 rounded-xl bg-zinc-50 border border-zinc-200/80 mb-2.5 flex items-center justify-between">
-                    <div>
-                      <span className="text-[8px] text-zinc-500 uppercase block font-semibold">BENCHMARK</span>
-                      <span className="text-lg font-black text-zinc-950">{item.highlightMetric}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[8px] text-zinc-500 uppercase block">CRITERIA</span>
-                      <span className="text-xs font-medium text-zinc-800">{item.highlightLabel}</span>
-                    </div>
-                  </div>
-
-                  <div className="p-2 rounded-xl bg-zinc-100/70 border border-zinc-200/80 text-[11px] font-sans text-zinc-900 leading-relaxed mb-2.5">
-                    <span className="font-mono text-[9px] text-zinc-900 font-bold uppercase block mb-0.5">METHODOLOGY:</span>
-                    {item.innovationText}
-                  </div>
-
-                  <div className="p-1.5 rounded-lg bg-white border border-zinc-200 text-[10px] font-mono text-zinc-900 truncate mb-2.5">
-                    {item.formula}
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-zinc-100 text-[10.5px] font-sans text-zinc-700 bg-zinc-50 rounded-xl p-2 border border-zinc-200/70">
-                  <span className="font-mono text-[8px] text-zinc-500 uppercase block mb-0.5 font-bold">RATIONALE:</span>
-                  {item.rationale}
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
     </section>
