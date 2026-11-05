@@ -1,4 +1,3 @@
-/* Stage 2: Atkinson-Holliday Physics */
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Crosshair, 
