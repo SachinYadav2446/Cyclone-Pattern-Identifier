@@ -110,38 +110,34 @@ export default function DatasetSection() {
   }, [isPaused]);
 
   return (
-    <section id="dataset" className="py-16 border-b border-zinc-800/80 bg-black">
+    <section id="dataset" className="py-16 border-b border-[#64104E]/40 bg-[#08050c] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-400 mb-2">
-              <Satellite className="w-3 h-3 text-zinc-300" />
-              <span>EARTH OBSERVATION & SATELLITE TELEMETRY</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            <h2 className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white">
               Multi-Spectral Radiometer Ingestion.
             </h2>
-            <p className="mt-1.5 text-xs sm:text-sm text-zinc-400 max-w-2xl">
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-300 max-w-2xl">
               Real-time geostationary payload channels from INSAT-3D/3DR calibrated to physical Kelvin via MOSDAC radiance tables and coupled with NOAA IBTrACS.
             </p>
           </div>
 
-          <div className="mt-4 md:mt-0 font-mono text-[11px] text-zinc-400 flex items-center gap-3">
+          <div className="mt-4 md:mt-0 font-mono text-[11px] text-slate-400 flex items-center gap-3">
             <div>
-              ORBIT: <span className="text-white font-bold">74°E Geostationary</span>
+              ORBIT: <span className="text-[#C3864D] font-bold">74°E Geostationary</span>
             </div>
-            <div className="h-3 w-px bg-zinc-800" />
+            <div className="h-3 w-px bg-[#64104E]/60" />
             <div>
-              DOMAIN: <span className="text-white font-bold">0°–35°N, 45°–100°E</span>
+              DOMAIN: <span className="text-[#C3864D] font-bold">0°–35°N, 45°–100°E</span>
             </div>
           </div>
         </div>
 
-        {/* Distinct Layout: Split Horizontal Interactive Spectrum Console with Auto-Looping */}
+        {/* Split Horizontal Interactive Spectrum Console with Auto-Looping */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12 items-stretch">
           {/* Left Column: Interactive Band Selector Stack */}
-          <div className="lg:col-span-5 flex flex-col justify-between border-y border-zinc-800/80 py-1 divide-y divide-zinc-800/60 bg-zinc-950 rounded-xl border border-zinc-800/80 overflow-hidden shadow-xl">
+          <div className="lg:col-span-5 flex flex-col justify-between border border-[#64104E]/50 py-1 divide-y divide-[#64104E]/30 bg-[#120a1c] rounded-2xl overflow-hidden shadow-2xl">
             {spectralChannels.map((channel) => {
               const isSelected = selectedChannel === channel.id;
 
@@ -152,36 +148,36 @@ export default function DatasetSection() {
                     setSelectedChannel(channel.id);
                   }}
                   className={`w-full py-4 px-4 text-left transition-all flex items-center justify-between group cursor-pointer ${
-                    isSelected ? 'bg-zinc-900 pl-5 border-l-4 border-l-white' : 'hover:bg-zinc-900/40'
+                    isSelected ? 'bg-[#241233]/90 pl-5 border-l-4 border-l-[#E04A31]' : 'hover:bg-[#1a0f26]/50'
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
                     <div className={`w-2 h-7 transition-all rounded-full ${
-                      isSelected ? 'bg-white shadow-xs' : 'bg-zinc-800 group-hover:bg-zinc-700'
+                      isSelected ? 'bg-[#E04A31] shadow-[0_0_8px_#E04A31]' : 'bg-[#64104E]/40 group-hover:bg-[#64104E]'
                     }`} />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs sm:text-sm font-bold tracking-tight ${
-                          isSelected ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'
+                          isSelected ? 'text-white' : 'text-slate-300 group-hover:text-white'
                         }`}>
                           {channel.name}
                         </span>
                         {isSelected && (
-                          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                          <span className="w-2 h-2 rounded-full bg-[#E04A31] animate-ping" />
                         )}
                       </div>
-                      <div className="text-[11px] font-mono text-zinc-400 mt-0.5">
-                        <span className={isSelected ? 'text-zinc-200 font-semibold' : 'text-zinc-500'}>λ {channel.wavelength}</span>
-                        <span className="mx-1.5 text-zinc-600">·</span>
+                      <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+                        <span className={isSelected ? 'text-[#C3864D] font-bold' : 'text-slate-400'}>λ {channel.wavelength}</span>
+                        <span className="mx-1.5 text-slate-600">·</span>
                         <span>{channel.resolution.split(' ')[0]}</span>
                       </div>
                     </div>
                   </div>
 
-                  <span className={`font-mono text-[10px] px-2 py-0.5 border ${
+                  <span className={`font-mono text-[10px] px-2.5 py-0.5 border rounded-md ${
                     isSelected
-                      ? 'border-white text-black font-bold bg-white'
-                      : 'border-zinc-800 text-zinc-400 group-hover:border-zinc-700'
+                      ? 'border-[#E04A31] text-white font-bold bg-[#E04A31] shadow-xs'
+                      : 'border-[#64104E]/50 text-slate-400 group-hover:border-[#B43067]/60'
                   }`}>
                     {channel.id.toUpperCase()}
                   </span>
@@ -190,12 +186,12 @@ export default function DatasetSection() {
             })}
 
             {/* Loop status bar */}
-            <div className="pt-2 px-3 flex items-center justify-between font-mono text-[10px] text-zinc-400">
+            <div className="pt-2 px-3 flex items-center justify-between font-mono text-[10px] text-slate-400 bg-[#0a050f]">
               <span className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-zinc-400' : 'bg-white animate-ping'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-slate-600' : 'bg-[#E04A31] animate-ping'}`} />
                 <span>{isPaused ? 'CYCLE PAUSED (HOVER/CLICK)' : 'AUTO-CYCLE ACTIVE (2s)'}</span>
               </span>
-              <span>INSAT-3D 4-BAND SEQUENCE</span>
+              <span className="text-[#C3864D] font-bold">INSAT-3D 4-BAND SEQUENCE</span>
             </div>
           </div>
 
@@ -203,10 +199,10 @@ export default function DatasetSection() {
           <div 
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="lg:col-span-7 bg-black border border-zinc-800 rounded-xl relative overflow-hidden group/box min-h-[460px] flex flex-col justify-end shadow-2xl ring-1 ring-white/10 cursor-pointer"
+            className="lg:col-span-7 bg-[#020104] border border-[#64104E]/60 rounded-2xl relative overflow-hidden group/box min-h-[460px] flex flex-col justify-end shadow-2xl cursor-pointer"
           >
-            {/* Pure Satellite Imagery (100% visible, no dark scrims blocking it) */}
-            <div className="absolute inset-0 bg-black overflow-hidden flex items-center justify-center">
+            {/* Pure Satellite Imagery */}
+            <div className="absolute inset-0 bg-[#020408] overflow-hidden flex items-center justify-center">
               <picture className="w-full h-full select-none">
                 {activeChannel.webp && (
                   <source srcSet={activeChannel.webp} type="image/webp" />
@@ -217,7 +213,6 @@ export default function DatasetSection() {
                   loading="eager"
                   decoding="async"
                   onError={(e) => {
-                    // Fallback to png immediately if any format issues occur
                     if (e.currentTarget.src !== activeChannel.image) {
                       e.currentTarget.src = activeChannel.image;
                     }
@@ -227,53 +222,53 @@ export default function DatasetSection() {
               </picture>
             </div>
 
-            {/* Minimal Channel Pill Tag in Top-Left (Non-intrusive) */}
+            {/* Minimal Channel Pill Tag in Top-Left */}
             <div className="absolute top-3 left-3 z-10 pointer-events-none">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-black/80 backdrop-blur-md border border-zinc-700/80 text-white font-mono text-xs font-semibold shadow-lg">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-[#0d0714]/90 backdrop-blur-md border border-[#64104E]/80 text-white font-mono text-xs font-semibold shadow-lg rounded-lg">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-pulse shadow-[0_0_6px_#E04A31]" />
                 <span>{activeChannel.name}</span>
               </div>
             </div>
 
             {/* Minimal Channel Code Tag in Top-Right */}
             <div className="absolute top-3 right-3 z-10 pointer-events-none">
-              <span className="font-mono text-[10px] px-2 py-1 bg-black/80 backdrop-blur-md border border-zinc-700/80 text-zinc-300 font-bold">
+              <span className="font-mono text-[10px] px-2 py-1 bg-[#0d0714]/90 backdrop-blur-md border border-[#B43067]/60 text-[#fbcfe8] font-bold rounded-lg">
                 {activeChannel.id.toUpperCase()}
               </span>
             </div>
 
-            {/* Bottom Hover Telemetry Drawer (Tucked away, slides up cleanly on hover) */}
-            <div className="relative z-10 bg-zinc-950/90 backdrop-blur-md border-t border-zinc-800 transition-all duration-300 overflow-hidden">
-              {/* Default Bar: Just role & hover cue */}
-              <div className="px-4 py-2.5 flex items-center justify-between font-mono text-xs text-zinc-300">
-                <span className="font-medium text-white flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+            {/* Bottom Hover Telemetry Drawer in Theme Glass Styling */}
+            <div className="relative z-10 bg-white/95 backdrop-blur-md border-t border-slate-200 transition-all duration-300 overflow-hidden text-slate-200 shadow-2xl">
+              {/* Default Bar */}
+              <div className="px-4 py-2.5 flex items-center justify-between font-mono text-xs text-slate-200">
+                <span className="font-bold text-white flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#E04A31] shadow-[0_0_8px_#E04A31]" />
                   {activeChannel.role}
                 </span>
-                <span className="text-[10px] text-zinc-400 font-mono">
+                <span className="text-[10px] text-[#C3864D] font-mono font-bold tracking-wider">
                   HOVER FOR TELEMETRY ↑
                 </span>
               </div>
 
-              {/* Full Description & Physics (Only revealed when hovered) */}
+              {/* Full Description & Physics */}
               <div className="px-4 pb-4 max-h-0 opacity-0 group-hover/box:max-h-80 group-hover/box:opacity-100 transition-all duration-300 space-y-3 pt-1">
-                <p className="text-xs text-zinc-300 leading-relaxed font-sans border-t border-zinc-800/80 pt-2">
+                <p className="text-xs text-slate-300 leading-relaxed font-sans border-t border-[#64104E]/50 pt-2.5">
                   {activeChannel.description}
                 </p>
 
-                <div className="grid grid-cols-2 gap-3 font-mono text-[11px] pt-2 border-t border-zinc-800/80">
+                <div className="grid grid-cols-2 gap-3 font-mono text-[11px] pt-2.5 border-t border-[#64104E]/50">
                   <div>
-                    <span className="text-zinc-500 block text-[9px] uppercase">SENSOR</span>
-                    <span className="text-zinc-200">{activeChannel.bands}</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-semibold tracking-wider">SENSOR</span>
+                    <span className="text-white font-bold">{activeChannel.bands}</span>
                   </div>
                   <div>
-                    <span className="text-zinc-500 block text-[9px] uppercase">RANGE</span>
-                    <span className="text-zinc-200">{activeChannel.tempRange}</span>
+                    <span className="text-slate-400 block text-[9px] uppercase font-semibold tracking-wider">RANGE</span>
+                    <span className="text-white font-bold">{activeChannel.tempRange}</span>
                   </div>
                 </div>
 
-                <div className="text-[10px] text-zinc-400 font-mono bg-black/60 p-2 border border-zinc-800 truncate">
-                  <span className="text-zinc-500 uppercase mr-1">CALIB:</span>
+                <div className="text-[10px] text-slate-300 font-mono bg-[#140a1d] p-2.5 border border-[#64104E]/60 truncate rounded-xl shadow-inner">
+                  <span className="text-[#E04A31] uppercase mr-1.5 font-bold">CALIB:</span>
                   {activeChannel.calibMethod}
                 </div>
               </div>
@@ -281,33 +276,33 @@ export default function DatasetSection() {
           </div>
         </div>
 
-        {/* Data Architecture Table View instead of 3 generic cards */}
-        <div className="border-t border-zinc-800 pt-10">
+        {/* Data Architecture Table View */}
+        <div className="border-t border-[#64104E]/40 pt-10">
           <div className="mb-6 flex items-center gap-2">
-            <Database className="w-4 h-4 text-zinc-400" />
-            <h4 className="text-xs font-mono tracking-wider text-zinc-400 uppercase">
-              DATA ARCHIVE & GROUND TRUTH REGISTRY
+            <Database className="w-4 h-4 text-[#E04A31]" />
+            <h4 className="text-xs font-mono tracking-wider text-slate-400 uppercase font-bold">
+              DATA ARCHIVE &amp; GROUND TRUTH REGISTRY
             </h4>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
             {groundTruthSources.map((gt, i) => (
-              <div key={i} className="border-l-2 border-zinc-700 pl-4 py-1">
+              <div key={i} className="border-l-2 border-[#E04A31] pl-4 py-1">
                 <div className="text-white font-bold text-sm tracking-tight mb-0.5">{gt.name}</div>
-                <div className="text-zinc-400 text-[11px] mb-3">{gt.source}</div>
+                <div className="text-[#C3864D] text-[11px] mb-3 font-semibold">{gt.source}</div>
                 
-                <div className="space-y-1.5 text-[11px] text-zinc-400">
+                <div className="space-y-1.5 text-[11px] text-slate-300">
                   <div>
-                    <span className="text-zinc-400">COVERAGE: </span>
-                    <span className="text-zinc-300">{gt.specs}</span>
+                    <span className="text-slate-500 font-medium">COVERAGE: </span>
+                    <span className="text-slate-200 font-semibold">{gt.specs}</span>
                   </div>
                   <div>
-                    <span className="text-zinc-400">FORMAT: </span>
-                    <span className="text-zinc-300">{gt.format}</span>
+                    <span className="text-slate-500 font-medium">FORMAT: </span>
+                    <span className="text-slate-200 font-semibold">{gt.format}</span>
                   </div>
                   <div>
-                    <span className="text-zinc-400">VOLUME: </span>
-                    <span className="text-white">{gt.volume}</span>
+                    <span className="text-slate-500 font-medium">VOLUME: </span>
+                    <span className="text-white font-bold">{gt.volume}</span>
                   </div>
                 </div>
               </div>
