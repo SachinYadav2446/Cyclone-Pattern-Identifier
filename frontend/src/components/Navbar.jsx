@@ -73,16 +73,16 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
         ? 'border-b border-[#64104E]/50 bg-[#08050c]/95 backdrop-blur-xl shadow-[0_4px_25px_rgba(0,0,0,0.7)]'
         : 'border-b border-transparent bg-[#08050c] shadow-none'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
-        {/* Brand Logo - Clean Typography Without Circle */}
-        <a href="#" className="flex items-center group shrink-0">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4 relative">
+        {/* Brand Logo - Shifted right with animated entrance */}
+        <a href="#" className="flex items-center group shrink-0 pl-2 sm:pl-6 md:pl-8 z-10 animate-vortex-brand">
           <span className="font-black text-lg tracking-tight font-mono text-white group-hover:text-[#E04A31] transition-colors">
-            vortex<span className="text-[#E04A31]">AI</span>
+            vortex<span className="text-[#E04A31] drop-shadow-[0_0_10px_rgba(224,74,49,0.5)]">AI</span>
           </span>
         </a>
 
-        {/* Desktop Nav Links - Clean Pill Capsule matching wireframe */}
-        <nav className="hidden md:flex items-center gap-6 px-6 py-1.5 rounded-full border border-[#64104E]/50 bg-[#140b1e]/85 shadow-lg text-xs font-mono">
+        {/* Desktop Nav Links - Clean Pill Capsule perfectly centered */}
+        <nav className="hidden md:flex items-center gap-6 px-6 py-1.5 rounded-full border border-[#64104E]/50 bg-[#140b1e]/85 shadow-lg text-xs font-mono absolute left-1/2 -translate-x-1/2 z-10">
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
             return (

@@ -154,29 +154,15 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
           {/* ============================================================== */}
           <div className="relative z-20 w-full lg:max-w-[48%] pt-2 pb-6 lg:py-4 flex flex-col justify-between">
             
-            {/* Top Row: Main Headline & Product Model / Spec Divider (Drops with bounce) */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 pb-6 border-b border-[#64104E]/50 animate-hero-drop">
-              <div className="flex-1">
-                <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-black tracking-tight text-white leading-[1.14] font-mono">
-                  Autonomous Sub-Pixel{' '}
-                  <span className="text-[#E04A31] underline decoration-[#CF2F4B] decoration-2 underline-offset-6">
-                    Eye Localization
-                  </span>{' '}
-                  &amp; Deep Dvorak.
-                </h1>
-              </div>
-
-              {/* Right of Headline: Vertical Divider + Neural Stack Model Indicator */}
-              <div className="flex items-center gap-4 shrink-0 sm:pl-6 sm:border-l sm:border-[#64104E]/60">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-                    Neural Stack
-                  </span>
-                  <span className="text-3xl sm:text-4xl font-mono font-black text-[#B43067] tracking-tight">
-                    04
-                  </span>
-                </div>
-              </div>
+            {/* Top Row: Main Headline (Drops with bounce) */}
+            <div className="pb-6 border-b border-[#64104E]/50 animate-hero-drop">
+              <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-black tracking-tight text-white leading-[1.14] font-mono">
+                Autonomous Sub-Pixel{' '}
+                <span className="text-[#E04A31] underline decoration-[#CF2F4B] decoration-2 underline-offset-6">
+                  Eye Localization
+                </span>{' '}
+                &amp; Deep Dvorak.
+              </h1>
             </div>
 
             {/* Middle Row: Visual Thumbnail Box + Clear Description + Action Buttons (Drops with bounce) */}

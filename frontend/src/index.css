@@ -198,3 +198,30 @@
 .animate-ticker-marquee:hover {
   animation-play-state: paused;
 }
+
+/* 5. Smooth High-Tech Animated Brand Entry for vortexAI */
+@keyframes vortex-brand-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(-28px, 0, 0) scale(0.95);
+    filter: blur(4px);
+  }
+  60% {
+    opacity: 0.95;
+    transform: translate3d(3px, 0, 0) scale(1.02);
+    filter: blur(0px);
+  }
+  80% {
+    transform: translate3d(-1px, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+.animate-vortex-brand {
+  animation: vortex-brand-enter 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+  will-change: transform, opacity, filter;
+}

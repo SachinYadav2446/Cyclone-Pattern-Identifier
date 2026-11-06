@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Component } from 'react';
 import Navbar from './components/Navbar';
-import LiveTelemetryTicker from './components/LiveTelemetryTicker';
+import LiveComputationStrip from './components/LiveComputationStrip';
 import HeroSection from './components/HeroSection';
 import DemoWorkbenchModal from './components/DemoWorkbenchModal';
 import ResearchNoveltySection from './components/ResearchNoveltySection';
@@ -73,12 +73,6 @@ export default function App() {
         onOpenDemo={() => setIsDemoOpen(true)}
       />
 
-      {/* Live Continuous News-Channel Calculation & Telemetry Ticker Ribbon */}
-      <LiveTelemetryTicker
-        onOpenConsole={() => setIsConsoleOpen(true)}
-        onOpenDemo={() => setIsDemoOpen(true)}
-      />
-
 
       <ErrorBoundary>
         <main>
@@ -95,6 +89,12 @@ export default function App() {
           <div id="models">
             <ModelArchitectureSection />
           </div>
+
+          {/* Real-Time Live Computation Telemetry Strip */}
+          <LiveComputationStrip
+            onOpenConsole={() => setIsConsoleOpen(true)}
+            onOpenDemo={() => setIsDemoOpen(true)}
+          />
 
           {/* 4. The 4-Step Operational Feature Cards Pipeline */}
           <div id="pipeline">

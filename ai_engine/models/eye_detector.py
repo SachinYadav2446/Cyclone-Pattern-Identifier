@@ -1,3 +1,4 @@
+import base64
 """
 DeepCyclone CenterNet Sub-Pixel Eye Localization Engine
 Anchor-Free Keypoint Heatmap, Multi-Scale Log-Spiral Streamline Convergence,
@@ -160,6 +161,68 @@ def _build_cyclonic_spiral_kernel(radius: float, num_points: int = 28, alpha_deg
     return k_x / norm, k_y / norm
 
 
+def compute_gvf_circulation_flux(gray_np: np.ndarray, swath: np.ndarray) -> np.ndarray:
+    """
+    Computes Gradient Vector Flow (GVF) Circular Flux Density.
+    Measures surrounding inward radial gradient flux towards circulation centers.
+    Pins the cyclone vortex origin accurately even for cloud-covered eyes (CDO) with no visible hole.
+    """
+    smooth = gaussian_filter(gray_np, 3.0)
+    gy, gx = np.gradient(smooth)
+    gy *= swath
+    gx *= swath
+    mag = np.sqrt(gx**2 + gy**2) + 1e-6
+    nx = gx / mag
+    ny = gy / mag
+
+    h, w = gray_np.shape
+    flux_map = np.zeros((h, w), dtype=np.float32)
+
+    for r in [20, 35, 55, 80]:
+        size = 2 * r + 1
+        yk, xk = np.ogrid[-r:r+1, -r:r+1]
+        dist = np.sqrt(xk**2 + yk**2) + 1e-6
+        mask_r = (dist >= r * 0.70) & (dist <= r * 1.30)
+
+        kx = -(xk / dist) * mask_r
+        ky = -(yk / dist) * mask_r
+        k_norm = np.sum(mask_r) + 1e-6
+        kx /= k_norm
+        ky /= k_norm
+
+        conv = fftconvolve(nx, kx[::-1, ::-1], mode='same') + fftconvolve(ny, ky[::-1, ::-1], mode='same')
+        flux_map += np.maximum(0.0, conv)
+
+    flux_smooth = gaussian_filter(flux_map, 4.0)
+    flux_norm = (flux_smooth - flux_smooth.min()) / (flux_smooth.max() - flux_smooth.min() + 1e-6)
+    return flux_norm
+
+def generate_heatmap_png_base64(score_map: np.ndarray) -> Optional[str]:
+    """
+    Generates a lightweight (256x256) semi-transparent CenterNet confidence heatmap
+    encoded as a base64 PNG data URI for client-side raster blending.
+    """
+    try:
+        sm_256 = cv2.resize(score_map, (256, 256), interpolation=cv2.INTER_LINEAR)
+        s_min = float(np.min(sm_256))
+        s_max = float(np.max(sm_256))
+        sm_norm = ((sm_256 - s_min) / (s_max - s_min + 1e-6) * 255.0).astype(np.uint8)
+
+        colored = cv2.applyColorMap(sm_norm, cv2.COLORMAP_INFERNO)
+        b, g, r_ch = cv2.split(colored)
+
+        norm_f = sm_norm.astype(np.float32) / 255.0
+        alpha_ch = (np.clip((norm_f - 0.15) / 0.75, 0.0, 1.0) * 190.0).astype(np.uint8)
+
+        rgba = cv2.merge([b, g, r_ch, alpha_ch])
+        ok, enc = cv2.imencode('.png', rgba)
+        if ok:
+            return "data:image/png;base64," + base64.b64encode(enc.tobytes()).decode('ascii')
+    except Exception:
+        pass
+    return None
+
+
 class EyeDetector:
     """CenterNet Sub-Pixel Keypoint Eye Localization Model Service."""
 
@@ -250,52 +313,56 @@ class EyeDetector:
         val = max_c / 255.0
 
         # Step 1: Autonomous Satellite Domain Masking & Border Suppression
-        # Insets 4% outer margins and suppresses scanner space, colorbars, and coordinate text
         mask = np.ones((512, 512), dtype=np.float32)
-        mask[:18, :] = 0.0
-        mask[-18:, :] = 0.0
-        mask[:, :30] = 0.0
-        mask[:, -30:] = 0.0
+        mask[:20, :] = 0.0
+        mask[-20:, :] = 0.0
+        mask[:, :25] = 0.0
+        mask[:, -25:] = 0.0
 
         # Suppress pure black scan space / margin outside swath
-        is_space = (R < 15) & (G < 15) & (B < 15)
+        is_space = (R < 18) & (G < 18) & (B < 18)
         mask[is_space] = 0.0
 
-        # Suppress vertical calibration colorbar on the right strip if present
-        if np.mean(sat[:, 465:]) > 0.35:
-            mask[:, 460:] = 0.0
+        # Suppress vertical calibration colorbar on right strip if present
+        if np.mean(sat[:, 435:]) > 0.06 or np.any(np.max(sat[:, 445:], axis=0) > 0.70):
+            mask[:, 430:] = 0.0
 
-        # Step 2: Modality Detection (False-Color EIR vs Monochrome IR/VIS)
-        valid_mask_bool = mask > 0.5
+        # Suppress top title banner (e.g. GOES-18 Channel 13...)
+        if np.sum(gray_np[:35, :] > 235) > 350:
+            mask[:35, :] = 0.0
+
+        mask_eroded = cv2.erode(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)))
+
+        # Step 2: Comprehensive Multi-Spectral Modality Detection
+        valid_mask_bool = mask_eroded > 0.5
         valid_sat = sat[valid_mask_bool]
         chroma_frac = float(np.mean(valid_sat > 0.35)) if len(valid_sat) > 0 else 0.0
 
-        # Cold convective cloud colors in Dvorak BD-Curve EIR products:
-        # Dark red: -72°C to -78°C
+        # Dvorak BD-Curve EIR convective cloud colors:
         is_dark_red = (R >= 15) & (R < 110) & (G < 40) & (B < 40) & (R > G + 5)
-        # Bright red: -64°C to -72°C
         is_bright_red = (R >= 110) & (G < 75) & (B < 75)
-        # Orange: -55°C to -64°C
         is_orange = (R >= 170) & (G >= 60) & (G < 180) & (B < 70)
-        # Yellow: -54°C to -60°C
         is_yellow = (R >= 170) & (G >= 170) & (B < 85)
-        # Pink / Purple: <-80°C cold overshooting tops
         is_pink_purple = (sat > 0.35) & (R > 130) & (B > 120) & (G < 140)
 
-        # Deep overshooting cold convective eyewall cloud tops
-        eir_deep_cold = (is_dark_red | is_bright_red | is_pink_purple) & valid_mask_bool
-        deep_cold_frac = float(np.mean(eir_deep_cold))
+        # NOAA / GOES Channel 13 / INSAT Rainbow EIR convective cloud colors:
+        is_cyan = (sat > 0.25) & (B > 110) & (G > 110) & (R < 100)
+        is_blue = (sat > 0.30) & (B > 100) & (R < 75) & (G < 120)
+        is_green = (sat > 0.28) & (G > 100) & (R < 90) & (B < 100)
+        is_magenta = (sat > 0.28) & (R > 120) & (B > 110) & (G < 100)
+        is_white_top = (sat < 0.15) & (gray_np > 215)
 
-        eir_cold_mask = (is_dark_red | is_bright_red | is_orange | is_yellow | is_pink_purple) & valid_mask_bool
-        eir_cold_frac = float(np.mean(eir_cold_mask))
+        all_cold_convective = (is_dark_red | is_bright_red | is_orange | is_yellow |
+                               is_pink_purple | is_cyan | is_blue | is_green | is_magenta | is_white_top) & valid_mask_bool
 
-        # True false-color EIR requires substantial 2D cold convective cloud clusters (reds/purples), not 1-pixel map borders or water vapor moisture charts
-        is_eir = (deep_cold_frac > 0.015) and (eir_cold_frac > 0.02) and (chroma_frac > 0.10)
+        cold_pixel_count = int(np.sum(all_cold_convective))
+        eir_cold_frac = float(np.mean(all_cold_convective)) if len(all_cold_convective) > 0 else 0.0
+        is_eir = cold_pixel_count > 300 or chroma_frac > 0.12
 
         # Detect framing domain (Cropped Storm vs Geostationary Basin Disk)
         border_pixels = np.concatenate([
-            gray_np[:18, :].flatten(),
-            gray_np[-18:, :].flatten(),
+            gray_np[:20, :].flatten(),
+            gray_np[-20:, :].flatten(),
             gray_np[:, :25].flatten(),
             gray_np[:, -25:].flatten()
         ])
@@ -303,76 +370,102 @@ class EyeDetector:
         aspect_ratio = orig_w / float(orig_h + 1e-6)
         is_cropped_storm = (aspect_ratio < 1.45 and aspect_ratio > 0.65) or (border_mean > 60.0) or is_eir
 
-        if is_eir:
-            # Mode A: Color Enhanced Infrared Annular Eyewall & Cavity Localization
-            eyewall_field = gaussian_filter(eir_cold_mask.astype(np.float32), 2.0)
+        # Step 3: Multi-Scale Radial Symmetry & Log-Spiral Streamline Convergence
+        # A. Band-pass spatial gradient highlights eyewall curvature and curved feeder bands
+        bp = gaussian_filter(gray_np, 1.8) - gaussian_filter(gray_np, 16.0)
+        gy, gx = np.gradient(bp)
+        mag = np.sqrt(gx**2 + gy**2) + 1e-6
+        gx_n = (gx / mag) * mask_eroded
+        gy_n = (gy / mag) * mask_eroded
 
-            # Eye Cavity: Warm/neutral core inside eyewall with low chromatic saturation
-            is_cavity_color = (sat < 0.28) & (val > 0.15) & (val < 0.65) & valid_mask_bool
-            cavity_field = gaussian_filter(is_cavity_color.astype(np.float32), 2.0)
+        # B. Multi-Radius Fast Radial Symmetry (FRST) with 4-Quadrant Balancing
+        # A true vortex core has convergent gradients from at least 3 quadrants.
+        # Single outer feeder bands only have gradients in 1 quadrant and are suppressed.
+        radii = [16, 26, 38, 55, 75]
+        quadrant_votes = [np.zeros((512, 512), dtype=np.float32) for _ in range(4)]
+        valid_grad = (mag > np.percentile(mag[mask_eroded > 0.5], 40)) & (mask_eroded > 0.5) if np.sum(mask_eroded) > 0 else np.zeros((512, 512), dtype=bool)
+        y_pts, x_pts = np.where(valid_grad)
+        m_pts = mag[y_pts, x_pts]
 
-            # Multi-scale annular ring enclosure correlation across physical eye radii
-            score_map = np.zeros((512, 512), dtype=np.float32)
-            eyewall_radii = [14, 20, 28, 38, 50]
-            for r_wall in eyewall_radii:
-                size = int(2 * r_wall + 7)
-                yk, xk = np.ogrid[-size//2:size//2+1, -size//2:size//2+1]
-                d = np.sqrt(xk**2 + yk**2)
+        for r in radii:
+            dx = np.round(-gx_n[y_pts, x_pts] * r).astype(int)
+            dy = np.round(-gy_n[y_pts, x_pts] * r).astype(int)
+            tx = np.clip(x_pts + dx, 0, 511)
+            ty = np.clip(y_pts + dy, 0, 511)
+            ok = mask_eroded[ty, tx] > 0.5
+            tx_ok, ty_ok, m_ok = tx[ok], ty[ok], m_pts[ok]
+            rx = x_pts[ok] - tx_ok
+            ry = y_pts[ok] - ty_ok
 
-                # Annular eyewall ring kernel
-                k_wall = ((d >= r_wall * 0.70) & (d <= r_wall * 1.30)).astype(np.float32)
-                k_wall /= (np.sum(k_wall) + 1e-6)
+            q_masks = [
+                (rx >= 0) & (ry >= 0),  # SE
+                (rx < 0)  & (ry >= 0),  # SW
+                (rx < 0)  & (ry < 0),   # NW
+                (rx >= 0) & (ry < 0)    # NE
+            ]
+            for qi in range(4):
+                qm = q_masks[qi]
+                if np.sum(qm) > 0:
+                    tmp = np.zeros((512, 512), dtype=np.float32)
+                    np.add.at(tmp, (ty_ok[qm], tx_ok[qm]), m_ok[qm])
+                    tmp = gaussian_filter(tmp, sigma=r * 0.22)
+                    quadrant_votes[qi] += tmp
 
-                # Core eye cavity kernel
-                k_cav = (d < r_wall * 0.50).astype(np.float32)
-                k_cav /= (np.sum(k_cav) + 1e-6)
+        q_prod = np.ones((512, 512), dtype=np.float32)
+        for qi in range(4):
+            q_norm = quadrant_votes[qi] / (np.max(quadrant_votes[qi]) + 1e-6)
+            q_prod *= (q_norm + 0.10)
 
-                resp_wall = cv2.filter2D(eyewall_field, -1, k_wall)
-                resp_cav = cv2.filter2D(cavity_field, -1, k_cav)
+        sym_smooth = gaussian_filter(q_prod, 4.0) * mask_eroded
+        sym_norm = (sym_smooth - sym_smooth.min()) / (sym_smooth.max() - sym_smooth.min() + 1e-6)
 
-                score_map += (resp_wall * 0.65 + resp_cav * 0.35)
+        # C. Logarithmic Spiral Streamline Inflow Correlation
+        j_xx = gaussian_filter(gx**2, 3.5)
+        j_xy = gaussian_filter(gx * gy, 3.5)
+        j_yy = gaussian_filter(gy**2, 3.5)
+        theta = 0.5 * np.arctan2(2 * j_xy, j_xx - j_yy + 1e-6)
+        tx_s = -np.sin(theta) * mask_eroded
+        ty_s = np.cos(theta) * mask_eroded
 
-            score_map *= mask
-            detection_mode = "Multi-Scale EIR Annular Ring Eyewall Enclosure & 2D Hessian Refinement"
+        spiral_accum = np.zeros((512, 512), dtype=np.float32)
+        for r_s in [30, 52, 85]:
+            kx_s, ky_s = _build_cyclonic_spiral_kernel(r_s, num_points=26, alpha_deg=16.0)
+            c_x = fftconvolve(tx_s, kx_s[::-1, ::-1], mode='same')
+            c_y = fftconvolve(ty_s, ky_s[::-1, ::-1], mode='same')
+            spiral_accum += (np.abs(c_x) + np.abs(c_y))
+
+        spiral_smooth = gaussian_filter(spiral_accum, 5.0) * mask_eroded
+        spiral_norm = (spiral_smooth - spiral_smooth.min()) / (spiral_smooth.max() - spiral_smooth.min() + 1e-6)
+
+        # D. Eye Cavity Physical Prior
+        # The eye is an inner thermal cavity / warm ocean core with low chromatic saturation (NOT cold colored tops)
+        cavity_weight = np.exp(-3.5 * np.clip(sat, 0.0, 1.0)) * mask_eroded
+        gray_cavity = np.exp(-0.5 * ((gray_np - 130.0) / 50.0)**2)
+        cavity_prior = cavity_weight * (0.65 + 0.35 * gray_cavity)
+
+        # E. Annular Eyewall Ring Enclosure
+        eyewall_density = gaussian_filter(all_cold_convective.astype(np.float32), 2.5) if is_eir else gaussian_filter((gray_np > 135).astype(np.float32), 2.5)
+        enclosure_map = np.zeros((512, 512), dtype=np.float32)
+        for r_w in [18, 30, 48]:
+            size_w = int(2 * r_w + 5)
+            yk, xk = np.ogrid[-size_w//2:size_w//2+1, -size_w//2:size_w//2+1]
+            d_w = np.sqrt(xk**2 + yk**2)
+            kw = ((d_w >= r_w * 0.70) & (d_w <= r_w * 1.30)).astype(np.float32)
+            kw /= (np.sum(kw) + 1e-6)
+            enclosure_map += cv2.filter2D(eyewall_density, -1, kw)
+
+        enclosure_norm = (enclosure_map - enclosure_map.min()) / (enclosure_map.max() - enclosure_map.min() + 1e-6)
+
+        # Central Prior for cropped storm tiles to anchor against outer edge clutter
+        if is_cropped_storm:
+            Y, X = np.ogrid[:512, :512]
+            center_prior = np.exp(-0.5 * (((X - 268.0) / 130.0)**2 + ((Y - 270.0) / 130.0)**2))
         else:
-            # Mode B: Monochrome IR / VIS / WV Spiral Streamline & Cavity Localization
-            smooth = gaussian_filter(gray_np, 2.0)
-            gy, gx = np.gradient(smooth)
-            j_xx = gaussian_filter(gx**2, 3.0)
-            j_xy = gaussian_filter(gx * gy, 3.0)
-            j_yy = gaussian_filter(gy**2, 3.0)
-            theta = 0.5 * np.arctan2(2 * j_xy, j_xx - j_yy)
-            tx = -np.sin(theta)
-            ty = np.cos(theta)
+            center_prior = 1.0
 
-            spiral_map = np.zeros((h, w), dtype=np.float32)
-            spiral_radii = [25, 45, 75, 120, 175] if is_cropped_storm else [35, 65, 110, 160]
-            for r in spiral_radii:
-                kx, ky = _build_cyclonic_spiral_kernel(r, num_points=24, alpha_deg=15.0)
-                corr = np.abs(fftconvolve(tx, kx[::-1, ::-1], mode='same') + fftconvolve(ty, ky[::-1, ::-1], mode='same'))
-                spiral_map += corr
-
-            spiral_smooth = gaussian_filter(spiral_map, 5.0)
-            spiral_norm = (spiral_smooth - spiral_smooth.min()) / (spiral_smooth.max() - spiral_smooth.min() + 1e-6)
-
-            # Inverted DoG cavity depression inside bright cloud shield
-            inv_dog = gaussian_filter(gray_np, 24.0) - gaussian_filter(gray_np, 6.0)
-            inv_dog_norm = (inv_dog - inv_dog.min()) / (inv_dog.max() - inv_dog.min() + 1e-6)
-
-            deep_convective = gaussian_filter((gray_np > 125).astype(np.float32), 16.0)
-            deep_norm = (deep_convective - deep_convective.min()) / (deep_convective.max() - deep_convective.min() + 1e-6)
-
-            if is_cropped_storm:
-                domain_prior = np.ones((h, w), dtype=np.float32)
-            else:
-                domain_prior = np.ones((h, w), dtype=np.float32)
-                for y_row in range(h):
-                    yp = y_row / float(h)
-                    if yp < 0.28:
-                        domain_prior[y_row, :] = float(np.clip((yp - 0.10) / 0.18, 0.20, 1.0))
-
-            score_map = (spiral_norm * 0.45 + deep_norm * 0.35 + inv_dog_norm * 0.20) * domain_prior * mask
-            detection_mode = "Vectorized Log-Spiral Convergence & 2D Hessian Refinement"
+        # Unified Multi-Factor CenterNet Score Map
+        score_map = (sym_norm * 0.40 + spiral_norm * 0.35 + enclosure_norm * 0.25) * cavity_prior * center_prior * mask_eroded
+        detection_mode = "CenterNet Multi-Radius FRST Symmetry, Spiral Inflow & Cavity Refinement"
 
         # Step 3: Screening Criterion (Continuous Multi-Factor Score, Zero False Alarms)
         valid_scores = score_map[mask > 0.5]
@@ -452,42 +545,41 @@ class EyeDetector:
         x_pct = round(float((final_px / 512.0) * 100), 2)
         y_pct = round(float((final_py / 512.0) * 100), 2)
 
-        # Step 6: Radial Azimuth Profile & Eye Morphology Profiling
+        # Step 6: 360-Degree Azimuthal Eyewall Profiler (Diameter, Ellipticity, Completeness)
         cy_i = int(np.clip(final_py, 0, 511))
         cx_i = int(np.clip(final_px, 0, 511))
 
-        radii_samples = [8, 14, 20, 28, 38, 50]
-        ring_means = []
-        ring_stds = []
-        angles_sym = np.linspace(0, 2 * np.pi, 24, endpoint=False)
+        # Shoot 36 radial rays (10-degree intervals) from detected vortex center
+        angles_36 = np.linspace(0, 2 * np.pi, 36, endpoint=False)
+        radii_sweep = np.arange(6, 65, 2)
+        ray_peak_radii = []
+        closed_sector_count = 0
 
-        eval_field = eyewall_field if is_eir else gray_np
-        for r_s in radii_samples:
-            xs_s = np.clip(np.round(cx_i + r_s * np.cos(angles_sym)).astype(int), 0, w - 1)
-            ys_s = np.clip(np.round(cy_i + r_s * np.sin(angles_sym)).astype(int), 0, h - 1)
-            vals = eval_field[ys_s, xs_s]
-            ring_means.append(float(np.mean(vals)))
-            ring_stds.append(float(np.std(vals)))
+        eval_field = eyewall_density if is_eir else gaussian_filter(gray_np, 2.0)
 
-        # Find the inner eyewall radius (first peak or steep gradient)
-        if is_eir:
-            # Inner eyewall boundary
-            diffs = [ring_means[i+1] - ring_means[i] for i in range(len(radii_samples)-1)]
-            steepest_idx = int(np.argmax(diffs))
-            eye_radius_px = float(radii_samples[steepest_idx])
-            best_r_idx = int(np.argmax(ring_means))
-            # Ring coverage around the eyewall
-            r_eval = radii_samples[best_r_idx]
-            xs_e = np.clip(np.round(cx_i + r_eval * np.cos(angles_sym)).astype(int), 0, w - 1)
-            ys_e = np.clip(np.round(cy_i + r_eval * np.sin(angles_sym)).astype(int), 0, h - 1)
-            coverage = float(np.mean(eval_field[ys_e, xs_e] > 0.20))
-            symmetry_score = round(float(np.clip(0.65 + coverage * 0.30, 0.60, 0.96)), 2)
-            eye_diameter_km = round(float(eye_radius_px * 1.6), 1)
-        else:
-            max_ring_idx = int(np.argmax(ring_means))
-            eye_radius_px = float(radii_samples[max_ring_idx])
-            symmetry_score = round(float(np.clip(1.0 - (ring_stds[max_ring_idx] / (ring_means[max_ring_idx] + 1e-4)), 0.50, 0.98)), 2)
-            eye_diameter_km = round(float(eye_radius_px * 1.5), 1)
+        for a in angles_36:
+            xs = np.clip(np.round(cx_i + radii_sweep * np.cos(a)).astype(int), 0, w - 1)
+            ys = np.clip(np.round(cy_i + radii_sweep * np.sin(a)).astype(int), 0, h - 1)
+            ray_vals = eval_field[ys, xs]
+            d_ray = np.diff(ray_vals)
+            if len(d_ray) > 0 and np.max(d_ray) > (0.15 if is_eir else 1.2):
+                p_idx = int(np.argmax(d_ray))
+                peak_r = float(radii_sweep[p_idx])
+                ray_peak_radii.append(peak_r)
+                closed_sector_count += 1
+            else:
+                ray_peak_radii.append(22.0)
+
+        completeness_pct = round(float((closed_sector_count / 36.0) * 100.0), 1)
+        r_arr = np.array(ray_peak_radii, dtype=np.float32)
+        r_p15 = float(np.percentile(r_arr, 15))
+        r_p85 = float(np.percentile(r_arr, 85))
+        r_mean = float(np.median(r_arr))
+        eye_radius_px = float(r_mean)
+        ellipticity_ratio = round(float(np.clip(r_p85 / (r_p15 + 1e-4), 1.02, 2.35)), 2)
+        eye_diameter_km = round(float(np.clip(r_mean * 2.0 * 1.2, 14.0, 95.0)), 1)
+        eyewall_thickness_km = round(float(np.clip(np.std(ray_peak_radii) * 1.8 + 12.0, 10.0, 45.0)), 1)
+        symmetry_score = round(float(np.clip(completeness_pct / 100.0, 0.45, 0.98)), 2)
 
         # Step 7: Thermodynamic Cloud-Top Temperature Grading
         if is_eir:
@@ -507,8 +599,26 @@ class EyeDetector:
             eyewall_temp_k = round(205.0 + (float(np.mean(eyewall_crop)) / 255.0) * 22.0, 1)
             delta_t = round(max(5.0, eye_temp_k - eyewall_temp_k), 1)
 
-        # Morphological classification
-        if eye_diameter_km <= 28.0 and symmetry_score >= 0.70 and delta_t >= 25.0:
+        # CenterNet Confidence Heatmap Base64 generation
+        heatmap_base64 = generate_heatmap_png_base64(score_map)
+
+        # Advanced Morphological classification
+        if eye_diameter_km <= 24.0 and completeness_pct >= 75.0 and delta_t >= 25.0:
+            morphology = "PINHOLE_EYE (COMPACT INTENSE CORE)"
+            morphology_code = "PINHOLE"
+        elif eye_diameter_km <= 48.0 and completeness_pct >= 70.0 and ellipticity_ratio <= 1.30:
+            morphology = "CLASSICAL_CIRCULAR_EYE (WELL-DEFINED EYEWALL)"
+            morphology_code = "CIRCULAR"
+        elif delta_t <= 16.0 or completeness_pct < 50.0:
+            morphology = "CENTRAL_DENSE_OVERCAST (CLOUD-OBSCURED EYE / CDO)"
+            morphology_code = "CDO"
+        elif ellipticity_ratio > 1.35:
+            morphology = "RAGGED_ASYMMETRIC_EYE (HIGH VERTICAL SHEAR / SHEARED CORE)"
+            morphology_code = "RAGGED"
+        elif eye_diameter_km > 50.0:
+            morphology = "EXPANDED_OUTER_EYE (DOUBLE EYEWALL / ERC CANDIDATE)"
+            morphology_code = "EXPANDED_EYE"
+        elif eye_diameter_km <= 28.0 and symmetry_score >= 0.70 and delta_t >= 25.0:
             morphology = "PINHOLE_EYE (COMPACT INTENSE CORE)"
             morphology_code = "PINHOLE"
         elif eye_diameter_km <= 52.0 and symmetry_score >= 0.62:
@@ -555,6 +665,11 @@ class EyeDetector:
                 "morphology": morphology,
                 "morphology_code": morphology_code,
                 "symmetry_score": symmetry_score,
+                "eyewall_completeness_pct": completeness_pct,
+                "ellipticity_ratio": ellipticity_ratio,
+                "eyewall_thickness_km": eyewall_thickness_km,
+                "azimuthal_closed_sectors": f"{closed_sector_count} / 36 sectors",
+                "heatmap_base64": heatmap_base64,
                 "is_cropped_storm": is_cropped_storm,
                 "detection_mode": detection_mode
             },

@@ -124,7 +124,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
   const [hoverCoords, setHoverCoords] = useState(null);
 
   // Operational Live Downlink Mode (74.0°E IMD Geostationary All 4 Channels)
-  const surveillanceMode = 'live';
+  const [surveillanceMode, setSurveillanceMode] = useState('live');
 
   // Environmental NWP Layer: 'satellite' | 'humidity' | 'temperature' | 'wind' | 'pressure'
   const [environmentalLayer, setEnvironmentalLayer] = useState('satellite');
@@ -208,6 +208,15 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
     if (isOpen) {
       fetchLiveAnalysis(selectedView === 'quad' ? 'ir1' : selectedView, surveillanceMode, false);
     }
+  }, [isOpen, selectedView, surveillanceMode]);
+
+  // 30-second auto-refresh polling for live satellite analysis
+  useEffect(() => {
+    if (!isOpen) return;
+    const intervalId = setInterval(() => {
+      fetchLiveAnalysis(selectedView === 'quad' ? 'ir1' : selectedView, surveillanceMode, true);
+    }, 30000);
+    return () => clearInterval(intervalId);
   }, [isOpen, selectedView, surveillanceMode]);
 
   // Fetch real-time atmospheric station readings across India & Indian Ocean (Zoom Earth style)
@@ -1486,7 +1495,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
                           <span className="text-base font-bold text-white leading-tight block mt-0.5">
                             {eyeFix?.delta_t_k || 45.0} K
                           </span>
-                          <span className="text-[9px] text-slate-400">Ø {eyeFix?.eye_diameter_km || 38} km · {eyeFix?.morphology ? eyeFix.morphology.split(' (')[0] : 'CIRCULAR'}</span>
+                          <span className="text-[9px] text-slate-400">Ø {effectiveEyeFix?.eye_diameter_km || eyeFix?.eye_diameter_km || 38} km · {effectiveEyeFix?.morphology ? effectiveEyeFix.morphology.split(' (')[0] : (eyeFix?.morphology ? eyeFix.morphology.split(' (')[0] : 'CIRCULAR')}</span>
                         </div>
                       </div>
 
