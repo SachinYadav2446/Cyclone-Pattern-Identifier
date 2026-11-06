@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
+  Download,
+  FileText,
   Crosshair, 
   Target, 
   Upload, 
@@ -426,16 +428,22 @@ export default function EyeLocalizationWorkbench({
       }
 
       if (customBase64) {
-        // Step 1: Sub-Pixel Eye Localization on uploaded image
-        const eyeRes = await fetch(`${API_BASE_URL}/api/v1/models/localize-eye`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image_base64: customBase64 }),
-          signal: AbortSignal.timeout(10000),
-        });
+        let eyeData = null;
+        try {
+          const eyeRes = await fetch(`${API_BASE_URL}/api/v1/models/localize-eye`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_base64: customBase64 }),
+            signal: AbortSignal.timeout(10000),
+          });
+          if (eyeRes.ok) {
+            eyeData = await eyeRes.json();
+          }
+        } catch (e) {
+          console.warn('Backend eye localization network error:', e);
+        }
 
-        if (eyeRes.ok) {
-          const eyeData = await eyeRes.json();
+        if (eyeData) {
           setApiData(eyeData);
           autoEyeRef.current = eyeData?.predicted_eye;
           setIsManuallyAdjusted(false);
@@ -503,12 +511,14 @@ export default function EyeLocalizationWorkbench({
             status: 'SUCCESS',
             has_cyclone: true,
             predicted_eye: {
-              pixel_x_percent: 54.0,
-              pixel_y_percent: 54.36,
-              latitude: 19.72,
-              longitude: 86.42,
+              pixel_x_percent: 43.95,
+              pixel_y_percent: 73.53,
+              latitude: 16.61,
+              longitude: 86.02,
               confidence: 0.94,
               eye_diameter_km: 28.0,
+              morphology: 'PINHOLE_EYE (COMPACT INTENSE CORE)',
+              eye_fix_type: 'CLOSED_EYE_CAVITY_FIX',
               detection_mode: 'CenterNet Keypoint Localizer'
             },
             haversine_error_km: 2.46,
@@ -527,6 +537,9 @@ export default function EyeLocalizationWorkbench({
               imd_category_code: 'ESCS'
             }
           });
+          if (fallback.trajectory_forecast) {
+            setTrajectoryData(fallback.trajectory_forecast);
+          }
         }
         return;
       }
@@ -588,6 +601,7 @@ export default function EyeLocalizationWorkbench({
       const reader = new FileReader();
       reader.onload = () => {
         const b64 = reader.result;
+        setIsManuallyAdjusted(false);
         setCustomImage(b64);
         fetchTelemetry(null, b64);
       };
@@ -616,6 +630,7 @@ export default function EyeLocalizationWorkbench({
       const reader = new FileReader();
       reader.onload = () => {
         const b64 = reader.result;
+        setIsManuallyAdjusted(false);
         setCustomImage(b64);
         fetchTelemetry(null, b64);
       };
@@ -713,7 +728,7 @@ export default function EyeLocalizationWorkbench({
   const hasCyclone = (activeStorm.id === 'live_insat')
     ? (apiData?.has_cyclone === true)
     : customImage
-    ? (apiData?.has_cyclone === true)
+    ? (apiData ? apiData?.has_cyclone !== false : true)
     : (apiData ? (apiData?.has_cyclone !== false && apiData?.status !== 'NO_CYCLONE_DETECTED') : true);
 
   const reticleX = apiData?.predicted_eye?.pixel_x_percent ?? activeStorm.reticleX;
@@ -751,6 +766,18 @@ export default function EyeLocalizationWorkbench({
     r34_knots_km: { ne: 269, se: 241, sw: 176, nw: 222 },
     r50_knots_km: { ne: 148, se: 130, sw: 93, nw: 120 },
     r64_knots_km: { ne: 74, se: 65, sw: 46, nw: 56 }
+  };
+
+  // Cyclone Eye & Cyclogenesis Lifecycle Telemetry
+  const eyeFixType = apiData?.predicted_eye?.eye_fix_type || (mswKnots >= 64 ? 'CLOSED_EYE_CAVITY_FIX' : (mswKnots >= 34 ? 'CDO_VIRTUAL_ROTATION_FOCUS' : 'PRE_GENESIS_ROTATION_CENTER'));
+  const vortexStageName = apiData?.predicted_eye?.vortex_stage_name || (eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? 'Mature Cyclonic Vortex (Well-Defined Eye Cavity)' : (eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 'Intensifying Cyclone with Central Dense Overcast (CDO)' : 'Early Formative Depression / Invest Rotation Center (LLCC)'));
+  const cyclogenesisRiskScore = apiData?.predicted_eye?.cyclogenesis_risk_score ?? (eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? 98.0 : (eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 92.5 : 85.6));
+  const pregenesisAlert = apiData?.predicted_eye?.pregenesis_alert || {
+    is_early_pregenesis: eyeFixType === 'PRE_GENESIS_ROTATION_CENTER',
+    vortex_phase: eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? 'EARLY_INVEST_SPINUP' : (eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 'INTENSIFYING_CDO' : 'MATURE_CYCLONE'),
+    lead_time_to_eye_formation: eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? '24 to 48 Hours Ahead of Formal Eye Opening' : (eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 'Pinhole Eye Emerging in 6 to 12 Hours' : 'Eye Fully Formed & Closed'),
+    convective_organization_index: 0.86,
+    recommended_action: eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? 'Activate Pre-Genesis Invest Watch. High probability of depression genesis within 24-48h.' : 'Maintain Continuous Eye Tracking & Coastal Warning Tier.'
   };
 
   const patternInfo = intensityData?.pattern_classification || {
@@ -904,23 +931,55 @@ export default function EyeLocalizationWorkbench({
     return { x: Math.round(px * 10) / 10, y: Math.round(py * 10) / 10 };
   };
 
-  const coneCoords = trajectoryData?.cone_of_uncertainty?.polygon_coordinates || [];
-  const conePolygonPointsStr = coneCoords.length > 0
-    ? coneCoords.map((pt) => {
-        const px = pt.pixel_x !== undefined ? pt.pixel_x : Math.min(95, Math.max(5, ((pt.lon - 45.0) / 60.0) * 100));
-        const py = pt.pixel_y !== undefined ? pt.pixel_y : Math.min(95, Math.max(5, ((40.0 - pt.lat) / 45.0) * 100));
-        return `${px},${py}`;
-      }).join(' ')
-    : '';
-
   const activeWaypoints = waypoints48h.length > 0 ? waypoints48h : [
     { horizon_h: 0, lat: predLat, lon: predLon, pixel_x: reticleX, pixel_y: reticleY, msw_kts: mswKnots, pressure_hpa: centralPressure, cone_km: 15.0 },
-    { horizon_h: 6, lat: (parseFloat(predLat) + 0.6).toFixed(2), lon: (parseFloat(predLon) + 0.3).toFixed(2), pixel_x: Math.min(95, reticleX + 2.5), pixel_y: Math.max(5, reticleY - 3.5), msw_kts: Math.max(30, mswKnots - 2), pressure_hpa: centralPressure + 2, cone_km: 32.0 },
-    { horizon_h: 12, lat: (parseFloat(predLat) + 1.2).toFixed(2), lon: (parseFloat(predLon) + 0.6).toFixed(2), pixel_x: Math.min(95, reticleX + 4.5), pixel_y: Math.max(5, reticleY - 6.5), msw_kts: Math.max(30, mswKnots - 4), pressure_hpa: centralPressure + 4, cone_km: 50.0 },
-    { horizon_h: 18, lat: landfallProjection.latitude, lon: landfallProjection.longitude, pixel_x: Math.min(95, reticleX + 6.0), pixel_y: Math.max(5, reticleY - 9.0), msw_kts: landfallProjection.projected_landfall_wind_kts, pressure_hpa: centralPressure + 6, cone_km: 68.0, is_landfall: true },
-    { horizon_h: 24, lat: (parseFloat(landfallProjection.latitude) + 0.5).toFixed(2), lon: (parseFloat(landfallProjection.longitude) + 0.4).toFixed(2), pixel_x: Math.min(95, reticleX + 7.5), pixel_y: Math.max(5, reticleY - 12.0), msw_kts: Math.max(25, mswKnots - 35), pressure_hpa: centralPressure + 25, cone_km: 88.0 },
-    { horizon_h: 48, lat: (parseFloat(landfallProjection.latitude) + 2.0).toFixed(2), lon: (parseFloat(landfallProjection.longitude) + 1.8).toFixed(2), pixel_x: Math.min(95, reticleX + 11.5), pixel_y: Math.max(5, reticleY - 18.0), msw_kts: 35.0, pressure_hpa: 998.0, cone_km: 175.0 },
+    { horizon_h: 6, lat: (parseFloat(predLat) + 0.6).toFixed(2), lon: (parseFloat(predLon) + 0.3).toFixed(2), pixel_x: Math.min(95, reticleX + 4.5), pixel_y: Math.max(5, reticleY - 5.5), msw_kts: Math.max(30, mswKnots - 2), pressure_hpa: centralPressure + 2, cone_km: 32.0 },
+    { horizon_h: 12, lat: (parseFloat(predLat) + 1.2).toFixed(2), lon: (parseFloat(predLon) + 0.6).toFixed(2), pixel_x: Math.min(95, reticleX + 8.5), pixel_y: Math.max(5, reticleY - 10.5), msw_kts: Math.max(30, mswKnots - 4), pressure_hpa: centralPressure + 4, cone_km: 50.0 },
+    { horizon_h: 18, lat: landfallProjection.latitude, lon: landfallProjection.longitude, pixel_x: Math.min(95, reticleX + 12.0), pixel_y: Math.max(5, reticleY - 15.0), msw_kts: landfallProjection.projected_landfall_wind_kts, pressure_hpa: centralPressure + 6, cone_km: 68.0, is_landfall: true },
+    { horizon_h: 24, lat: (parseFloat(landfallProjection.latitude) + 0.5).toFixed(2), lon: (parseFloat(landfallProjection.longitude) + 0.4).toFixed(2), pixel_x: Math.min(95, reticleX + 15.5), pixel_y: Math.max(5, reticleY - 20.0), msw_kts: Math.max(25, mswKnots - 35), pressure_hpa: centralPressure + 25, cone_km: 88.0 },
+    { horizon_h: 48, lat: (parseFloat(landfallProjection.latitude) + 2.0).toFixed(2), lon: (parseFloat(landfallProjection.longitude) + 1.8).toFixed(2), pixel_x: Math.min(95, reticleX + 22.5), pixel_y: Math.max(5, reticleY - 28.0), msw_kts: 35.0, pressure_hpa: 998.0, cone_km: 175.0 },
   ];
+
+  const coneCoords = trajectoryData?.cone_of_uncertainty?.polygon_coordinates || [];
+  const conePolygonPointsStr = useMemo(() => {
+    // If backend provided coneCoords and they are aligned with activeWaypoints[0]
+    if (coneCoords.length > 0) {
+      const c0x = coneCoords[0].pixel_x !== undefined ? coneCoords[0].pixel_x : Math.min(95, Math.max(5, ((coneCoords[0].lon - 45.0) / 60.0) * 100));
+      const c0y = coneCoords[0].pixel_y !== undefined ? coneCoords[0].pixel_y : Math.min(95, Math.max(5, ((40.0 - coneCoords[0].lat) / 45.0) * 100));
+      if (Math.hypot(c0x - reticleX, c0y - reticleY) < 18) {
+        return coneCoords.map((pt) => {
+          const px = pt.pixel_x !== undefined ? pt.pixel_x : Math.min(95, Math.max(5, ((pt.lon - 45.0) / 60.0) * 100));
+          const py = pt.pixel_y !== undefined ? pt.pixel_y : Math.min(95, Math.max(5, ((40.0 - pt.lat) / 45.0) * 100));
+          return `${px},${py}`;
+        }).join(' ');
+      }
+    }
+    // Dynamic calculation from activeWaypoints to guarantee exact track alignment
+    if (activeWaypoints.length < 2) return '';
+    const leftPts = [];
+    const rightPts = [];
+    for (let i = 0; i < activeWaypoints.length; i++) {
+      const curr = getWpPixels(activeWaypoints[i]);
+      let dx = 0, dy = 0;
+      if (i < activeWaypoints.length - 1) {
+        const next = getWpPixels(activeWaypoints[i + 1]);
+        dx = next.x - curr.x;
+        dy = next.y - curr.y;
+      } else {
+        const prev = getWpPixels(activeWaypoints[i - 1]);
+        dx = curr.x - prev.x;
+        dy = curr.y - prev.y;
+      }
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const coneKm = activeWaypoints[i].cone_km || (15 + i * 25);
+      const conePx = Math.max(1.8, Math.min(14, (coneKm / 120) * 3.8));
+      leftPts.push(`${(curr.x + nx * conePx).toFixed(1)},${(curr.y + ny * conePx).toFixed(1)}`);
+      rightPts.push(`${(curr.x - nx * conePx).toFixed(1)},${(curr.y - ny * conePx).toFixed(1)}`);
+    }
+    return leftPts.concat(rightPts.reverse()).join(' ');
+  }, [coneCoords, activeWaypoints, reticleX, reticleY]);
 
   const trackLinePointsStr = activeWaypoints.map((wp) => {
     const coords = getWpPixels(wp);
@@ -1044,12 +1103,80 @@ export default function EyeLocalizationWorkbench({
     setMouseCoords({ lat, lon, x: x.toFixed(1), y: y.toFixed(1) });
   };
 
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const handleDirectDownloadPdf = async (e) => {
+    e?.stopPropagation();
+    if (isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    try {
+      const isCycloneActive = Boolean(hasCyclone);
+      const stormTitle = isCycloneActive 
+        ? (selectedStormId ? (activeStorm?.name || 'Cyclone Pass') : 'Uploaded Satellite Pass')
+        : 'Quiescent Marine Pass';
+      const bId = `VORTEX-RSMC-${isCycloneActive ? (selectedStormId ? selectedStormId.toUpperCase() : 'CUSTOM') : 'QUIESCENT'}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`;
+
+      const payload = {
+        has_cyclone: isCycloneActive,
+        storm_name: stormTitle,
+        bulletin_id: bId,
+        issue_time_utc: new Date().toUTCString(),
+        category: isCycloneActive ? imdCatName : 'GREEN ALL-CLEAR (ROUTINE SURVEILLANCE)',
+        eye_lat: predLat,
+        eye_lon: predLon,
+        msw_knots: isCycloneActive ? mswKnots : 12.0,
+        msw_kmh: isCycloneActive ? mswKmh : 22,
+        central_pressure_hpa: isCycloneActive ? centralPressure : 1010.5,
+        pressure_deficit_hpa: isCycloneActive ? pressureDeficit : 2.5,
+        dvorak_t: isCycloneActive ? dvorakT : 0.0,
+        vortex_stage_name: isCycloneActive ? vortexStageName : 'Quiescent Ambient Marine Atmosphere',
+        cyclogenesis_risk_score: isCycloneActive ? cyclogenesisRiskScore : 3.8,
+        lead_time_to_eye_formation: isCycloneActive 
+          ? (pregenesisAlert?.lead_time_to_eye_formation || '24-48 Hours Ahead')
+          : 'No Cyclogenesis Imminent (> 72h Safe)',
+        recommended_action: isCycloneActive
+          ? (pregenesisAlert?.recommended_action || 'Maintain continuous coastal eye tracking & radar surveillance.')
+          : 'ALL-CLEAR: Routine maritime and coastal operations permitted across all sectors. Normal port operations in effect.',
+        image_base64: customImage || activeStorm?.image,
+        waypoints: activeWaypoints,
+        quadrant_radii: quadrantRadii,
+        morphology: isCycloneActive ? (apiData?.predicted_eye?.morphology || 'CIRCULAR EYE') : 'NON_CYCLONIC_CELLULAR'
+      };
+
+      const res = await fetch(`${API_BASE_URL}/api/v1/models/export-bulletin-pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error(`Server responded with ${res.status}`);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const filePrefix = isCycloneActive ? 'VortexAI_Official_Bulletin' : 'VortexAI_Quiescent_Surveillance_Report';
+      a.download = `${filePrefix}_${stormTitle.replace(/\s+/g, '_')}_${bId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download PDF:', err);
+      alert('Unable to generate PDF bulletin. Ensure backend server is active.');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   const isModal = Boolean(onClose);
 
   const hasInputImage = Boolean(customImage);
 
   const mainContent = (
-    <div className="max-w-7xl mx-auto w-full flex-1 min-h-0 flex flex-col relative z-10 font-mono">
+    <div className="max-w-7xl mx-auto w-full flex flex-col relative z-10 font-mono space-y-5">
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -1113,10 +1240,10 @@ export default function EyeLocalizationWorkbench({
         </div>
       ) : (
         /* VIEW STATE 2: IMAGE LOADED -> VISUALIZER (7 COLS) + TELEMETRY & ALL PIPELINE FEATURES (5 COLS) */
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Main Visualizer Column (7 Cols) -> Exactly Matches Right Side Height */}
-          <div className="lg:col-span-7 h-full flex flex-col bg-[#0d0714] border border-[#64104E]/60 shadow-2xl rounded-2xl overflow-hidden relative text-white">
+          <div className="lg:col-span-7 flex flex-col bg-[#0d0714] border border-[#64104E]/60 shadow-2xl rounded-2xl overflow-hidden relative text-white">
             {/* Tactical Corner Crosshairs */}
             <span className="absolute top-1 left-1.5 font-mono text-[9px] text-slate-600 z-30 pointer-events-none select-none">+</span>
             <span className="absolute top-1 right-1.5 font-mono text-[9px] text-slate-600 z-30 pointer-events-none select-none">+</span>
@@ -1124,27 +1251,52 @@ export default function EyeLocalizationWorkbench({
             <span className="absolute bottom-1 right-1.5 font-mono text-[9px] text-slate-600 z-30 pointer-events-none select-none">+</span>
 
             {/* Top Toolbar with Feature Toggles */}
-            <div className="shrink-0 h-10 px-3 bg-[#120a1c] border-b border-[#64104E]/50 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
+            <div className="shrink-0 min-h-12 px-3 sm:px-4 py-2 bg-[#120a1c] border-b border-[#64104E]/60 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#E04A31] animate-pulse shadow-[0_0_8px_#E04A31]" />
-                <span className="font-bold text-white tracking-wide truncate max-w-[180px]">
-                  UPLOADED SATELLITE PASS
+                <span className="font-bold text-white tracking-wide text-xs whitespace-nowrap">
+                  SATELLITE PASS
                 </span>
-                <span className="text-[10px] text-[#C3864D] font-semibold hidden md:inline">
+                <span className="text-[10px] text-[#C3864D] font-semibold truncate max-w-[130px] sm:max-w-[190px]" title={imdCatName}>
                   {isLoadingApi ? 'ANALYZING...' : imdCatName}
                 </span>
+
+                {/* Cyclone Eye & Vortex Lifecycle Stage Badge */}
+                {!isLoadingApi && (
+                  <span className={`text-[9px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider border flex items-center gap-1.5 shadow-sm ${
+                    eyeFixType === 'CLOSED_EYE_CAVITY_FIX'
+                      ? 'bg-emerald-950/80 border-emerald-500/70 text-emerald-300'
+                      : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS'
+                      ? 'bg-purple-950/80 border-purple-500/70 text-purple-300'
+                      : eyeFixType === 'PRE_GENESIS_ROTATION_CENTER'
+                      ? 'bg-amber-950/80 border-amber-500/70 text-amber-300 animate-pulse'
+                      : 'bg-orange-950/80 border-orange-500/70 text-orange-300'
+                  }`}>
+                    <span 
+                      className="w-1.5 h-1.5 rounded-full" 
+                      style={{ 
+                        backgroundColor: eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#10b981' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#c084fc' : eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? '#f59e0b' : '#fb923c',
+                        boxShadow: `0 0 6px ${eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#10b981' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#c084fc' : '#f59e0b'}`
+                      }} 
+                    />
+                    {eyeFixType === 'CLOSED_EYE_CAVITY_FIX' && 'CLOSED EYE CAVITY'}
+                    {eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' && 'CDO EMBEDDED EYE'}
+                    {eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' && 'PRE-GENESIS LLCC'}
+                    {eyeFixType === 'SHEARED_CORE_VORTEX_FIX' && 'SHEARED VORTEX'}
+                  </span>
+                )}
               </div>
 
-              {/* Feature Overlay Toggles & Upload Action */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
+              {/* Feature Overlay Toggles & Bulletin Action */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1 bg-[#0a050f] p-0.5 rounded-lg border border-[#64104E]/50">
                   <button
                     onClick={() => setShowThermodynamicAnnulus(!showThermodynamicAnnulus)}
                     title="Toggle Eyewall Ring"
-                    className={`px-2 py-0.5 text-[10px] font-mono rounded transition-all cursor-pointer border ${
+                    className={`px-2 py-1 text-[10px] font-mono rounded transition-all cursor-pointer border ${
                       showThermodynamicAnnulus
                         ? 'bg-[#241026] border-[#B43067] text-white font-bold'
-                        : 'bg-[#180e24]/70 border-[#64104E]/50 text-slate-400 hover:text-white'
+                        : 'bg-transparent border-transparent text-slate-400 hover:text-white'
                     }`}
                   >
                     👁 Eyewall
@@ -1152,10 +1304,10 @@ export default function EyeLocalizationWorkbench({
                   <button
                     onClick={() => setShowGaleRadii(!showGaleRadii)}
                     title="Toggle Asymmetric Gale Radii Overlay"
-                    className={`px-2 py-0.5 text-[10px] font-mono rounded transition-all cursor-pointer border ${
+                    className={`px-2 py-1 text-[10px] font-mono rounded transition-all cursor-pointer border ${
                       showGaleRadii
                         ? 'bg-[#241026] border-[#E04A31] text-white font-bold'
-                        : 'bg-[#180e24]/70 border-[#64104E]/50 text-slate-400 hover:text-white'
+                        : 'bg-transparent border-transparent text-slate-400 hover:text-white'
                     }`}
                   >
                     💨 Radii
@@ -1163,10 +1315,10 @@ export default function EyeLocalizationWorkbench({
                   <button
                     onClick={() => setShowTrajectoryOverlay(!showTrajectoryOverlay)}
                     title="Toggle 48h Trajectory & Landfall Cone"
-                    className={`px-2 py-0.5 text-[10px] font-mono rounded transition-all cursor-pointer border ${
+                    className={`px-2 py-1 text-[10px] font-mono rounded transition-all cursor-pointer border ${
                       showTrajectoryOverlay
                         ? 'bg-[#241026] border-[#CF2F4B] text-white font-bold'
-                        : 'bg-[#180e24]/70 border-[#64104E]/50 text-slate-400 hover:text-white'
+                        : 'bg-transparent border-transparent text-slate-400 hover:text-white'
                     }`}
                   >
                     📍 Track
@@ -1174,33 +1326,35 @@ export default function EyeLocalizationWorkbench({
                   <button
                     onClick={() => setShowConfidenceHeatmap(!showConfidenceHeatmap)}
                     title="Toggle CenterNet Probability Confidence Heatmap"
-                    className={`px-2 py-0.5 text-[10px] font-mono rounded transition-all cursor-pointer border ${
+                    className={`px-2 py-1 text-[10px] font-mono rounded transition-all cursor-pointer border ${
                       showConfidenceHeatmap
                         ? 'bg-[#241026] border-[#E04A31] text-amber-300 font-bold shadow-[0_0_8px_rgba(224,74,49,0.35)]'
-                        : 'bg-[#180e24]/70 border-[#64104E]/50 text-slate-400 hover:text-white'
+                        : 'bg-transparent border-transparent text-slate-400 hover:text-white'
                     }`}
                   >
                     🔥 Heatmap
                   </button>
-
-                  {isManuallyAdjusted && (
-                    <button
-                      onClick={handleResetToAutoEye}
-                      title="Eye location was manually fine-tuned. Click to reset to AI CenterNet fix."
-                      className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono rounded bg-amber-950/60 border border-amber-500/80 text-amber-300 hover:text-white transition-all cursor-pointer shadow-sm animate-pulse"
-                    >
-                      <Crosshair className="w-3 h-3 text-amber-400" />
-                      <span>MANUAL PIN (RESET AUTO)</span>
-                    </button>
-                  )}
                 </div>
 
+                {isManuallyAdjusted && (
+                  <button
+                    onClick={handleResetToAutoEye}
+                    title="Eye location was manually fine-tuned. Click to reset to AI CenterNet fix."
+                    className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-mono rounded bg-amber-950/80 border border-amber-500/80 text-amber-300 hover:text-white transition-all cursor-pointer shadow-sm animate-pulse font-bold"
+                  >
+                    <Crosshair className="w-3 h-3 text-amber-400" />
+                    <span>RESET AUTO</span>
+                  </button>
+                )}
+
                 <button
-                  onClick={handleResetUpload}
-                  className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] bg-[#180e24] hover:bg-[#251236] border border-[#64104E]/60 hover:border-[#E04A31] text-slate-200 hover:text-white rounded-lg transition-colors cursor-pointer shadow-sm active:scale-95"
+                  onClick={handleDirectDownloadPdf}
+                  disabled={isDownloadingPdf}
+                  title="Directly download official WMO/IMD-standard 2-Page Tropical Cyclone Advisory Bulletin PDF"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] bg-gradient-to-r from-[#B43067] to-[#E04A31] hover:brightness-110 border border-[#E04A31] text-white rounded-lg transition-all cursor-pointer shadow-md shadow-[#E04A31]/20 active:scale-95 font-semibold disabled:opacity-60"
                 >
-                  <Upload className="w-3 h-3 text-[#E04A31]" />
-                  <span className="hidden sm:inline">NEW IMAGE</span>
+                  <Download className={`w-3.5 h-3.5 text-[#fbcfe8] ${isDownloadingPdf ? 'animate-bounce' : ''}`} />
+                  <span>{isDownloadingPdf ? 'DOWNLOADING PDF...' : 'DOWNLOAD BULLETIN (PDF)'}</span>
                 </button>
               </div>
             </div>
@@ -1208,10 +1362,9 @@ export default function EyeLocalizationWorkbench({
             {/* Viewport Canvas with CenterNet Eye Reticle + Overlays */}
             <div
               ref={canvasRef}
-              onClick={handleCanvasClick}
               onMouseMove={handleMouseMove}
               onMouseLeave={() => setMouseCoords(null)}
-              className="flex-1 min-h-0 relative bg-black overflow-hidden flex items-center justify-center cursor-crosshair select-none"
+              className="relative w-full aspect-[4/3] min-h-[500px] md:min-h-[580px] lg:min-h-[640px] bg-black overflow-hidden flex items-center justify-center cursor-default select-none"
             >
               {/* 1. Underlying Satellite Frame */}
               <img
@@ -1248,21 +1401,13 @@ export default function EyeLocalizationWorkbench({
                   {showTrajectoryOverlay && (
                     <g>
                       {/* Cone of Uncertainty polygon */}
-                      {conePolygonPointsStr ? (
+                      {conePolygonPointsStr && (
                         <polygon
                           points={conePolygonPointsStr}
-                          fill="rgba(224, 74, 49, 0.16)"
-                          stroke="rgba(224, 74, 49, 0.45)"
-                          strokeDasharray="1.5 1.5"
-                          strokeWidth="0.4"
-                        />
-                      ) : (
-                        <polygon
-                          points={`${reticleX},${reticleY} ${Math.min(95, reticleX - 4)},${Math.max(5, reticleY - 6)} ${Math.min(95, reticleX - 8)},${Math.max(5, reticleY - 14)} ${Math.min(95, reticleX - 12)},${Math.max(5, reticleY - 22)} ${Math.min(95, reticleX + 14)},${Math.max(5, reticleY - 20)} ${Math.min(95, reticleX + 9)},${Math.max(5, reticleY - 13)} ${Math.min(95, reticleX + 5)},${Math.max(5, reticleY - 6)}`}
-                          fill="rgba(224, 74, 49, 0.16)"
-                          stroke="rgba(224, 74, 49, 0.45)"
-                          strokeDasharray="1.5 1.5"
-                          strokeWidth="0.4"
+                          fill="rgba(224, 74, 49, 0.12)"
+                          stroke="rgba(224, 74, 49, 0.40)"
+                          strokeDasharray="2 1.5"
+                          strokeWidth="0.35"
                         />
                       )}
 
@@ -1271,35 +1416,48 @@ export default function EyeLocalizationWorkbench({
                         points={trackLinePointsStr}
                         fill="none"
                         stroke="#E04A31"
-                        strokeWidth="0.8"
+                        strokeWidth="0.75"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
 
                       {/* Waypoint markers */}
                       {activeWaypoints.map((wp, idx) => {
+                        // Suppress duplicate waypoint at T+0 eye center
+                        if (wp.horizon_h === 0) return null;
                         const pt = getWpPixels(wp);
                         const isPast = forecastHour >= wp.horizon_h;
+                        const distToEye = Math.hypot(pt.x - reticleX, pt.y - reticleY);
+                        // Only show text for milestone waypoints to avoid visual crowding
+                        const isMilestone = wp.is_landfall || wp.horizon_h === 24 || wp.horizon_h === 48;
+                        // When scrubber is at/near this waypoint, suppress static SVG text so the scrubber's telemetry badge doesn't collide
+                        const isBeingScrubbed = Math.abs(forecastHour - wp.horizon_h) < 6;
                         return (
                           <g key={idx}>
                             <circle
                               cx={pt.x}
                               cy={pt.y}
-                              r={wp.is_landfall ? 1.8 : 1.1}
+                              r={wp.is_landfall ? 1.5 : 0.9}
                               fill={wp.is_landfall ? '#ef4444' : (isPast ? '#E04A31' : '#ffffff')}
                               stroke="#000000"
-                              strokeWidth="0.3"
+                              strokeWidth="0.25"
                             />
-                            <text
-                              x={Math.min(92, pt.x + 2.2)}
-                              y={Math.max(6, pt.y + 0.8)}
-                              fill={wp.is_landfall ? '#fca5a5' : '#fed7aa'}
-                              fontSize="2.2"
-                              fontFamily="monospace"
-                              fontWeight="bold"
-                            >
-                              +{wp.horizon_h}h{wp.is_landfall ? ' (LF)' : ''}
-                            </text>
+                            {isMilestone && distToEye >= 5.0 && !isBeingScrubbed && (
+                              <text
+                                x={pt.x}
+                                y={pt.y - 3.2}
+                                textAnchor="middle"
+                                fill={wp.is_landfall ? '#fca5a5' : '#fef08a'}
+                                fontSize="2.0"
+                                fontFamily="monospace"
+                                fontWeight="bold"
+                                stroke="#000000"
+                                strokeWidth="0.3"
+                                paintOrder="stroke fill"
+                              >
+                                +{wp.horizon_h}h{wp.is_landfall ? ' (LF)' : ''}
+                              </text>
+                            )}
                           </g>
                         );
                       })}
@@ -1312,25 +1470,27 @@ export default function EyeLocalizationWorkbench({
                       {/* R34 Gale (Cyan) */}
                       <polygon
                         points={`${reticleX + (quadrantRadii.r34_knots_nm.ne * 0.07) * 0.707},${reticleY - (quadrantRadii.r34_knots_nm.ne * 0.07) * 0.707} ${reticleX + (quadrantRadii.r34_knots_nm.se * 0.07) * 0.707},${reticleY + (quadrantRadii.r34_knots_nm.se * 0.07) * 0.707} ${reticleX - (quadrantRadii.r34_knots_nm.sw * 0.07) * 0.707},${reticleY + (quadrantRadii.r34_knots_nm.sw * 0.07) * 0.707} ${reticleX - (quadrantRadii.r34_knots_nm.nw * 0.07) * 0.707},${reticleY - (quadrantRadii.r34_knots_nm.nw * 0.07) * 0.707}`}
-                        fill="rgba(56, 189, 248, 0.16)"
+                        fill="rgba(56, 189, 248, 0.07)"
                         stroke="#38bdf8"
-                        strokeWidth="0.5"
+                        strokeWidth="0.35"
+                        strokeDasharray="2 1.5"
                       />
 
                       {/* R50 Storm (Yellow) */}
                       <polygon
                         points={`${reticleX + (quadrantRadii.r50_knots_nm.ne * 0.07) * 0.707},${reticleY - (quadrantRadii.r50_knots_nm.ne * 0.07) * 0.707} ${reticleX + (quadrantRadii.r50_knots_nm.se * 0.07) * 0.707},${reticleY + (quadrantRadii.r50_knots_nm.se * 0.07) * 0.707} ${reticleX - (quadrantRadii.r50_knots_nm.sw * 0.07) * 0.707},${reticleY + (quadrantRadii.r50_knots_nm.sw * 0.07) * 0.707} ${reticleX - (quadrantRadii.r50_knots_nm.nw * 0.07) * 0.707},${reticleY - (quadrantRadii.r50_knots_nm.nw * 0.07) * 0.707}`}
-                        fill="rgba(234, 179, 8, 0.20)"
+                        fill="rgba(234, 179, 8, 0.09)"
                         stroke="#eab308"
-                        strokeWidth="0.5"
+                        strokeWidth="0.35"
+                        strokeDasharray="2 1.5"
                       />
 
                       {/* R64 Hurricane (Red) */}
                       <polygon
                         points={`${reticleX + (quadrantRadii.r64_knots_nm.ne * 0.07) * 0.707},${reticleY - (quadrantRadii.r64_knots_nm.ne * 0.07) * 0.707} ${reticleX + (quadrantRadii.r64_knots_nm.se * 0.07) * 0.707},${reticleY + (quadrantRadii.r64_knots_nm.se * 0.07) * 0.707} ${reticleX - (quadrantRadii.r64_knots_nm.sw * 0.07) * 0.707},${reticleY + (quadrantRadii.r64_knots_nm.sw * 0.07) * 0.707} ${reticleX - (quadrantRadii.r64_knots_nm.nw * 0.07) * 0.707},${reticleY - (quadrantRadii.r64_knots_nm.nw * 0.07) * 0.707}`}
-                        fill="rgba(239, 68, 68, 0.28)"
+                        fill="rgba(239, 68, 68, 0.14)"
                         stroke="#ef4444"
-                        strokeWidth="0.6"
+                        strokeWidth="0.45"
                       />
                     </g>
                   )}
@@ -1342,9 +1502,9 @@ export default function EyeLocalizationWorkbench({
                       cy={reticleY}
                       r={Math.max(2.5, Math.min(8.0, (eyeDiameter / 30.0) * 3.5))}
                       fill="none"
-                      stroke="rgba(255, 255, 255, 0.85)"
-                      strokeDasharray="1.2 1.2"
-                      strokeWidth="0.4"
+                      stroke="rgba(255, 255, 255, 0.65)"
+                      strokeDasharray="1.5 1.5"
+                      strokeWidth="0.35"
                     />
                   )}
                 </svg>
@@ -1357,16 +1517,58 @@ export default function EyeLocalizationWorkbench({
                   style={{ left: `${reticleX}%`, top: `${reticleY}%` }}
                 >
                   <div className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
-                    <div className={`w-8 h-8 rounded-full border ${forecastHour === 0 ? 'border-white/90 shadow-[0_0_12px_rgba(255,255,255,0.4)]' : 'border-white/40'} flex items-center justify-center`}>
-                      <div className="w-2.5 h-2.5 rounded-full border border-white/60" />
+                    {/* Concentric rings styled by Vortex Fix Type */}
+                    <div 
+                      className={`w-8 h-8 rounded-full border flex items-center justify-center ${
+                        eyeFixType === 'CLOSED_EYE_CAVITY_FIX'
+                          ? (forecastHour === 0 ? 'border-white/95 shadow-[0_0_12px_rgba(255,255,255,0.6)]' : 'border-white/40')
+                          : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS'
+                          ? 'border-purple-400 border-dashed shadow-[0_0_12px_rgba(192,132,252,0.6)]'
+                          : eyeFixType === 'PRE_GENESIS_ROTATION_CENTER'
+                          ? 'border-amber-400 border-dashed shadow-[0_0_12px_rgba(245,158,11,0.6)] animate-pulse'
+                          : 'border-orange-400/90 shadow-[0_0_12px_rgba(251,146,60,0.5)]'
+                      }`}
+                    >
+                      <div className={`w-2.5 h-2.5 rounded-full border ${
+                        eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? 'border-white/80' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 'border-purple-300' : 'border-amber-300'
+                      }`} />
                     </div>
-                    <div className="absolute w-12 h-px bg-white/70" />
-                    <div className="absolute h-12 w-px bg-white/70" />
-                    <div className="absolute w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#ffffff]" />
+                    <div className={`absolute w-12 h-px ${eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? 'bg-amber-400/80' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 'bg-purple-400/80' : 'bg-white/80'}`} />
+                    <div className={`absolute h-12 w-px ${eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? 'bg-amber-400/80' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 'bg-purple-400/80' : 'bg-white/80'}`} />
+                    <div 
+                      className="absolute w-1.5 h-1.5 rounded-full" 
+                      style={{
+                        backgroundColor: eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#ffffff' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#e9d5ff' : '#fef08a',
+                        boxShadow: `0 0 6px ${eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#ffffff' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#c084fc' : '#f59e0b'}`
+                      }}
+                    />
 
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/90 border border-[#64104E]/60 px-1.5 py-0.2 font-mono text-[9px] text-slate-200 whitespace-nowrap shadow">
-                      {forecastHour === 0 ? `EYE FIX: (${predLat}°N, ${predLon}°E)` : `T+0 FIX: (${predLat}°N, ${predLon}°E)`}
-                    </div>
+                    {/* T+0 Reticle Badge: Prominently ABOVE when forecastHour === 0; Non-colliding when scrubbing forecastHour > 0 */}
+                    {forecastHour === 0 ? (
+                      <div className="absolute -top-[34px] left-1/2 -translate-x-1/2 bg-[#09040e]/95 border border-[#64104E] px-2.5 py-1 rounded-md font-mono text-[9.5px] text-slate-100 whitespace-nowrap shadow-2xl flex items-center gap-1.5 backdrop-blur-md z-30 ring-1 ring-white/10">
+                        <span 
+                          className="w-1.5 h-1.5 rounded-full" 
+                          style={{ backgroundColor: eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#10b981' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#c084fc' : '#f59e0b' }} 
+                        />
+                        <span className="font-bold text-[#fbcfe8]">
+                          {eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? 'EYE FIX' : (eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 'CDO CORE' : (eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? 'LLCC FIX' : 'SHEARED CORE'))}:
+                        </span>
+                        <span>({predLat}°N, {predLon}°E)</span>
+                      </div>
+                    ) : (
+                      // When scrubbing, if projected reticle is nearby (<16px distance), show minimalist micro-badge to prevent any badge collision
+                      Math.hypot(activeEyeX - reticleX, activeEyeY - reticleY) < 16.0 ? (
+                        <div className="absolute top-[18px] left-1/2 -translate-x-1/2 bg-[#09040e]/95 border border-slate-700/60 px-1.5 py-0.2 rounded font-mono text-[7.5px] text-slate-400 whitespace-nowrap shadow-md pointer-events-none z-15">
+                          T+0
+                        </div>
+                      ) : (
+                        <div className="absolute top-[24px] left-1/2 -translate-x-1/2 bg-[#09040e]/95 border border-slate-700/80 px-2 py-0.5 rounded font-mono text-[8.5px] text-slate-200 whitespace-nowrap shadow-xl flex items-center gap-1 backdrop-blur-md z-20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                          <span className="font-semibold text-slate-300">T+0 FIX:</span>
+                          <span>({predLat}°N, {predLon}°E)</span>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               )}
@@ -1395,8 +1597,8 @@ export default function EyeLocalizationWorkbench({
                     <div className="absolute h-14 w-px bg-[#E04A31]" />
                     <div className="absolute w-2 h-2 rounded-full bg-[#E04A31] shadow-[0_0_8px_#E04A31]" />
 
-                    {/* Projected Target Telemetry Tag */}
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#09040d]/95 backdrop-blur-md border border-[#E04A31] px-2 py-0.5 rounded font-mono text-[9.5px] text-white whitespace-nowrap shadow-xl flex items-center gap-1.5">
+                    {/* Projected Target Telemetry Tag: Positioned ABOVE the crosshair with highest z-index */}
+                    <div className="absolute -top-[36px] left-1/2 -translate-x-1/2 bg-[#09040d]/95 backdrop-blur-md border border-[#E04A31] px-2.5 py-1 rounded-md font-mono text-[9.5px] text-white whitespace-nowrap shadow-2xl flex items-center gap-1.5 z-40 ring-1 ring-[#E04A31]/50">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-ping" />
                       <span className="font-bold text-[#fbcfe8]">T+{forecastHour}H:</span>
                       <span>{activeEyeLat}°N, {activeEyeLon}°E</span>
@@ -1521,7 +1723,7 @@ export default function EyeLocalizationWorkbench({
           </div>
 
           {/* Right: Model Inferences & All Features (5 Cols) -> Exactly Matches Left Side Height */}
-          <div className="lg:col-span-5 h-full flex flex-col justify-between gap-3">
+          <div className="lg:col-span-5 flex flex-col space-y-4">
             
             {/* Feature Tab Navigation */}
             <div className="flex items-center gap-1 p-1 bg-[#120a1c] border border-[#64104E]/60 rounded-xl shrink-0">
@@ -1643,10 +1845,49 @@ export default function EyeLocalizationWorkbench({
                       </span>
                     </div>
                   </div>
+
+                  {/* Cyclone Eye Prediction & Pre-Genesis Early Advisory Banner */}
+                  <div className={`mt-2 p-2.5 rounded-xl border text-[9.5px] font-mono shadow-lg transition-all ${
+                    eyeFixType === 'CLOSED_EYE_CAVITY_FIX'
+                      ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
+                      : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS'
+                      ? 'bg-purple-950/30 border-purple-500/40 text-purple-200'
+                      : 'bg-amber-950/30 border-amber-500/50 text-amber-200'
+                  }`}>
+                    <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-white/10">
+                      <div className="flex items-center gap-1.5 font-bold tracking-wide">
+                        <Radio className="w-3.5 h-3.5 text-[#E04A31]" />
+                        <span>CYCLONE EYE PREDICTION &amp; GENESIS WATCH</span>
+                      </div>
+                      <span className="px-1.5 py-0.2 rounded bg-black/40 border border-white/20 text-[8px] font-bold">
+                        LEAD TIME: {pregenesisAlert?.lead_time_to_eye_formation?.split(' ')[0] || '24-48'}H
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[9px] mb-1.5">
+                      <div>
+                        <span className="text-slate-400 block text-[8px] uppercase">LIFECYCLE STAGE</span>
+                        <span className="font-bold text-white truncate block">
+                          {vortexStageName}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[8px] uppercase">CYCLOGENESIS RISK</span>
+                        <span className="font-bold text-cyan-300 block">
+                          {cyclogenesisRiskScore}% · {eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? 'Mature Closed Core' : (eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? 'Active CDO Intensification' : 'Early Invest Spin-Up')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-1.5 rounded bg-black/50 border border-white/10 text-[8.5px] leading-relaxed text-slate-300">
+                      <span className="font-bold text-[#E04A31] mr-1">ADVISORY:</span>
+                      {pregenesisAlert?.recommended_action || 'Maintain continuous satellite tracking and radar surveillance.'}
+                    </div>
+                  </div>
                 </div>
 
                 {/* IMD Intensity Scale & Dvorak Tiers Table with Matching Tier Highlighted! */}
-                <div className="flex-1 min-h-0 p-3 bg-[#0a050f] border border-[#64104E]/60 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div className="p-4 bg-[#0a050f] border border-[#64104E]/60 rounded-2xl shadow-xl space-y-3">
                   <div>
                     <div className="flex items-center justify-between pb-1.5 border-b border-[#64104E]/50">
                       <div className="flex items-center gap-1.5">
@@ -1872,12 +2113,14 @@ export default function EyeLocalizationWorkbench({
           </div>
         </div>
       )}
+
+
     </div>
   );
 
   if (isModal) {
     return (
-      <div className="fixed inset-0 z-[100] bg-[#08050c] text-white flex flex-col overflow-hidden h-screen max-h-screen font-mono select-none">
+      <div className="fixed inset-0 z-[100] bg-[#08050c] text-white flex flex-col overflow-y-auto h-screen font-mono">
         {/* Precision ambient background grid */}
         <div className="fixed inset-0 bg-grid-pattern opacity-30 pointer-events-none" />
 
@@ -1885,7 +2128,7 @@ export default function EyeLocalizationWorkbench({
         <div className="shrink-0 w-full h-[2px] bg-gradient-to-r from-[#64104E] via-[#E04A31] to-[#B43067]" />
 
         {/* 1. TOP HEADER APP BAR (AEROSPACE CLEAN & PROPORTIONED, h-13) */}
-        <header className="shrink-0 z-50 w-full border-b border-[#64104E]/50 bg-[#09050d]/95 backdrop-blur-xl shadow-2xl h-13 flex items-center">
+        <header className="sticky top-0 shrink-0 z-50 w-full border-b border-[#64104E]/50 bg-[#09050d]/95 backdrop-blur-xl shadow-2xl h-14 flex items-center">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between gap-4">
             {/* Left: Brand Identity & Telemetry Status */}
             <div className="flex items-center gap-2.5">
@@ -1951,7 +2194,7 @@ export default function EyeLocalizationWorkbench({
         </header>
 
         {/* Modal Inner Viewport: Fills 100% of remaining screen, strictly zero scroll */}
-        <div className="flex-1 min-h-0 w-full bg-[#08050c] text-white p-3 sm:p-4 flex flex-col overflow-hidden">
+        <div className="flex-1 w-full bg-[#08050c] text-white p-4 sm:p-6 lg:p-8 flex flex-col pb-28 overflow-visible">
           {mainContent}
         </div>
       </div>

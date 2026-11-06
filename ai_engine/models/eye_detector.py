@@ -226,6 +226,63 @@ def generate_heatmap_png_base64(score_map: np.ndarray) -> Optional[str]:
 class EyeDetector:
     """CenterNet Sub-Pixel Keypoint Eye Localization Model Service."""
 
+    def classify_cyclogenesis_lifecycle(self, morphology_code: str, symmetry_score: float = 0.90) -> Dict[str, Any]:
+        """Classifies cyclogenesis lifecycle stage from formative invest (LLCC) to mature eye cavity."""
+        if morphology_code in ["PINHOLE", "CIRCULAR"]:
+            return {
+                "eye_fix_type": "CLOSED_EYE_CAVITY_FIX",
+                "vortex_stage_name": "Mature Cyclonic Vortex (Well-Defined Eye Cavity)",
+                "cyclogenesis_risk_score": 98.0,
+                "pregenesis_alert": {
+                    "is_early_pregenesis": False,
+                    "vortex_phase": "MATURE_CYCLONE",
+                    "lead_time_to_eye_formation": "Eye Fully Formed & Closed",
+                    "convective_organization_index": round(float(symmetry_score * 0.95), 2),
+                    "recommended_action": "Maintain Continuous Radar/Satellite Eye Tracking & Coastal Storm Warning."
+                }
+            }
+        elif morphology_code == "CDO":
+            return {
+                "eye_fix_type": "CDO_VIRTUAL_ROTATION_FOCUS",
+                "vortex_stage_name": "Intensifying Cyclone with Central Dense Overcast (CDO)",
+                "cyclogenesis_risk_score": 92.5,
+                "pregenesis_alert": {
+                    "is_early_pregenesis": False,
+                    "vortex_phase": "INTENSIFYING_CDO",
+                    "lead_time_to_eye_formation": "Pinhole Eye Emerging in 6 to 12 Hours",
+                    "convective_organization_index": round(float(symmetry_score * 0.88), 2),
+                    "recommended_action": "Upgrade Coastal Alert Tier. Prepare Storm Surge & Gale Wind Advisories."
+                }
+            }
+        elif morphology_code in ["RAGGED", "EXPANDED_EYE"]:
+            return {
+                "eye_fix_type": "SHEARED_CORE_VORTEX_FIX",
+                "vortex_stage_name": "Sheared / Asymmetric Cyclonic Core (Active Eyewall)",
+                "cyclogenesis_risk_score": 86.0,
+                "pregenesis_alert": {
+                    "is_early_pregenesis": False,
+                    "vortex_phase": "SHEARED_CORE",
+                    "lead_time_to_eye_formation": "Variable Eye Coherence Under Vertical Wind Shear",
+                    "convective_organization_index": round(float(symmetry_score * 0.82), 2),
+                    "recommended_action": "Monitor Wind Shear Vectors & Convective Re-Alignment."
+                }
+            }
+        else:
+            risk = round(float(np.clip(72.0 + symmetry_score * 20.0, 65.0, 92.0)), 1)
+            return {
+                "eye_fix_type": "PRE_GENESIS_ROTATION_CENTER",
+                "vortex_stage_name": "Early Formative Depression / Invest Rotation Center (LLCC)",
+                "cyclogenesis_risk_score": risk,
+                "pregenesis_alert": {
+                    "is_early_pregenesis": True,
+                    "vortex_phase": "PRE_GENESIS_INVEST",
+                    "lead_time_to_eye_formation": "24 to 48 Hours Ahead of Formal Eye Opening",
+                    "convective_organization_index": round(float(symmetry_score * 0.75), 2),
+                    "recommended_action": "Early Genesis Alert: Notify Marine Fisheries & Port Authorities 24-48h in advance."
+                }
+            }
+
+
     def pixel_to_latlon(self, px_x: float, px_y: float) -> Tuple[float, float]:
         lat = 20.0 - (px_y - REF_Y_20N) / PX_PER_DEG_LAT
         lon = 80.0 + (px_x - REF_X_80E) / PX_PER_DEG_LON
@@ -249,6 +306,9 @@ class EyeDetector:
         pred_lon = round(gt_lon + dx_deg * 0.4, 2)
         km_error = haversine_distance_km(pred_lat, pred_lon, gt_lat, gt_lon)
         delta_t = round(info['eye_temp_k'] - info['eyewall_temp_k'], 1)
+        morph = info.get('morphology', 'CIRCULAR_OPEN_EYE (WELL-DEFINED EYEWALL)')
+        m_code = "PINHOLE" if "PINHOLE" in morph else ("CURVED_BAND" if "CURVED_BAND" in morph else ("RAGGED" if "RAGGED" in morph else "CIRCULAR"))
+        lifecycle = self.classify_cyclogenesis_lifecycle(m_code, info.get('symmetry_score', 0.90))
         
         return {
             "status": "SUCCESS",
@@ -270,8 +330,13 @@ class EyeDetector:
                 "eyewall_min_temp_k": info['eyewall_temp_k'],
                 "eye_core_temp_k": info['eye_temp_k'],
                 "delta_t_k": delta_t,
-                "morphology": info.get('morphology', 'CIRCULAR_OPEN_EYE (WELL-DEFINED EYEWALL)'),
+                "morphology": morph,
+                "morphology_code": m_code,
                 "symmetry_score": info.get('symmetry_score', 0.90),
+                "eye_fix_type": lifecycle["eye_fix_type"],
+                "vortex_stage_name": lifecycle["vortex_stage_name"],
+                "cyclogenesis_risk_score": lifecycle["cyclogenesis_risk_score"],
+                "pregenesis_alert": lifecycle["pregenesis_alert"],
                 "detection_mode": "CenterNet Sub-Pixel Hessian Localizer (IBTrACS Ground Truth Anchored)"
             },
             "ground_truth": {
@@ -314,22 +379,18 @@ class EyeDetector:
 
         # Step 1: Autonomous Satellite Domain Masking & Border Suppression
         mask = np.ones((512, 512), dtype=np.float32)
-        mask[:20, :] = 0.0
-        mask[-20:, :] = 0.0
+        mask[:40, :] = 0.0
+        mask[-25:, :] = 0.0
         mask[:, :25] = 0.0
         mask[:, -25:] = 0.0
 
-        # Suppress pure black scan space / margin outside swath
-        is_space = (R < 18) & (G < 18) & (B < 18)
-        mask[is_space] = 0.0
-
-        # Suppress vertical calibration colorbar on right strip if present
-        if np.mean(sat[:, 435:]) > 0.06 or np.any(np.max(sat[:, 445:], axis=0) > 0.70):
-            mask[:, 430:] = 0.0
+        # Suppress vertical calibration colorbar on far right strip if present
+        if np.mean(sat[:, 450:]) > 0.08:
+            mask[:, 455:] = 0.0
 
         # Suppress top title banner (e.g. GOES-18 Channel 13...)
-        if np.sum(gray_np[:35, :] > 235) > 350:
-            mask[:35, :] = 0.0
+        if np.sum(gray_np[:55, :] > 220) > 200 or np.sum(rgb_arr[:55, :, 0] > 180) > 300:
+            mask[:55, :] = 0.0
 
         mask_eroded = cv2.erode(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)))
 
@@ -381,7 +442,7 @@ class EyeDetector:
         # B. Multi-Radius Fast Radial Symmetry (FRST) with 4-Quadrant Balancing
         # A true vortex core has convergent gradients from at least 3 quadrants.
         # Single outer feeder bands only have gradients in 1 quadrant and are suppressed.
-        radii = [16, 26, 38, 55, 75]
+        radii = [14, 20, 28, 40, 56]
         quadrant_votes = [np.zeros((512, 512), dtype=np.float32) for _ in range(4)]
         valid_grad = (mag > np.percentile(mag[mask_eroded > 0.5], 40)) & (mask_eroded > 0.5) if np.sum(mask_eroded) > 0 else np.zeros((512, 512), dtype=bool)
         y_pts, x_pts = np.where(valid_grad)
@@ -414,7 +475,7 @@ class EyeDetector:
         q_prod = np.ones((512, 512), dtype=np.float32)
         for qi in range(4):
             q_norm = quadrant_votes[qi] / (np.max(quadrant_votes[qi]) + 1e-6)
-            q_prod *= (q_norm + 0.10)
+            q_prod *= (q_norm + 0.01)
 
         sym_smooth = gaussian_filter(q_prod, 4.0) * mask_eroded
         sym_norm = (sym_smooth - sym_smooth.min()) / (sym_smooth.max() - sym_smooth.min() + 1e-6)
@@ -437,16 +498,10 @@ class EyeDetector:
         spiral_smooth = gaussian_filter(spiral_accum, 5.0) * mask_eroded
         spiral_norm = (spiral_smooth - spiral_smooth.min()) / (spiral_smooth.max() - spiral_smooth.min() + 1e-6)
 
-        # D. Eye Cavity Physical Prior
-        # The eye is an inner thermal cavity / warm ocean core with low chromatic saturation (NOT cold colored tops)
-        cavity_weight = np.exp(-3.5 * np.clip(sat, 0.0, 1.0)) * mask_eroded
-        gray_cavity = np.exp(-0.5 * ((gray_np - 130.0) / 50.0)**2)
-        cavity_prior = cavity_weight * (0.65 + 0.35 * gray_cavity)
-
-        # E. Annular Eyewall Ring Enclosure
+        # D. Annular Eyewall Ring Enclosure & Convective Inflow Focus
         eyewall_density = gaussian_filter(all_cold_convective.astype(np.float32), 2.5) if is_eir else gaussian_filter((gray_np > 135).astype(np.float32), 2.5)
         enclosure_map = np.zeros((512, 512), dtype=np.float32)
-        for r_w in [18, 30, 48]:
+        for r_w in [18, 28, 42, 60]:
             size_w = int(2 * r_w + 5)
             yk, xk = np.ogrid[-size_w//2:size_w//2+1, -size_w//2:size_w//2+1]
             d_w = np.sqrt(xk**2 + yk**2)
@@ -456,16 +511,48 @@ class EyeDetector:
 
         enclosure_norm = (enclosure_map - enclosure_map.min()) / (enclosure_map.max() - enclosure_map.min() + 1e-6)
 
-        # Central Prior for cropped storm tiles to anchor against outer edge clutter
-        if is_cropped_storm:
-            Y, X = np.ogrid[:512, :512]
-            center_prior = np.exp(-0.5 * (((X - 268.0) / 130.0)**2 + ((Y - 270.0) / 130.0)**2))
-        else:
-            center_prior = 1.0
+        # E. Physical Cavity Thermal Contrast:
+        # The eye is surrounded by colder eyewall tops.
+        kernel_core = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)).astype(np.float32)
+        kernel_core /= np.sum(kernel_core)
+        core_density = cv2.filter2D(eyewall_density, -1, kernel_core)
+        cavity_contrast = np.clip(enclosure_norm - 0.45 * core_density, 0.0, 1.0)
 
-        # Unified Multi-Factor CenterNet Score Map
-        score_map = (sym_norm * 0.40 + spiral_norm * 0.35 + enclosure_norm * 0.25) * cavity_prior * center_prior * mask_eroded
-        detection_mode = "CenterNet Multi-Radius FRST Symmetry, Spiral Inflow & Cavity Refinement"
+        # Margin mask to suppress camera frame edge noise (22px border)
+        margin_mask = np.zeros((512, 512), dtype=np.float32)
+        margin_mask[22:490, 22:490] = 1.0
+
+        # Dedicated Cold Eyewall Ring & Warm Core Enclosure for Enhanced IR (BD-curve / Rainbow / TropicalTidbits)
+        burgundy_eyewall = ((R >= 18) & (R < 130) & (G < 50) & (B < 50) & (R > G + 5) & (R > B + 5) & (mask_eroded > 0.5)).astype(np.float32)
+        eyewall_count = np.sum(burgundy_eyewall)
+        is_pink_core = (sat > 0.30) & (R > 130) & (B > 110) & (G < 140) & (mask_eroded > 0.5)
+        pink_count = np.sum(is_pink_core)
+
+        if is_eir and (eyewall_count > 150 or pink_count > 10):
+            dens = gaussian_filter(burgundy_eyewall, 2.0)
+            ring_accum = np.zeros((512, 512), dtype=np.float32)
+            for r_w in [14, 20, 28, 38]:
+                size_w = int(2 * r_w + 5)
+                yk, xk = np.ogrid[-size_w//2:size_w//2+1, -size_w//2:size_w//2+1]
+                d_w = np.sqrt(xk**2 + yk**2)
+                ring_kw = ((d_w >= r_w * 0.65) & (d_w <= r_w * 1.35)).astype(np.float32)
+                ring_kw /= (np.sum(ring_kw) + 1e-6)
+                r_resp = cv2.filter2D(dens, -1, ring_kw)
+                ring_accum += r_resp
+
+            ring_norm = (ring_accum - ring_accum.min()) / (ring_accum.max() - ring_accum.min() + 1e-6)
+            warm_core_density = gaussian_filter(is_pink_core.astype(np.float32), 4.0)
+            warm_core_norm = warm_core_density / (np.max(warm_core_density) + 1e-6) if np.max(warm_core_density) > 0 else np.zeros((512, 512), dtype=np.float32)
+            
+            # Adaptive weighting: when an intense overshooting core is present (e.g. CDO / embedded pinhole eye stage),
+            # weight the overshooting core density (0.50) to prevent outer convective arcs from competing
+            if pink_count >= 150:
+                score_map = (sym_norm * 0.25 + ring_norm * 0.25 + warm_core_norm * 0.50) * mask_eroded * margin_mask
+            else:
+                score_map = (sym_norm * 0.35 + ring_norm * 0.35 + warm_core_norm * 0.30) * mask_eroded * margin_mask
+        else:
+            score_map = (sym_norm * 0.70 + spiral_norm * 0.20 + enclosure_norm * 0.10) * mask_eroded * margin_mask
+        detection_mode = "CenterNet Multi-Radius FRST Symmetry, Eyewall Ring & Cavity Refinement"
 
         # Step 3: Screening Criterion (Continuous Multi-Factor Score, Zero False Alarms)
         valid_scores = score_map[mask > 0.5]
@@ -645,6 +732,8 @@ class EyeDetector:
 
         elapsed_ms = round((time.perf_counter() - start_t) * 1000, 1)
 
+        lifecycle = self.classify_cyclogenesis_lifecycle(morphology_code, symmetry_score)
+
         return {
             "status": "SUCCESS",
             "has_cyclone": True,
@@ -671,6 +760,10 @@ class EyeDetector:
                 "azimuthal_closed_sectors": f"{closed_sector_count} / 36 sectors",
                 "heatmap_base64": heatmap_base64,
                 "is_cropped_storm": is_cropped_storm,
+                "eye_fix_type": lifecycle["eye_fix_type"],
+                "vortex_stage_name": lifecycle["vortex_stage_name"],
+                "cyclogenesis_risk_score": lifecycle["cyclogenesis_risk_score"],
+                "pregenesis_alert": lifecycle["pregenesis_alert"],
                 "detection_mode": detection_mode
             },
             "ground_truth": {

@@ -653,8 +653,32 @@ def compute_cone_polygon(waypoints: List[Dict[str, Any]], basin: str = "Bay of B
         right_lat = round(curr['lat'] - ny * cone_deg, 3)
         right_lon = round(curr['lon'] - nx * cone_deg, 3)
 
-        left_px, left_py = lat_lon_to_pixel(left_lat, left_lon, basin)
-        right_px, right_py = lat_lon_to_pixel(right_lat, right_lon, basin)
+        has_pixel = curr.get('pixel_x') is not None and curr.get('pixel_y') is not None
+        if has_pixel:
+            if i < len(waypoints) - 1 and waypoints[i+1].get('pixel_x') is not None:
+                p_dx = waypoints[i + 1]['pixel_x'] - curr['pixel_x']
+                p_dy = waypoints[i + 1]['pixel_y'] - curr['pixel_y']
+            elif i > 0 and waypoints[i-1].get('pixel_x') is not None:
+                p_dx = curr['pixel_x'] - waypoints[i - 1]['pixel_x']
+                p_dy = curr['pixel_y'] - waypoints[i - 1]['pixel_y']
+            else:
+                p_dx, p_dy = 1.0, 0.0
+
+            p_norm = math.sqrt(p_dx**2 + p_dy**2) + 1e-6
+            p_nx = -p_dy / p_norm
+            p_ny = p_dx / p_norm
+
+            deg_dist = math.sqrt(dx**2 + dy**2)
+            deg_to_px = (p_norm / deg_dist) if deg_dist > 1e-4 else 4.0
+            cone_px = cone_deg * deg_to_px
+
+            left_px = round(float(np.clip(curr['pixel_x'] + p_nx * cone_px, 2.0, 98.0)), 1)
+            left_py = round(float(np.clip(curr['pixel_y'] + p_ny * cone_px, 2.0, 98.0)), 1)
+            right_px = round(float(np.clip(curr['pixel_x'] - p_nx * cone_px, 2.0, 98.0)), 1)
+            right_py = round(float(np.clip(curr['pixel_y'] - p_ny * cone_px, 2.0, 98.0)), 1)
+        else:
+            left_px, left_py = lat_lon_to_pixel(left_lat, left_lon, basin)
+            right_px, right_py = lat_lon_to_pixel(right_lat, right_lon, basin)
 
         left_points.append({
             'lat': left_lat,
@@ -1198,8 +1222,8 @@ class TrajectoryForecaster:
             # Georeferenced screen pixel percentage projection
             if pixel_x_pct is not None and pixel_y_pct is not None:
                 # Directly anchor to user's localized eye pixel
-                dx_px = (pt["lon"] - current_lon) * 2.4
-                dy_px = -(pt["lat"] - current_lat) * 2.8
+                dx_px = (pt["lon"] - current_lon) * 4.2
+                dy_px = -(pt["lat"] - current_lat) * 4.2
                 px = round(float(np.clip(pixel_x_pct + dx_px, 5.0, 95.0)), 1)
                 py = round(float(np.clip(pixel_y_pct + dy_px, 5.0, 95.0)), 1)
             else:
