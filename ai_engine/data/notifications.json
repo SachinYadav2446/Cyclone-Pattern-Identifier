@@ -1,0 +1,62 @@
+[
+  {
+    "id": "notif-001",
+    "title": "Severe Cyclonic Storm REMAL: Rapid Intensification Alert",
+    "category_badge": "SCS",
+    "severity": "CRITICAL",
+    "storm_id": "remal",
+    "storm_name": "CYCLONE REMAL",
+    "message": "System has rapidly intensified to Severe Cyclonic Storm (65 kts, 978 hPa). Core convective eyewall closing. Landfall track projected across coastal West Bengal & Bangladesh within 18 hours.",
+    "msw_knots": 65.0,
+    "pressure_hpa": 978.0,
+    "landfall_eta": "18 Hours (Sagar Island / Khepupara)",
+    "timestamp_utc": "2026-11-06 20:18 UTC",
+    "is_read": true,
+    "action_label": "Inspect Cyclone Remal"
+  },
+  {
+    "id": "notif-002",
+    "title": "Daily Synoptic Basin Digest \u2014 North Indian Ocean (08:00 UTC)",
+    "category_badge": "DIGEST",
+    "severity": "DAILY_DIGEST",
+    "storm_id": "fani",
+    "storm_name": "BAY OF BENGAL BASIN",
+    "message": "Synoptic Overview: High sea surface temperatures (SST 30.5\u00b0C) and low vertical wind shear (<10 kts) over East-Central Bay. One active cyclonic vortex under continuous geostationary surveillance.",
+    "msw_knots": 115.0,
+    "pressure_hpa": 932.0,
+    "landfall_eta": "Active Surveillance",
+    "timestamp_utc": "2026-11-06 08:00 UTC",
+    "is_read": true,
+    "action_label": "View Basin Overview"
+  },
+  {
+    "id": "notif-003",
+    "title": "Super Cyclonic Storm FANI: Pin-Point Eye Reticle Fix",
+    "category_badge": "SuCS",
+    "severity": "ADVISORY",
+    "storm_id": "fani",
+    "storm_name": "CYCLONE FANI",
+    "message": "CenterNet & ResNet-18 confirmed sub-pixel eye coordinates at 19.35\u00b0N, 85.69\u00b0E. Diameter calibrated at 28.5 km with prominent 84K thermodynamic temperature depression.",
+    "msw_knots": 115.0,
+    "pressure_hpa": 932.0,
+    "landfall_eta": "Puri Coast Intersected",
+    "timestamp_utc": "2026-11-06 10:30 UTC",
+    "is_read": true,
+    "action_label": "Inspect Cyclone Fani"
+  },
+  {
+    "id": "notif-004",
+    "title": "INSAT-3D Multi-Spectral Pass Synced: Zero False Alarms",
+    "category_badge": "SATELLITE",
+    "severity": "INFO",
+    "storm_id": "live_insat",
+    "storm_name": "GEOSTATIONARY DOWNLINK",
+    "message": "Operational 4-band telemetry (TIR1 10.8\u00b5m, VIS 0.65\u00b5m, WV 6.8\u00b5m, CTBT) processed across South Asian quadrant. Basin background flow nominal.",
+    "msw_knots": 25.0,
+    "pressure_hpa": 1008.0,
+    "landfall_eta": "Quiescent Flow",
+    "timestamp_utc": "2026-11-06 00:30 UTC",
+    "is_read": true,
+    "action_label": "Open GIS Console"
+  }
+]

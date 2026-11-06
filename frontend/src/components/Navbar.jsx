@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Terminal, Menu, X, Upload, Radio, Sparkles } from 'lucide-react';
+import { Terminal, Menu, X, Upload, Radio, Sparkles, Bell } from 'lucide-react';
 
 const navItems = [
   { id: 'novelty', label: 'Novelties' },
@@ -8,7 +8,7 @@ const navItems = [
   { id: 'dataset', label: 'Dataset' },
 ];
 
-export default function Navbar({ onOpenConsole, onOpenDemo }) {
+export default function Navbar({ onOpenConsole, onOpenDemo, onOpenNotifications, unreadCount = 2 }) {
   const [activeSection, setActiveSection] = useState('novelty');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -106,6 +106,21 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
 
         {/* Right CTA Actions - Sleek Pill Buttons matching wireframe */}
         <div className="flex items-center gap-2.5 font-mono">
+          {/* Meteorological Alerts & Early Warning Pill */}
+          <button
+            onClick={onOpenNotifications}
+            className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-[#1a0f28] hover:bg-[#251538] text-slate-200 border border-[#B43067]/40 hover:border-[#B43067] font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+            title="Early Warning Alerts & Daily Email Reports"
+          >
+            <Bell className="w-3.5 h-3.5 text-[#E04A31] animate-pulse" />
+            <span className="hidden sm:inline">Alerts</span>
+            {unreadCount > 0 && (
+              <span className="flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#E04A31] text-[10px] font-bold text-white shadow-sm">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
           {/* Demo Pill (formerly Interactive Demo) */}
           <button
             onClick={onOpenDemo}
@@ -150,6 +165,16 @@ export default function Navbar({ onOpenConsole, onOpenDemo }) {
             </a>
           ))}
           <div className="pt-2.5 flex items-center gap-2 border-t border-[#64104E]/40">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenNotifications();
+              }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#1a0f28] border border-[#B43067]/50 text-slate-200 font-bold text-xs"
+            >
+              <Bell className="w-3.5 h-3.5 text-[#E04A31]" />
+              <span>Alerts ({unreadCount})</span>
+            </button>
             <button
               onClick={() => {
                 setMobileMenuOpen(false);

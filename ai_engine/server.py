@@ -8,6 +8,7 @@ from fastapi import FastAPI, BackgroundTasks, Response
 import io
 from typing import Dict, Any
 from ai_engine.services.bulletin_generator import generate_cyclone_bulletin_pdf
+from ai_engine.services.notification_service import notification_service
 from fastapi.middleware.cors import CORSMiddleware
 from ai_engine.models.live_vortex_analyzer import vortex_analyzer
 import uvicorn
@@ -330,6 +331,47 @@ def export_bulletin_pdf(payload: Dict[str, Any]):
             "Content-Disposition": f"attachment; filename=VortexAI_Bulletin_{storm}.pdf"
         }
     )
+
+class SubscribeEmailRequest(BaseModel):
+    email: str
+    frequency: Optional[str] = "daily"
+    realtime_critical: Optional[bool] = True
+    daily_digest: Optional[bool] = True
+    pass_updates: Optional[bool] = False
+    min_category: Optional[str] = "SCS"
+
+class SendReportEmailRequest(BaseModel):
+    recipient_email: str
+    storm_data: Optional[Dict[str, Any]] = None
+
+@app.get("/api/v1/notifications")
+def get_basin_notifications():
+    """Returns active real-time and synoptic notifications with unread counts."""
+    return notification_service.get_notifications()
+
+@app.post("/api/v1/notifications/{notif_id}/read")
+def mark_notification_read(notif_id: str):
+    """Marks an alert notification as read."""
+    return notification_service.mark_as_read(notif_id)
+
+@app.post("/api/v1/notifications/mark-all-read")
+def mark_all_notifications_read():
+    """Marks all alert notifications as read."""
+    return notification_service.mark_all_read()
+
+@app.post("/api/v1/notifications/subscribe")
+def subscribe_to_alerts(payload: SubscribeEmailRequest):
+    """Subscribes an email to real-time or daily meteorological advisories."""
+    return notification_service.subscribe_email(payload.dict())
+
+@app.post("/api/v1/notifications/send-report-email")
+def send_report_email(payload: SendReportEmailRequest):
+    """Dispatches official PDF Advisory Bulletin and HTML briefing to target email."""
+    return notification_service.send_report_email(
+        recipient_email=payload.recipient_email,
+        storm_data=payload.storm_data
+    )
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

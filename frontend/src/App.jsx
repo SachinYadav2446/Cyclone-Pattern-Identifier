@@ -9,6 +9,7 @@ import ModelArchitectureSection from './components/ModelArchitectureSection';
 import DatasetSection from './components/DatasetSection';
 import Footer from './components/Footer';
 import GISConsoleModal from './components/GISConsoleModal';
+import NotificationCenterModal from './components/NotificationCenterModal';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -46,6 +47,25 @@ class ErrorBoundary extends Component {
 export default function App() {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [unreadAlertCount, setUnreadAlertCount] = useState(2);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/v1/notifications');
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadAlertCount(data.unread_count || 0);
+        }
+      } catch (e) {
+        // quiet fallback
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
   const [selectedWorkbenchStormId, setSelectedWorkbenchStormId] = useState('fani');
   const [livePassOverride, setLivePassOverride] = useState(null);
 
@@ -71,6 +91,8 @@ export default function App() {
       <Navbar 
         onOpenConsole={() => setIsConsoleOpen(true)} 
         onOpenDemo={() => setIsDemoOpen(true)}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        unreadCount={unreadAlertCount}
       />
 
 
@@ -134,6 +156,17 @@ export default function App() {
         isOpen={isConsoleOpen}
         onClose={() => setIsConsoleOpen(false)}
         onOpenInWorkbench={handleOpenInWorkbench}
+      />
+
+      {/* Meteorological Early Warning & Email Dispatch Modal */}
+      <NotificationCenterModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        onSelectStorm={(stormId) => {
+          setIsNotificationsOpen(false);
+          setSelectedWorkbenchStormId(stormId);
+          setIsDemoOpen(true);
+        }}
       />
     </div>
   );

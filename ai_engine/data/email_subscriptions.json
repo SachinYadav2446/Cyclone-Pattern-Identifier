@@ -1,0 +1,20 @@
+[
+  {
+    "email": "operator@met-agency.gov",
+    "frequency": "daily",
+    "realtime_critical": true,
+    "daily_digest": true,
+    "pass_updates": false,
+    "min_category": "SCS",
+    "subscribed_at": "2026-11-06 20:30 UTC"
+  },
+  {
+    "email": "meteorologist@test.gov",
+    "frequency": "daily",
+    "realtime_critical": true,
+    "daily_digest": true,
+    "pass_updates": false,
+    "min_category": "SCS",
+    "subscribed_at": "2026-11-06 20:33 UTC"
+  }
+]

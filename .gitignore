@@ -57,6 +57,9 @@ weights/*
 Thumbs.db
 *.lnk
 outputs/
+sent_emails/
+ai_engine/data/sent_emails/
+
 
 # Frontend
 frontend/node_modules/
