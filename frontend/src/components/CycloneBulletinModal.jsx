@@ -4,16 +4,13 @@ import {
   Download, 
   Printer, 
   X, 
-  ShieldAlert, 
-  Target, 
   Wind, 
   Clock, 
   MapPin, 
   AlertTriangle,
-  CheckCircle2,
-  Calendar,
-  Layers,
-  ChevronRight
+  Compass,
+  Gauge,
+  CheckCircle2
 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 
@@ -28,7 +25,6 @@ export default function CycloneBulletinModal({ isOpen, onClose, reportData }) {
     bulletinId = `VORTEX-BULLETIN-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-01`,
     issueTime = new Date().toUTCString(),
     category = "Very Severe Cyclonic Storm (VSCS)",
-    badgeColor = "#ef4444",
     eyeLat = 19.52,
     eyeLon = 85.96,
     mswKnots = 90.0,
@@ -36,14 +32,13 @@ export default function CycloneBulletinModal({ isOpen, onClose, reportData }) {
     pressureHpa = 953.0,
     pressureDeficit = 57.0,
     dvorakT = 5.0,
-    vortexStageName = "Mature Cyclonic Vortex (Well-Defined Eye Cavity)",
+    vortexStageName = "Mature Cyclonic Vortex (Well-Defined Eye)",
     cyclogenesisRiskScore = 95.0,
-    leadTimeToEye = "Eye Fully Formed & Closed",
-    recommendedAction = "Maintain High Alert along coastal belts. Halt all deep-sea fishing operations immediately.",
+    leadTimeToEye = "Eye Formed & Monitored",
+    recommendedAction = "Maintain high alert along coastal belts. Complete evacuation of 0-5 km coastal belt. Halt all deep-sea fishing operations immediately.",
     imageSrc = null,
     waypoints = [],
-    quadrantRadii = null,
-    morphology = "CIRCULAR EYE"
+    quadrantRadii = null
   } = reportData;
 
   const r34 = quadrantRadii?.r34_knots_nm || { ne: 140, se: 130, sw: 90, nw: 110 };
@@ -105,7 +100,7 @@ export default function CycloneBulletinModal({ isOpen, onClose, reportData }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <style>{`
         @media print {
           body * {
@@ -121,45 +116,27 @@ export default function CycloneBulletinModal({ isOpen, onClose, reportData }) {
             width: 100% !important;
             background: #ffffff !important;
             color: #0f172a !important;
-            padding: 16px !important;
+            padding: 20px !important;
             border: none !important;
-          }
-          #printable-bulletin .bg-\[\#140b20\],
-          #printable-bulletin .bg-\[\#120a1c\],
-          #printable-bulletin .bg-\[\#0d0714\] {
-            background: #f8fafc !important;
-            border-color: #cbd5e1 !important;
-            color: #0f172a !important;
-          }
-          #printable-bulletin text-white,
-          #printable-bulletin h1,
-          #printable-bulletin span {
-            color: #0f172a !important;
-          }
-          #printable-bulletin table th {
-            background: #1e293b !important;
-            color: #ffffff !important;
-          }
-          #printable-bulletin table td {
-            color: #1e293b !important;
           }
         }
       `}</style>
-      {/* Container styled like an official military/meteorological document */}
-      <div className="relative w-full max-w-4xl bg-[#0e0716] border-2 border-[#64104E] rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
+
+      {/* Main Modal Shell */}
+      <div className="relative w-full max-w-4xl bg-[#0c0616] border border-[#64104E]/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
         
-        {/* Top Control Bar */}
-        <div className="shrink-0 h-14 px-5 bg-[#170c24] border-b border-[#64104E]/80 flex items-center justify-between text-white">
+        {/* Top Minimalist Action Bar */}
+        <div className="shrink-0 h-13 px-5 bg-[#140b22] border-b border-[#64104E]/40 flex items-center justify-between text-white font-mono">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 rounded-lg bg-[#E04A31]/20 border border-[#E04A31]/50 text-[#E04A31]">
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-xs sm:text-sm font-bold tracking-wider uppercase font-mono">
+              <h2 className="text-xs sm:text-sm font-bold tracking-tight">
                 Official Meteorological Situation Bulletin
               </h2>
-              <span className="text-[10px] text-slate-400 font-mono">
-                WMO / IMD Standard Compliant · RSMC Cyclone Intelligence
+              <span className="text-[10px] text-slate-400">
+                WMO / IMD Protocol Compliant · White Theme Publication Standard
               </span>
             </div>
           </div>
@@ -168,250 +145,254 @@ export default function CycloneBulletinModal({ isOpen, onClose, reportData }) {
             <button
               onClick={handleDownloadDirectPdf}
               disabled={isExporting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] hover:brightness-110 text-white font-bold text-xs tracking-wider uppercase shadow-lg shadow-[#E04A31]/20 transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E04A31] hover:bg-[#CF2F4B] text-white font-bold text-xs tracking-wider transition-all cursor-pointer disabled:opacity-50 shadow"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{isExporting ? 'GENERATING PDF...' : 'DOWNLOAD PDF (.PDF)'}</span>
+              <span>{isExporting ? 'Generating...' : 'Download PDF'}</span>
             </button>
 
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#241026] hover:bg-[#321535] border border-[#B43067]/70 text-slate-200 hover:text-white font-mono text-xs transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1f102d] hover:bg-[#2b173e] border border-zinc-700 text-slate-200 text-xs transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">PRINT / SAVE AS PDF</span>
+              <span className="hidden sm:inline">Print / Save</span>
             </button>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-[#1e1030] hover:bg-rose-950/80 border border-[#64104E]/50 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Scrollable Printable Bulletin Content */}
-        <div id="printable-bulletin" className="flex-1 overflow-y-auto p-6 space-y-5 text-slate-200 font-sans">
+        {/* Scrollable White Paper Document Sheet Container */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-zinc-950/60">
           
           {exportError && (
-            <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-500/70 text-amber-200 text-xs font-mono flex items-center gap-2">
+            <div className="mb-4 p-2.5 rounded-lg bg-amber-950/60 border border-amber-600 text-amber-200 text-xs font-mono flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
               <span>{exportError}</span>
             </div>
           )}
 
-          {/* Bulletin Header Header Banner */}
-          <div className="p-4 rounded-xl bg-[#140b20] border border-[#64104E]/80 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-36 h-36 bg-[#E04A31]/10 rounded-full blur-2xl pointer-events-none" />
-            
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-[#64104E]/50">
-              <div>
-                <span className="text-[10px] font-mono text-[#fbcfe8] uppercase tracking-widest font-bold block">
-                  VORTEX-AI AUTONOMOUS GEOSTATIONARY SATELLITE NETWORK
-                </span>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-wide font-mono mt-0.5">
-                  TROPICAL CYCLONE ADVISORY BULLETIN: {stormName}
-                </h1>
+          {/* Crisp White Institutional Document Sheet */}
+          <div 
+            id="printable-bulletin" 
+            className="bg-white text-slate-900 border border-slate-200 rounded-xl p-6 sm:p-8 shadow-2xl max-w-3xl mx-auto font-mono text-xs space-y-6"
+          >
+            {/* 1. Official Agency Masthead */}
+            <div className="pb-3 border-b border-blue-900">
+              <div className="text-[10px] font-bold text-blue-900 tracking-wider uppercase">
+                Regional Specialized Meteorological Centre (RSMC) · Cyclone Intelligence
               </div>
-
-              <span 
-                className="px-3 py-1 rounded-full text-xs font-mono font-black uppercase tracking-wider shadow-md border"
-                style={{ backgroundColor: `${badgeColor}25`, borderColor: badgeColor, color: '#ffffff' }}
-              >
-                {category}
-              </span>
+              <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-0.5">
+                OFFICIAL TROPICAL CYCLONE ADVISORY BULLETIN
+              </h1>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono mt-3 text-slate-300">
+            {/* 2. Key Metadata Summary Line */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 text-xs gap-2">
               <div>
-                <span className="text-[9px] text-slate-500 block uppercase">BULLETIN TRACKING ID</span>
-                <span className="font-bold text-white text-[11px]">{bulletinId}</span>
+                <span className="font-bold text-red-600 text-sm">{stormName}</span>
+                <span className="mx-2 text-slate-400">·</span>
+                <span className="font-bold text-blue-950">{category}</span>
               </div>
-              <div>
-                <span className="text-[9px] text-slate-500 block uppercase">ISSUE TIMESTAMP</span>
-                <span className="font-bold text-white text-[11px]">{issueTime}</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-500 block uppercase">ANALYSIS ENGINE</span>
-                <span className="font-bold text-[#E04A31] text-[11px]">CenterNet + ConvNeXt-V2</span>
-              </div>
-              <div>
-                <span className="text-[9px] text-slate-500 block uppercase">GENESIS STATUS</span>
-                <span className="font-bold text-amber-300 text-[11px]">{cyclogenesisRiskScore}% Risk</span>
+              <div className="text-[11px] text-slate-500 flex items-center gap-3">
+                <span>Ref: {bulletinId}</span>
+                <span>Issued: {issueTime}</span>
               </div>
             </div>
-          </div>
 
-          {/* 2-Column Core Section: Satellite Pass Image + Telemetry Table */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
-            
-            {/* Left: Satellite Capture Preview */}
-            <div className="md:col-span-6 bg-[#120a1c] border border-[#64104E]/70 rounded-xl p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#64104E]/40 text-xs font-mono">
-                <span className="font-bold text-white flex items-center gap-1.5">
-                  <Target className="w-3.5 h-3.5 text-[#E04A31]" />
-                  <span>SATELLITE PASS &amp; EYE FIX</span>
-                </span>
-                <span className="text-[10px] text-slate-400">GEOREFERENCED</span>
+            {/* 3. Section 1: Executive Telemetry (Clean Minimalist Metrics Strip) */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-blue-900 uppercase tracking-wider pb-1 border-b border-slate-200">
+                1. Executive Telemetry &amp; Intensity Assessment
               </div>
 
-              <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-black border border-[#64104E]/50 flex items-center justify-center">
-                {imageSrc ? (
-                  <img 
-                    src={imageSrc} 
-                    alt="Observed Cyclone Satellite Pass" 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="text-center p-4">
-                    <Target className="w-10 h-10 text-slate-600 mx-auto mb-2 animate-pulse" />
-                    <span className="text-xs text-slate-500 font-mono">Live INSAT-3D Pass Telemetry</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <div className="text-[9px] text-slate-500 uppercase font-bold">Max Sustained Wind</div>
+                  <div className="text-base font-black text-red-600 mt-0.5">{mswKnots} KTS</div>
+                  <div className="text-[10px] text-slate-500">{mswKmh} km/h (Gusts: {Math.round(mswKnots * 1.15)} kts)</div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <div className="text-[9px] text-slate-500 uppercase font-bold">Central Pressure</div>
+                  <div className="text-base font-black text-slate-900 mt-0.5">{pressureHpa} hPa</div>
+                  <div className="text-[10px] text-slate-500">Deficit: -{pressureDeficit} hPa</div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <div className="text-[9px] text-slate-500 uppercase font-bold">Eye Center Fix</div>
+                  <div className="text-base font-black text-blue-900 mt-0.5">{eyeLat.toFixed(2)}°N, {eyeLon.toFixed(2)}°E</div>
+                  <div className="text-[10px] text-slate-500">Sub-pixel CenterNet</div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <div className="text-[9px] text-slate-500 uppercase font-bold">Dvorak Intensity</div>
+                  <div className="text-base font-black text-amber-600 mt-0.5">T{dvorakT} / CI {dvorakT}</div>
+                  <div className="text-[10px] text-slate-500">Dual-Scale ConvNeXt</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Section 2: Visual Satellite Pass & Wind Radii */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-blue-900 uppercase tracking-wider pb-1 border-b border-slate-200">
+                2. Geostationary Satellite Observation &amp; Wind Field
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1 items-start">
+                {/* Satellite Viewport */}
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold text-slate-700 uppercase">
+                    Infrared Satellite Pass (TIR-1 10.8µm)
                   </div>
-                )}
-                
-                {/* Visual reticle tag indicator */}
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/80 backdrop-blur-sm border border-[#E04A31] text-[9.5px] font-mono text-white">
-                  EYE FIX: ({eyeLat.toFixed(2)}°N, {eyeLon.toFixed(2)}°E)
-                </div>
-              </div>
-
-              <div className="mt-2 text-[10px] font-mono text-slate-400 text-center">
-                Sub-Pixel Hessian Refined Resolution · Continuous 2D Peak Centroid
-              </div>
-            </div>
-
-            {/* Right: Technical Verification Telemetry Table */}
-            <div className="md:col-span-6 bg-[#120a1c] border border-[#64104E]/70 rounded-xl p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#64104E]/40 text-xs font-mono">
-                <span className="font-bold text-white flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>CORE INFERENCE TELEMETRY</span>
-                </span>
-                <span className="text-[10px] text-cyan-300 font-bold">WMO TIER 1</span>
-              </div>
-
-              <div className="space-y-2 text-xs font-mono">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[#0d0714] border border-[#64104E]/40">
-                  <span className="text-slate-400">Eye Center Coordinates</span>
-                  <span className="font-bold text-white">{eyeLat.toFixed(2)}°N, {eyeLon.toFixed(2)}°E</span>
+                  <div className="aspect-square w-full rounded border border-slate-300 overflow-hidden bg-slate-100 flex items-center justify-center">
+                    {imageSrc ? (
+                      <img 
+                        src={imageSrc} 
+                        alt="Satellite Pass" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-slate-400 text-xs">No satellite image data</span>
+                    )}
+                  </div>
+                  <div className="text-[9px] text-slate-500">
+                    Sub-pixel Eye Center: {eyeLat.toFixed(2)}° N, {eyeLon.toFixed(2)}° E · Calibrated INSAT-3D
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[#0d0714] border border-[#64104E]/40">
-                  <span className="text-slate-400">Max Sustained Wind (MSW)</span>
-                  <span className="font-bold text-[#E04A31]">{mswKnots} KTS ({mswKmh} km/h)</span>
-                </div>
+                {/* Wind Radii Breakdown */}
+                <div className="space-y-2">
+                  <div className="text-[10px] font-bold text-slate-700 uppercase">
+                    Asymmetric 4-Quadrant Wind Radii (NM)
+                  </div>
 
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[#0d0714] border border-[#64104E]/40">
-                  <span className="text-slate-400">Central Minimum Pressure</span>
-                  <span className="font-bold text-[#C3864D]">{pressureHpa} hPa (-{pressureDeficit} deficit)</span>
-                </div>
+                  <table className="w-full text-left border-collapse border border-slate-200 text-[11px]">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-200">
+                        <th className="p-1.5 font-bold text-slate-700">WIND TIER</th>
+                        <th className="p-1.5 text-center font-bold text-slate-700">NE</th>
+                        <th className="p-1.5 text-center font-bold text-slate-700">SE</th>
+                        <th className="p-1.5 text-center font-bold text-slate-700">SW</th>
+                        <th className="p-1.5 text-center font-bold text-slate-700">NW</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-[11px]">
+                      <tr className="bg-white">
+                        <td className="p-1.5 font-bold text-sky-600">34-kt Gale (R34)</td>
+                        <td className="p-1.5 text-center">{r34.ne} NM</td>
+                        <td className="p-1.5 text-center">{r34.se} NM</td>
+                        <td className="p-1.5 text-center">{r34.sw} NM</td>
+                        <td className="p-1.5 text-center">{r34.nw} NM</td>
+                      </tr>
+                      <tr className="bg-slate-50">
+                        <td className="p-1.5 font-bold text-amber-600">50-kt Storm (R50)</td>
+                        <td className="p-1.5 text-center">{Math.round(r34.ne * 0.55)} NM</td>
+                        <td className="p-1.5 text-center">{Math.round(r34.se * 0.55)} NM</td>
+                        <td className="p-1.5 text-center">{Math.round(r34.sw * 0.55)} NM</td>
+                        <td className="p-1.5 text-center">{Math.round(r34.nw * 0.55)} NM</td>
+                      </tr>
+                      <tr className="bg-white">
+                        <td className="p-1.5 font-bold text-red-600">64-kt Hurricane (R64)</td>
+                        <td className="p-1.5 text-center">{Math.round(r34.ne * 0.30)} NM</td>
+                        <td className="p-1.5 text-center">{Math.round(r34.se * 0.30)} NM</td>
+                        <td className="p-1.5 text-center">{Math.round(r34.sw * 0.30)} NM</td>
+                        <td className="p-1.5 text-center">{Math.round(r34.nw * 0.30)} NM</td>
+                      </tr>
+                    </tbody>
+                  </table>
 
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[#0d0714] border border-[#64104E]/40">
-                  <span className="text-slate-400">Dvorak Intensity Rating</span>
-                  <span className="font-bold text-white">T{dvorakT} / CI {dvorakT}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[#0d0714] border border-[#64104E]/40">
-                  <span className="text-slate-400">Vortex Lifecycle Stage</span>
-                  <span className="font-bold text-amber-300 truncate max-w-[200px]" title={vortexStageName}>
-                    {vortexStageName}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded-lg bg-[#0d0714] border border-[#64104E]/40">
-                  <span className="text-slate-400">Eye Formation Lead Time</span>
-                  <span className="font-bold text-cyan-300">{leadTimeToEye}</span>
-                </div>
-              </div>
-
-              {/* Gale Wind Radii (R34) */}
-              <div className="mt-3 p-2 rounded-lg bg-[#170e24] border border-[#64104E]/60 text-[10px] font-mono">
-                <span className="text-slate-400 block text-[9px] uppercase font-bold text-center mb-1">
-                  ASYMMETRIC GALE RADII EXTENT (34 KTS / R34)
-                </span>
-                <div className="grid grid-cols-4 gap-1 text-center font-bold text-white">
-                  <div><span className="text-slate-500 block text-[8px]">NE</span>{r34.ne} NM</div>
-                  <div><span className="text-slate-500 block text-[8px]">SE</span>{r34.se} NM</div>
-                  <div><span className="text-slate-500 block text-[8px]">SW</span>{r34.sw} NM</div>
-                  <div><span className="text-slate-500 block text-[8px]">NW</span>{r34.nw} NM</div>
+                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200 text-[10px] space-y-1 text-slate-600">
+                    <div><strong>Vortex Morphology:</strong> {vortexStageName}</div>
+                    <div><strong>Eye Formation Lead Time:</strong> {leadTimeToEye}</div>
+                    <div><strong>Cyclogenesis Risk Index:</strong> {cyclogenesisRiskScore}% probability</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Section 3: 48-Hour Track Forecast Table */}
-          <div className="bg-[#120a1c] border border-[#64104E]/70 rounded-xl p-4">
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-[#64104E]/40 text-xs font-mono">
-              <span className="font-bold text-white flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-rose-400" />
-                <span>48-HOUR PROJECTED TRAJECTORY &amp; LANDFALL SCHEDULE</span>
-              </span>
-              <span className="text-[10px] text-slate-400">STEERING CURRENT + BETA-DRIFT KINEMATICS</span>
-            </div>
+            {/* 5. Section 3: 48-Hour Track Forecast Table */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-blue-900 uppercase tracking-wider pb-1 border-b border-slate-200">
+                3. Numerical 48-Hour Waypoint &amp; Landfall Schedule
+              </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead>
-                  <tr className="border-b border-[#64104E]/60 text-slate-400 text-[10px]">
-                    <th className="pb-1.5 font-bold">HORIZON</th>
-                    <th className="pb-1.5 font-bold">COORDINATES</th>
-                    <th className="pb-1.5 font-bold">WIND (KTS)</th>
-                    <th className="pb-1.5 font-bold">WIND (KM/H)</th>
-                    <th className="pb-1.5 font-bold">UNCERTAINTY CONE</th>
-                    <th className="pb-1.5 font-bold text-right">STATUS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#64104E]/30 text-slate-200">
-                  {(waypoints.length > 0 ? waypoints : [
-                    { horizon_h: 0, latitude: eyeLat, longitude: eyeLon, wind_kts: mswKnots, is_landfall: false },
-                    { horizon_h: 6, latitude: Number((eyeLat + 0.35).toFixed(2)), longitude: Number((eyeLon + 0.45).toFixed(2)), wind_kts: mswKnots + 5, is_landfall: false },
-                    { horizon_h: 12, latitude: Number((eyeLat + 0.75).toFixed(2)), longitude: Number((eyeLon + 0.90).toFixed(2)), wind_kts: mswKnots + 10, is_landfall: false },
-                    { horizon_h: 24, latitude: Number((eyeLat + 1.55).toFixed(2)), longitude: Number((eyeLon + 1.45).toFixed(2)), wind_kts: Math.max(45, mswKnots - 15), is_landfall: true },
-                    { horizon_h: 48, latitude: Number((eyeLat + 2.85).toFixed(2)), longitude: Number((eyeLon + 2.15).toFixed(2)), wind_kts: 35, is_landfall: false }
-                  ]).map((wp, i) => (
-                    <tr key={i} className={`hover:bg-[#1a0e28]/50 ${wp.is_landfall ? 'bg-rose-950/20' : ''}`}>
-                      <td className="py-2 font-bold text-white">T+{wp.horizon_h}H</td>
-                      <td className="py-2 text-slate-300">{wp.latitude}°N, {wp.longitude}°E</td>
-                      <td className="py-2 font-bold text-[#E04A31]">{wp.wind_kts} KTS</td>
-                      <td className="py-2 text-slate-400">{Math.round(wp.wind_kts * 1.852)} km/h</td>
-                      <td className="py-2 text-slate-400">± {Math.round(wp.horizon_h * 2.8 + 25)} km</td>
-                      <td className="py-2 text-right">
-                        {wp.is_landfall ? (
-                          <span className="px-2 py-0.5 rounded bg-rose-900/80 border border-rose-500/80 text-rose-200 font-bold text-[9px]">
-                            COASTAL LANDFALL
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-slate-400">
-                            {wp.horizon_h === 0 ? 'CURRENT FIX' : 'OVER WATER'}
-                          </span>
-                        )}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse border border-slate-200 text-[10.5px]">
+                  <thead>
+                    <tr className="bg-slate-100 border-b border-slate-200 text-slate-800">
+                      <th className="p-1.5 font-bold">HORIZON</th>
+                      <th className="p-1.5 font-bold">COORDINATES</th>
+                      <th className="p-1.5 font-bold text-center">MSW (KTS)</th>
+                      <th className="p-1.5 font-bold text-center">MSW (KM/H)</th>
+                      <th className="p-1.5 font-bold text-center">UNCERTAINTY</th>
+                      <th className="p-1.5 font-bold">INTERCEPTION STATE</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(waypoints.length > 0 ? waypoints : [
+                      { horizon_h: 0, lat: eyeLat, lon: eyeLon, msw_kts: mswKnots, cone_km: 15, is_landfall: false },
+                      { horizon_h: 6, lat: eyeLat + 0.35, lon: eyeLon + 0.45, msw_kts: mswKnots + 5, cone_km: 32, is_landfall: false },
+                      { horizon_h: 12, lat: eyeLat + 0.75, lon: eyeLon + 0.90, msw_kts: mswKnots + 10, cone_km: 50, is_landfall: false },
+                      { horizon_h: 24, lat: eyeLat + 1.55, lon: eyeLon + 1.45, msw_kts: Math.max(45, mswKnots - 15), cone_km: 88, is_landfall: true },
+                      { horizon_h: 36, lat: eyeLat + 2.20, lon: eyeLon + 1.85, msw_kts: Math.max(35, mswKnots - 35), cone_km: 120, is_landfall: false },
+                      { horizon_h: 48, lat: eyeLat + 2.85, lon: eyeLon + 2.15, msw_kts: 30, cone_km: 175, is_landfall: false }
+                    ]).map((wp, idx) => {
+                      const isLf = wp.is_landfall;
+                      const h = wp.horizon_h !== undefined ? wp.horizon_h : idx * 6;
+                      const lat = (wp.latitude || wp.lat || eyeLat).toFixed(2);
+                      const lon = (wp.longitude || wp.lon || eyeLon).toFixed(2);
+                      const kts = Math.round(wp.wind_kts || wp.msw_kts || mswKnots);
+                      const kmh = Math.round(kts * 1.852);
+                      const cone = Math.round(wp.cone_km || (h * 2.8 + 25));
+
+                      return (
+                        <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                          <td className="p-1.5 font-bold text-slate-800">T+{h}H</td>
+                          <td className="p-1.5">{lat}° N, {lon}° E</td>
+                          <td className="p-1.5 text-center font-bold text-red-600">{kts} KTS</td>
+                          <td className="p-1.5 text-center">{kmh} km/h</td>
+                          <td className="p-1.5 text-center text-slate-500">± {cone} km</td>
+                          <td className="p-1.5 font-bold">
+                            {isLf ? (
+                              <span className="text-red-600">COASTAL LANDFALL</span>
+                            ) : h === 0 ? (
+                              <span className="text-blue-900">INITIAL FIX</span>
+                            ) : (
+                              <span className="text-slate-600">MARINE SECTOR</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
+            {/* 6. Section 4: Operational Action Directives Callout */}
+            <div className="p-3.5 rounded bg-red-50 border-l-4 border-red-600 text-slate-800 text-xs space-y-1">
+              <div className="font-bold text-red-700 uppercase tracking-wide text-[10px]">
+                MANDATORY ACTION DIRECTIVE (NDMA / COAST GUARD COMPLIANT):
+              </div>
+              <p className="text-[11px] leading-relaxed text-slate-700">
+                {recommendedAction}
+              </p>
+            </div>
+
+            {/* Document Footer */}
+            <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400">
+              <span>VortexAI Meteorological Surveillance Division</span>
+              <span>WMO / IMD Compliant Official Advisory</span>
+            </div>
+
           </div>
-
-          {/* Section 4: NDMA Action Directive & Fishermen Advisory */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-red-950/40 via-[#1c0a1a] to-amber-950/40 border border-red-500/60 flex flex-col gap-2 font-mono text-xs">
-            <div className="flex items-center gap-2 text-red-300 font-bold tracking-wide">
-              <ShieldAlert className="w-4 h-4 text-[#E04A31]" />
-              <span>EMERGENCY DISASTER MANAGEMENT DIRECTIVE (NDMA / COAST GUARD)</span>
-            </div>
-
-            <p className="text-slate-300 text-xs leading-relaxed font-sans">
-              <strong className="text-white font-mono uppercase">Operational Action: </strong>
-              {recommendedAction}
-            </p>
-
-            <div className="pt-2 border-t border-red-500/30 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
-              <span>Notice: Generated by VortexAI Autonomous Satellite Pipeline.</span>
-              <span className="font-bold text-slate-300">AUTHORITY: REGIONAL SPECIALIZED METEOROLOGICAL CENTER (RSMC)</span>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>

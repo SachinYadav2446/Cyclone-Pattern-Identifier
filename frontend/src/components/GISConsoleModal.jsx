@@ -30,7 +30,8 @@ import {
   Cloud,
   CloudRain,
   Layers,
-  Sparkles
+  Sparkles,
+  Film
 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 import { getLiveVortexAnalysis } from '../utils/liveVortexEngine';
@@ -115,7 +116,7 @@ const channels = [
   },
 ];
 
-export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) {
+export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, onOpenTimelapse }) {
   const [selectedView, setSelectedView] = useState('ir1'); // 'ir1' | 'vis' | 'wv' | 'ctbt' | 'quad'
   const [activeTab, setActiveTab] = useState('telemetry'); // 'telemetry' | 'trajectory'
   const [cacheBuster, setCacheBuster] = useState(Date.now());
@@ -581,6 +582,16 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench }) 
               <Download className={`w-3.5 h-3.5 text-[#fbcfe8] ${isDownloadingPdf ? 'animate-bounce' : ''}`} />
               <span className="hidden sm:inline">{isDownloadingPdf ? 'DOWNLOADING PDF...' : (hasActiveSystems ? 'DOWNLOAD BULLETIN (PDF)' : 'DOWNLOAD REPORT (PDF)')}</span>
               <span className="sm:hidden">{isDownloadingPdf ? 'PDF...' : 'PDF'}</span>
+            </button>
+
+            {/* 4D Satellite Timelapse Player */}
+            <button
+              onClick={() => onOpenTimelapse && onOpenTimelapse(hasActiveSystems ? 'phailin_super_cyclone' : 'live_insat')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] rounded-lg transition-all cursor-pointer font-semibold shadow-md active:scale-95 border bg-[#1a0f28] hover:bg-[#28153c] text-amber-300 border-amber-500/40 hover:border-amber-400"
+              title="Open 4D Satellite Timelapse & Kinematics Loop"
+            >
+              <Film className="w-3.5 h-3.5 text-amber-400" />
+              <span>TIMELAPSE LOOP</span>
             </button>
 
             {/* Refresh Pass */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Terminal, Menu, X, Upload, Radio, Sparkles, Bell } from 'lucide-react';
+import { Menu, X, Radio, Bell } from 'lucide-react';
 
 const navItems = [
   { id: 'novelty', label: 'Novelties' },
@@ -8,7 +8,7 @@ const navItems = [
   { id: 'dataset', label: 'Dataset' },
 ];
 
-export default function Navbar({ onOpenConsole, onOpenDemo, onOpenNotifications, unreadCount = 2 }) {
+export default function Navbar({ onOpenConsole, onOpenNotifications, unreadCount = 2 }) {
   const [activeSection, setActiveSection] = useState('novelty');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -73,23 +73,23 @@ export default function Navbar({ onOpenConsole, onOpenDemo, onOpenNotifications,
         ? 'border-b border-[#64104E]/50 bg-[#08050c]/95 backdrop-blur-xl shadow-[0_4px_25px_rgba(0,0,0,0.7)]'
         : 'border-b border-transparent bg-[#08050c] shadow-none'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4 relative">
-        {/* Brand Logo - Shifted right with animated entrance */}
-        <a href="#" className="flex items-center group shrink-0 pl-2 sm:pl-6 md:pl-8 z-10 animate-vortex-brand">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+        {/* Brand Logo */}
+        <a href="#" className="flex items-center group shrink-0 pl-1 sm:pl-2">
           <span className="font-black text-lg tracking-tight font-mono text-white group-hover:text-[#E04A31] transition-colors">
             vortex<span className="text-[#E04A31] drop-shadow-[0_0_10px_rgba(224,74,49,0.5)]">AI</span>
           </span>
         </a>
 
-        {/* Desktop Nav Links - Clean Pill Capsule perfectly centered */}
-        <nav className="hidden md:flex items-center gap-6 px-6 py-1.5 rounded-full border border-[#64104E]/50 bg-[#140b1e]/85 shadow-lg text-xs font-mono absolute left-1/2 -translate-x-1/2 z-10">
+        {/* Desktop Nav Links - Clean Pill Capsule with no overlap */}
+        <nav className="hidden md:flex items-center gap-5 lg:gap-6 px-5 lg:px-6 py-1.5 rounded-full border border-[#64104E]/50 bg-[#140b1e]/85 shadow-lg text-xs font-mono">
           {navItems.map((item) => {
             const isActive = activeSection === item.id;
             return (
               <a
                 key={item.id}
                 href={`#${item.id}`}
-                className={`relative py-0.5 transition-colors ${
+                className={`relative py-0.5 transition-colors whitespace-nowrap ${
                   isActive
                     ? 'text-[#E04A31] font-bold tracking-wide'
                     : 'text-slate-300 hover:text-white font-medium'
@@ -104,40 +104,30 @@ export default function Navbar({ onOpenConsole, onOpenDemo, onOpenNotifications,
           })}
         </nav>
 
-        {/* Right CTA Actions - Sleek Pill Buttons matching wireframe */}
-        <div className="flex items-center gap-2.5 font-mono">
-          {/* Meteorological Alerts & Early Warning Pill */}
-          <button
-            onClick={onOpenNotifications}
-            className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-[#1a0f28] hover:bg-[#251538] text-slate-200 border border-[#B43067]/40 hover:border-[#B43067] font-bold transition-all shadow-md active:scale-95 cursor-pointer"
-            title="Early Warning Alerts & Daily Email Reports"
-          >
-            <Bell className="w-3.5 h-3.5 text-[#E04A31] animate-pulse" />
-            <span className="hidden sm:inline">Alerts</span>
-            {unreadCount > 0 && (
-              <span className="flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#E04A31] text-[10px] font-bold text-white shadow-sm">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-
-          {/* Demo Pill (formerly Interactive Demo) */}
-          <button
-            onClick={onOpenDemo}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs bg-[#1a0f28] hover:bg-[#251538] text-slate-200 border border-[#B43067]/40 hover:border-[#B43067] font-bold transition-all shadow-md active:scale-95 cursor-pointer"
-            title="Launch Cyclone Inference & Localization Demo"
-          >
-            <Upload className="w-3.5 h-3.5 text-[#B43067]" />
-            <span>Demo</span>
-          </button>
-
-          {/* GIS Console Pill without Arrow or gradient */}
+        {/* Right CTA Actions - Clean, uncluttered layout */}
+        <div className="flex items-center gap-2.5 sm:gap-3 font-mono shrink-0">
+          {/* GIS Console Pill */}
           <button
             onClick={onOpenConsole}
             className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-[#E04A31] hover:bg-[#CF2F4B] text-white shadow-[0_0_20px_rgba(224,74,49,0.35)] transition-all cursor-pointer active:scale-95"
             title="Launch Real-Time 4-Band Satellite GIS Mission Control"
           >
             <span>GIS Console</span>
+          </button>
+
+          {/* Meteorological Alarm Bell (Icon Only with Badge) */}
+          <button
+            onClick={onOpenNotifications}
+            className="group relative p-2 rounded-full bg-[#1a0f28] hover:bg-[#251538] text-slate-200 border border-[#B43067]/40 hover:border-[#B43067] transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center"
+            title="Open Meteorological Alarms & Early Warning Feed"
+            aria-label="Meteorological Alerts"
+          >
+            <Bell className="w-4 h-4 text-[#E04A31] group-hover:scale-110 transition-transform" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#E04A31] text-[9px] font-bold text-white shadow-[0_0_8px_#E04A31] ring-2 ring-[#08050c]">
+                {unreadCount}
+              </span>
+            )}
           </button>
 
           {/* Mobile Menu Button */}
@@ -168,32 +158,28 @@ export default function Navbar({ onOpenConsole, onOpenDemo, onOpenNotifications,
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                onOpenNotifications();
-              }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#1a0f28] border border-[#B43067]/50 text-slate-200 font-bold text-xs"
-            >
-              <Bell className="w-3.5 h-3.5 text-[#E04A31]" />
-              <span>Alerts ({unreadCount})</span>
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenDemo();
-              }}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#1a0f28] border border-[#B43067]/50 text-slate-200 font-bold text-xs"
-            >
-              <Upload className="w-3.5 h-3.5 text-[#B43067]" />
-              <span>Demo</span>
-            </button>
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
                 onOpenConsole();
               }}
               className="flex-1 py-2 px-3 rounded-lg bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white text-xs font-bold flex items-center justify-center gap-2 shadow"
             >
               <Radio className="w-3.5 h-3.5 text-white" />
               <span>GIS Console</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenNotifications();
+              }}
+              className="p-2 rounded-lg bg-[#1a0f28] border border-[#B43067]/50 text-slate-200 font-bold text-xs relative flex items-center justify-center"
+              title="Open Meteorological Alarms"
+              aria-label="Meteorological Alerts"
+            >
+              <Bell className="w-4 h-4 text-[#E04A31]" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-[#E04A31] text-[9px] font-bold text-white">
+                  {unreadCount}
+                </span>
+              )}
             </button>
           </div>
         </div>

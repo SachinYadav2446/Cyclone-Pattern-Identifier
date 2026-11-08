@@ -241,7 +241,7 @@ class LiveVortexAnalyzer:
                 presence_check = eye_detector.localize_image_array(buf.getvalue())
 
                 pred_conf = presence_check.get("predicted_eye", {}).get("confidence", 0)
-                if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS" and pred_conf >= 2.0:
+                if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS" and pred_conf >= 0.25:
                     largest_idx = np.argmax(sizes) + 1
                     y_idx, x_idx = np.where(bob_labeled == largest_idx)
                     
@@ -296,7 +296,7 @@ class LiveVortexAnalyzer:
                 presence_check = eye_detector.localize_image_array(buf.getvalue())
 
                 pred_conf = presence_check.get("predicted_eye", {}).get("confidence", 0)
-                if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS" and pred_conf >= 2.0:
+                if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS" and pred_conf >= 0.25:
                     largest_idx = np.argmax(sizes) + 1
                     y_idx, x_idx = np.where(as_labeled == largest_idx)
                     

@@ -1,3 +1,11 @@
+"""
+VortexAI Official Meteorological Bulletin Generator.
+Generates an executive, institutional-grade 2-page publication-quality
+Tropical Cyclone Advisory Bulletin (or Quiescent Basin Outlook)
+following WMO / IMD / NOAA RSMC standards.
+Clean white theme with elegant, restrained typography and crisp data tables.
+"""
+
 import io
 import os
 import base64
@@ -15,42 +23,45 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.patches as patches
 
-# Color Palette: VortexAI Official Dark Brand Theme
-C_BG = '#08050c'         # Deep obsidian backdrop
-C_CARD = '#11091c'       # Elevated card background
-C_CARD_ALT = '#170d24'   # Alternating row background
-C_BORDER = '#64104E'     # Primary plum border
-C_CRIMSON = '#E04A31'    # Coral/Crimson accent
-C_ROSE = '#B43067'       # Rose accent
-C_AMBER = '#C3864D'      # Gold/Amber accent
-C_CYAN = '#38bdf8'       # Telemetry cyan
-C_GREEN = '#10b981'      # Success / All-clear emerald
-C_GREEN_DARK = '#062618' # Deep green card background
-C_GREEN_BORDER = '#059669'
-C_TEXT_WHITE = '#ffffff' # Pure white
-C_TEXT_PINK = '#fbcfe8'  # Highlighting pink
-C_TEXT_SLATE = '#cbd5e1' # Soft slate
-C_TEXT_MUTED = '#94a3b8' # Secondary text
+# ---------------------------------------------------------------------------
+# Clean White Theme Palette (Institutional Meteorological Agency Standard)
+# ---------------------------------------------------------------------------
+BG_WHITE = '#ffffff'          # Clean white paper
+BG_SUBTLE = '#f8fafc'         # Very light slate tint for cards & table stripes
+BG_HEADER = '#f1f5f9'         # Light slate table header
+LINE_BORDER = '#cbd5e1'       # Subtle hairline grey border (0.5pt - 0.8pt)
+LINE_LIGHT = '#e2e8f0'        # Very faint divider
+TEXT_MAIN = '#0f172a'         # Deep charcoal/navy (nearly black, high contrast)
+TEXT_MUTED = '#475569'        # Secondary slate text
+TEXT_LIGHT = '#64748b'        # Captions and timestamp text
 
-def wrap_str(s: str, width: int = 40) -> str:
+# Restrained Accents
+COLOR_NAVY = '#1e3a8a'        # Primary institutional navy
+COLOR_CRIMSON = '#dc2626'     # Severe / Hurricane warning
+COLOR_AMBER = '#d97706'       # Advisory / Storm warning
+COLOR_CYAN = '#0284c7'        # Gale / Telemetry
+COLOR_GREEN = '#15803d'       # All-Clear / Safe state
+COLOR_GREEN_BG = '#f0fdf4'    # Light green tint for all-clear
+COLOR_CRIMSON_BG = '#fef2f2'  # Light red tint for warning
+
+def wrap_str(s: str, width: int = 50) -> str:
     """Wraps text cleanly without breaking words or overflowing bounding boxes."""
     if not s:
         return ""
     return "\n".join(textwrap.wrap(str(s).strip(), width=width))
 
-def draw_section_divider(fig, y: float, title: str, color: str = '#fbcfe8'):
-    """Draws a clean, professional aerospace section divider bar."""
-    ax_div = fig.add_axes([0.05, y, 0.90, 0.015])
-    ax_div.axis('off')
-    ax_div.plot([0.0, 1.0], [0.5, 0.5], color='#4a1840', linewidth=0.8, linestyle='-')
-    ax_div.text(0.01, 0.5, f"◆ {title}", fontsize=6.8, weight='bold', color=color,
-                va='center', backgroundcolor=C_BG)
+def draw_section_rule(fig, y: float, title: str, accent_color: str = COLOR_NAVY):
+    """Draws a clean, minimalistic institutional section header with a thin hairline rule."""
+    fig.text(0.06, y + 0.007, title.upper(), fontsize=7.2, weight='bold', color=accent_color,
+             fontfamily='sans-serif', va='bottom')
+    ax_line = fig.add_axes([0.06, y + 0.003, 0.88, 0.0008])
+    ax_line.axis('off')
+    ax_line.add_patch(patches.Rectangle((0, 0), 1, 1, facecolor=LINE_BORDER, edgecolor='none'))
 
 def generate_cyclone_bulletin_pdf(report_data: dict, output_stream: io.BytesIO) -> None:
     """
-    Generates an executive, institutional-grade 2-page Tropical Cyclone Situation Bulletin
-    (or Quiescent Basin Dossier if no cyclone is active), structured with isolated heading card,
-    subheading card, and crisp divided sections.
+    Generates a clean white-themed, institutional-grade 2-page Tropical Cyclone Situation Bulletin
+    with minimalistic layout, restrained typography, and zero clunky nested boxes.
     """
     has_cyclone = bool(report_data.get("has_cyclone", True))
     storm_id = str(report_data.get("storm_id", "")).lower()
@@ -85,14 +96,14 @@ def generate_cyclone_bulletin_pdf(report_data: dict, output_stream: io.BytesIO) 
     except (ValueError, TypeError):
         dvorak_t = 5.0 if has_cyclone else 0.0
 
-    lifecycle_stage = str(report_data.get("vortex_stage_name", "Mature Cyclonic Vortex (Well-Defined Eye Cavity)" if has_cyclone else "Quiescent Ambient Marine Atmosphere"))
+    lifecycle_stage = str(report_data.get("vortex_stage_name", "Mature Cyclonic Vortex (Well-Defined Eye)" if has_cyclone else "Quiescent Ambient Marine Atmosphere"))
     try:
         risk_score = float(report_data.get("cyclogenesis_risk_score", 95.0 if has_cyclone else 3.8))
     except (ValueError, TypeError):
         risk_score = 95.0 if has_cyclone else 3.8
 
-    lead_time = str(report_data.get("lead_time_to_eye_formation", "Eye Formed & Actively Monitored" if has_cyclone else "No Cyclogenesis Imminent (> 72h Safe)"))
-    advisory = str(report_data.get("recommended_action", "Maintain high alert along coastal districts. Complete evacuation of 0-5 km coastal belt. Halt all port and deep-sea fishing operations immediately." if has_cyclone else "ALL-CLEAR: Routine maritime and coastal operations permitted across all sectors. Normal port operations in effect."))
+    lead_time = str(report_data.get("lead_time_to_eye_formation", "Eye Formed & Monitored" if has_cyclone else "No Cyclogenesis Imminent (> 72h Safe)"))
+    advisory = str(report_data.get("recommended_action", "Maintain high alert along coastal districts. Complete evacuation of 0-5 km coastal belt. Halt all port and deep-sea fishing operations immediately." if has_cyclone else "Routine maritime and coastal operations permitted across all sectors. Normal port operations in effect."))
     
     raw_waypoints = report_data.get("waypoints") or []
     quadrant_radii = report_data.get("quadrant_radii") or {}
@@ -152,223 +163,210 @@ def generate_cyclone_bulletin_pdf(report_data: dict, output_stream: io.BytesIO) 
     with PdfPages(output_stream) as pdf:
         
         # =========================================================================
-        # PAGE 1: EXECUTIVE BRIEFING, SYNOPTIC SATELLITE PASS & INTENSITY DIAGNOSTICS
+        # PAGE 1: EXECUTIVE BULLETIN, SYNOPTIC SATELLITE PASS & INTENSITY DIAGNOSTICS
         # =========================================================================
         fig1 = plt.figure(figsize=(8.27, 11.69), dpi=200) # Standard A4 Portrait
-        fig1.patch.set_facecolor(C_BG)
+        fig1.patch.set_facecolor(BG_WHITE)
 
         # -------------------------------------------------------------------------
-        # 1. HEADING ALONE (CLEAN BORDER RADIUS BOX)
+        # 1. INSTITUTIONAL MASTHEAD (CLEAN, NO ENCLOSING BOXES)
         # -------------------------------------------------------------------------
-        ax_hdr = fig1.add_axes([0.05, 0.910, 0.90, 0.055])
-        ax_hdr.axis('off')
-        hdr_bg = '#160824' if has_cyclone else '#082318'
-        hdr_border = C_BORDER if has_cyclone else C_GREEN
-        ax_hdr.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.025", 
-                                                facecolor=hdr_bg, edgecolor=hdr_border, linewidth=1.5))
-        ax_hdr.text(0.5, 0.72, "REGIONAL SPECIALIZED METEOROLOGICAL CENTRE (RSMC) · CYCLONE INTELLIGENCE",
-                    ha='center', va='center', color=C_CYAN, fontsize=7.5, weight='bold', fontfamily='sans-serif')
+        doc_title = "OFFICIAL TROPICAL CYCLONE ADVISORY BULLETIN" if has_cyclone else "TROPICAL WEATHER OUTLOOK & BASIN STATE DOSSIER"
+        fig1.text(0.06, 0.950, "REGIONAL SPECIALIZED METEOROLOGICAL CENTRE (RSMC) · CYCLONE INTELLIGENCE",
+                  color=COLOR_NAVY, fontsize=6.8, weight='bold', fontfamily='sans-serif')
+        fig1.text(0.06, 0.925, doc_title,
+                  color=TEXT_MAIN, fontsize=11.5, weight='bold', fontfamily='sans-serif')
         
-        main_title = "OFFICIAL TROPICAL CYCLONE INTELLIGENCE BULLETIN" if has_cyclone else "TROPICAL WEATHER OUTLOOK & QUIESCENT BASIN REPORT"
-        ax_hdr.text(0.5, 0.30, main_title,
-                    ha='center', va='center', color=C_TEXT_WHITE, fontsize=12.0, weight='bold', fontfamily='sans-serif')
+        # Crisp rule under masthead
+        ax_mast_line = fig1.add_axes([0.06, 0.916, 0.88, 0.0012])
+        ax_mast_line.axis('off')
+        ax_mast_line.add_patch(patches.Rectangle((0, 0), 1, 1, facecolor=COLOR_NAVY, edgecolor='none'))
 
         # -------------------------------------------------------------------------
-        # 2. SUBHEADING CARD (SYSTEM ID, TIMESTAMPS & STATUS METADATA)
+        # 2. METADATA SUB-HEADER LINE (KEY-VALUE GRID)
         # -------------------------------------------------------------------------
-        ax_sub = fig1.add_axes([0.05, 0.845, 0.90, 0.055])
-        ax_sub.axis('off')
-        sub_bg = '#1a0b2c' if has_cyclone else C_GREEN_DARK
-        sub_border = C_ROSE if has_cyclone else C_GREEN_BORDER
-        ax_sub.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.02",
-                                                facecolor=sub_bg, edgecolor=sub_border, linewidth=1.2))
-        # Top line: Storm Name and Warning Tier
-        ax_sub.text(0.025, 0.68, f"STORM SYSTEM: {storm_name}", fontsize=10.0, weight='bold', color=C_CRIMSON if has_cyclone else '#34d399')
-        ax_sub.text(0.975, 0.68, f"STATUS: {category}", fontsize=8.5, weight='bold', color=C_TEXT_PINK if has_cyclone else '#6ee7b7', ha='right')
-        # Bottom line: Bulletin ID, Issue time, Protocol
-        ax_sub.text(0.025, 0.26, f"BULLETIN: {bulletin_id}", fontsize=7.0, color=C_TEXT_SLATE, fontfamily='monospace')
-        ax_sub.text(0.50, 0.26, f"ISSUED: {issue_time_utc}", fontsize=7.0, color=C_TEXT_SLATE, fontfamily='monospace', ha='center')
-        ax_sub.text(0.975, 0.26, "RSMC PROTOCOL: WMO / IMD STANDARD", fontsize=7.0, color=C_CYAN, fontfamily='monospace', ha='right')
-
-        # -------------------------------------------------------------------------
-        # DIVIDER 1
-        # -------------------------------------------------------------------------
-        draw_section_divider(fig1, 0.832, "SECTION 01: EXECUTIVE THREAT LEVEL & DVORAK INTENSITY ASSESSMENT")
-
-        # -------------------------------------------------------------------------
-        # 3. SECTION 1: EXECUTIVE THREAT / INTENSITY BANNER CARD
-        # -------------------------------------------------------------------------
-        ax_threat = fig1.add_axes([0.05, 0.760, 0.90, 0.065])
-        ax_threat.axis('off')
-        threat_bg = '#250817' if has_cyclone else '#052317'
-        threat_border = C_CRIMSON if has_cyclone else C_GREEN_BORDER
-        ax_threat.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.02",
-                                                   facecolor=threat_bg, edgecolor=threat_border, linewidth=1.4))
-        if has_cyclone:
-            ax_threat.text(0.025, 0.68, f"WARNING TIER: {category}", fontsize=9.0, weight='bold', color=C_CRIMSON)
-            ax_threat.text(0.025, 0.28, f"MAX SUSTAINED WIND: {msw_kts:.0f} KNOTS ({msw_kmh} KM/H)  ·  MIN CENTRAL PRESSURE: {pressure_hpa:.0f} HPA (-{pressure_deficit:.0f} hPa Deficit)", 
-                           fontsize=7.2, weight='bold', color='#fde68a', fontfamily='monospace')
-            ax_threat.text(0.975, 0.50, f"DVORAK: T{dvorak_t:.1f}", fontsize=11.5, weight='bold', color=C_TEXT_WHITE, ha='right', va='center')
-        else:
-            ax_threat.text(0.025, 0.68, "SECTOR THREAT LEVEL: GREEN (ALL-CLEAR) · ROUTINE BASIN SURVEILLANCE", fontsize=9.0, weight='bold', color='#34d399')
-            ax_threat.text(0.025, 0.28, "NO ACTIVE CYCLONIC DISTURBANCE DETECTED  ·  MEAN AMBIENT SECTOR WIND: 8-14 KTS  ·  PRESSURE: 1010.5 HPA",
-                           fontsize=7.2, weight='bold', color='#a7f3d0', fontfamily='monospace')
-            ax_threat.text(0.975, 0.50, "GENESIS: < 5%", fontsize=11.0, weight='bold', color='#34d399', ha='right', va='center')
-
-        # -------------------------------------------------------------------------
-        # DIVIDER 2
-        # -------------------------------------------------------------------------
-        draw_section_divider(fig1, 0.745, "SECTION 02: SYNOPTIC GEOSTATIONARY SATELLITE OBSERVATION & WIND FIELD")
-
-        # -------------------------------------------------------------------------
-        # 4. SECTION 2: VISUAL DIAGNOSTICS (LEFT: SATELLITE PASS, RIGHT: WIND RADII)
-        # -------------------------------------------------------------------------
-        # Left Container: Satellite Observation Card
-        ax_sat_box = fig1.add_axes([0.05, 0.455, 0.44, 0.280])
-        ax_sat_box.axis('off')
-        ax_sat_box.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.02",
-                                                    facecolor=C_CARD, edgecolor=C_BORDER if has_cyclone else C_GREEN_BORDER, linewidth=1.2))
-        ax_sat_box.text(0.04, 0.92, "GEOSTATIONARY INFRARED PASS (TIR-1 10.8µm)", fontsize=7.5, weight='bold', color=C_TEXT_PINK if has_cyclone else '#6ee7b7')
+        fig1.text(0.06, 0.895, f"STORM SYSTEM: {storm_name}", fontsize=8.5, weight='bold', color=COLOR_CRIMSON if has_cyclone else COLOR_GREEN)
+        fig1.text(0.94, 0.895, f"CLASSIFICATION: {category}", fontsize=8.0, weight='bold', color=COLOR_NAVY if has_cyclone else COLOR_GREEN, ha='right')
         
-        # Satellite Image Viewport inside Left Card
-        ax_sat = fig1.add_axes([0.065, 0.470, 0.41, 0.220])
+        fig1.text(0.06, 0.878, f"Bulletin Ref: {bulletin_id}", fontsize=6.8, color=TEXT_MUTED, fontfamily='monospace')
+        fig1.text(0.50, 0.878, f"Issued: {issue_time_utc}", fontsize=6.8, color=TEXT_MUTED, fontfamily='monospace', ha='center')
+        fig1.text(0.94, 0.878, "Standard: WMO / IMD Protocol", fontsize=6.8, color=TEXT_MUTED, fontfamily='monospace', ha='right')
+
+        # -------------------------------------------------------------------------
+        # 3. EXECUTIVE METRIC SUMMARY STRIP (4 CLEAN MINIMALIST CARDS)
+        # -------------------------------------------------------------------------
+        draw_section_rule(fig1, 0.852, "1. Executive Telemetry & Intensity Assessment")
+
+        card_width = 0.205
+        card_gap = 0.020
+        card_y = 0.775
+        card_height = 0.062
+
+        summary_metrics = [
+            ("MAX SUSTAINED WIND", f"{msw_kts:.0f} KNOTS", f"{msw_kmh} km/h (Gusts: {int(msw_kts*1.15)} kts)", COLOR_CRIMSON if has_cyclone else COLOR_GREEN),
+            ("CENTRAL PRESSURE", f"{pressure_hpa:.0f} hPa", f"Deficit: -{pressure_deficit:.0f} hPa", TEXT_MAIN),
+            ("EYE POSITION FIX", f"{eye_lat:.2f}°N, {eye_lon:.2f}°E", "Sub-pixel CenterNet Refined", COLOR_NAVY if has_cyclone else COLOR_GREEN),
+            ("DVORAK CURRENT INTENSITY", f"T{dvorak_t:.1f} / CI {dvorak_t:.1f}", f"Stage: {category.split('(')[-1].rstrip(')') if '(' in category else category}", COLOR_AMBER if has_cyclone else COLOR_GREEN),
+        ]
+
+        for i, (title, val, sub, val_col) in enumerate(summary_metrics):
+            cx = 0.06 + i * (card_width + card_gap)
+            ax_c = fig1.add_axes([cx, card_y, card_width, card_height])
+            ax_c.axis('off')
+            ax_c.add_patch(patches.Rectangle((0, 0), 1, 1, facecolor=BG_SUBTLE, edgecolor=LINE_BORDER, linewidth=0.6))
+            ax_c.text(0.08, 0.76, title, fontsize=5.8, weight='bold', color=TEXT_LIGHT, fontfamily='sans-serif', transform=ax_c.transAxes)
+            ax_c.text(0.08, 0.42, val, fontsize=8.8, weight='bold', color=val_col, fontfamily='sans-serif', transform=ax_c.transAxes)
+            ax_c.text(0.08, 0.16, sub, fontsize=5.6, color=TEXT_MUTED, fontfamily='sans-serif', transform=ax_c.transAxes)
+
+        # -------------------------------------------------------------------------
+        # 4. SECTION 2: SYNOPTIC OBSERVATION & RADII (SIDE BY SIDE, CLEAN WHITE)
+        # -------------------------------------------------------------------------
+        draw_section_rule(fig1, 0.750, "2. Geostationary Satellite Observation & Wind Radii")
+
+        # Left: Satellite Image Pane
+        fig1.text(0.06, 0.728, "INFRARED SATELLITE PASS (TIR-1 10.8µm)", fontsize=6.8, weight='bold', color=TEXT_MAIN)
+        
+        ax_sat = fig1.add_axes([0.06, 0.505, 0.42, 0.215])
         if sat_img:
             ax_sat.imshow(sat_img)
             w, h = sat_img.size
             cx, cy = w * 0.5, h * 0.5
             if has_cyclone:
-                ax_sat.plot(cx, cy, marker='+', markersize=14, markeredgewidth=2, color=C_TEXT_WHITE)
-                circle = plt.Circle((cx, cy), w * 0.08, fill=False, edgecolor=C_CRIMSON, linewidth=1.6, linestyle='--')
+                ax_sat.plot(cx, cy, marker='+', markersize=10, markeredgewidth=1.4, color=BG_WHITE)
+                circle = plt.Circle((cx, cy), w * 0.08, fill=False, edgecolor=COLOR_CRIMSON, linewidth=1.2, linestyle='--')
                 ax_sat.add_patch(circle)
             else:
-                rect = plt.Rectangle((w * 0.2, h * 0.2), w * 0.6, h * 0.6, fill=False, edgecolor=C_GREEN, linewidth=1.5, linestyle=':')
+                rect = plt.Rectangle((w * 0.2, h * 0.2), w * 0.6, h * 0.6, fill=False, edgecolor=COLOR_GREEN, linewidth=1.2, linestyle=':')
                 ax_sat.add_patch(rect)
-                ax_sat.text(cx, cy, "ALL-CLEAR", ha='center', va='center', color=C_GREEN, fontsize=8, weight='bold',
-                            bbox=dict(boxstyle="round,pad=0.2", facecolor=C_BG, edgecolor=C_GREEN, alpha=0.85))
+                ax_sat.text(cx, cy, "ALL-CLEAR", ha='center', va='center', color=COLOR_GREEN, fontsize=7.5, weight='bold',
+                            bbox=dict(boxstyle="square,pad=0.2", facecolor=BG_WHITE, edgecolor=COLOR_GREEN, alpha=0.9))
         else:
-            ax_sat.add_patch(patches.Rectangle((0, 0), 1, 1, facecolor='#160c24', edgecolor='#4a1840'))
-            ax_sat.text(0.5, 0.5, "Satellite Pass Synchronized\n(INSAT-3D L1B Calibration)", ha='center', va='center', color=C_TEXT_MUTED, fontsize=7.5)
-        ax_sat.axis('off')
-        fix_caption = f"SUB-PIXEL EYE FIX: {eye_lat:.2f}° N, {eye_lon:.2f}° E" if has_cyclone else "SECTOR STATUS: NOMINAL (NO CIRCULATION)"
-        ax_sat_box.text(0.04, 0.04, fix_caption, fontsize=6.8, color=C_CYAN if has_cyclone else '#34d399', fontfamily='monospace', weight='bold')
+            ax_sat.add_patch(patches.Rectangle((0, 0), 1, 1, facecolor=BG_SUBTLE, edgecolor=LINE_BORDER, linewidth=0.5))
+            ax_sat.text(0.5, 0.5, "Satellite Pass Synchronized\n(INSAT-3D L1B Calibration)", ha='center', va='center', color=TEXT_MUTED, fontsize=6.5)
+        
+        for spine in ax_sat.spines.values():
+            spine.set_color(LINE_BORDER)
+            spine.set_linewidth(0.6)
+        ax_sat.set_xticks([])
+        ax_sat.set_yticks([])
 
-        # Right Container: Wind Radii / Environmental Radar Card
-        ax_rad_box = fig1.add_axes([0.51, 0.455, 0.44, 0.280])
-        ax_rad_box.axis('off')
-        ax_rad_box.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.02",
-                                                    facecolor=C_CARD, edgecolor=C_BORDER if has_cyclone else C_GREEN_BORDER, linewidth=1.2))
-        rad_title = "ASYMMETRIC 4-QUADRANT WIND RADII (NM)" if has_cyclone else "ATMOSPHERIC ENVIRONMENT RADAR PROFILE"
-        ax_rad_box.text(0.04, 0.92, rad_title, fontsize=7.5, weight='bold', color=C_TEXT_PINK if has_cyclone else '#6ee7b7')
+        sat_caption = f"Sub-Pixel Eye Center: {eye_lat:.2f}° N, {eye_lon:.2f}° E  ·  Calibrated INSAT TIR-1" if has_cyclone else "Sector Surveillance: Quiescent Ambient Flow (No Closed Vortex)"
+        fig1.text(0.06, 0.485, sat_caption, fontsize=6.0, color=TEXT_MUTED, fontfamily='sans-serif')
+
+        # Right: Wind Radii Polar Plot (Pure white background)
+        rad_title = "ASYMMETRIC 4-QUADRANT WIND RADII (NM)" if has_cyclone else "ENVIRONMENTAL ATMOSPHERIC RADAR PROFILE"
+        fig1.text(0.52, 0.728, rad_title, fontsize=6.8, weight='bold', color=TEXT_MAIN)
 
         if has_cyclone:
-            # Polar plot positioned with ample margin so title and degrees NEVER touch the header!
-            ax_radii = fig1.add_axes([0.55, 0.470, 0.36, 0.215], polar=True)
-            ax_radii.set_facecolor(C_CARD)
+            ax_radii = fig1.add_axes([0.55, 0.478, 0.36, 0.210], polar=True)
+            ax_radii.set_facecolor(BG_WHITE)
             theta = np.array([45, 135, 225, 315, 45]) * (np.pi / 180)
             r34_vals = np.array([r34.get('ne', 140), r34.get('nw', 110), r34.get('sw', 90), r34.get('se', 130), r34.get('ne', 140)])
             r50_vals = np.array([r50.get('ne', 80), r50.get('nw', 65), r50.get('sw', 50), r50.get('se', 70), r50.get('ne', 80)])
             r64_vals = np.array([r64.get('ne', 40), r64.get('nw', 30), r64.get('sw', 25), r64.get('se', 35), r64.get('ne', 40)])
             
-            ax_radii.plot(theta, r34_vals, color=C_CYAN, linewidth=1.4, label='R34 Gale (34kt)')
-            ax_radii.fill(theta, r34_vals, color=C_CYAN, alpha=0.20)
-            ax_radii.plot(theta, r50_vals, color=C_AMBER, linewidth=1.4, label='R50 Storm (50kt)')
-            ax_radii.fill(theta, r50_vals, color=C_AMBER, alpha=0.25)
-            ax_radii.plot(theta, r64_vals, color=C_CRIMSON, linewidth=1.4, label='R64 Hurricane (64kt)')
-            ax_radii.fill(theta, r64_vals, color=C_CRIMSON, alpha=0.35)
+            ax_radii.plot(theta, r34_vals, color=COLOR_CYAN, linewidth=1.2, label='R34 Gale (34kt)')
+            ax_radii.fill(theta, r34_vals, color=COLOR_CYAN, alpha=0.12)
+            ax_radii.plot(theta, r50_vals, color=COLOR_AMBER, linewidth=1.2, label='R50 Storm (50kt)')
+            ax_radii.fill(theta, r50_vals, color=COLOR_AMBER, alpha=0.15)
+            ax_radii.plot(theta, r64_vals, color=COLOR_CRIMSON, linewidth=1.2, label='R64 Hurricane (64kt)')
+            ax_radii.fill(theta, r64_vals, color=COLOR_CRIMSON, alpha=0.20)
             ax_radii.set_theta_zero_location('N')
             ax_radii.set_theta_direction(-1)
-            ax_radii.tick_params(colors=C_TEXT_MUTED, labelsize=5.8)
-            ax_radii.grid(color='#382247', linestyle='--', linewidth=0.5)
-            ax_radii.spines['polar'].set_color(C_BORDER)
-            ax_radii.legend(loc='lower center', bbox_to_anchor=(0.5, -0.28), ncol=3, fontsize=5.8, frameon=False, labelcolor=C_TEXT_SLATE)
+            ax_radii.tick_params(colors=TEXT_LIGHT, labelsize=5.5)
+            ax_radii.grid(color=LINE_LIGHT, linestyle='-', linewidth=0.5)
+            ax_radii.spines['polar'].set_color(LINE_BORDER)
+            ax_radii.spines['polar'].set_linewidth(0.5)
+            ax_radii.legend(loc='lower center', bbox_to_anchor=(0.5, -0.22), ncol=3, fontsize=5.5, frameon=False, labelcolor=TEXT_MUTED)
         else:
-            ax_radii = fig1.add_axes([0.55, 0.470, 0.36, 0.215], polar=True)
-            ax_radii.set_facecolor(C_CARD)
+            ax_radii = fig1.add_axes([0.55, 0.478, 0.36, 0.210], polar=True)
+            ax_radii.set_facecolor(BG_WHITE)
             categories = ['SST (Nominal)', 'Vertical Shear', 'Mid-Level RH', 'Vorticity', 'Stability']
             angles = np.linspace(0, 2 * np.pi, len(categories), endpoint=False).tolist()
             angles += angles[:1]
             values = [28.5 / 32.0, 0.72, 0.65, 0.20, 0.85]
             values += values[:1]
-            ax_radii.plot(angles, values, color=C_GREEN, linewidth=1.5, label='Atmosphere State')
-            ax_radii.fill(angles, values, color=C_GREEN, alpha=0.22)
+            ax_radii.plot(angles, values, color=COLOR_GREEN, linewidth=1.2, label='Atmosphere State')
+            ax_radii.fill(angles, values, color=COLOR_GREEN, alpha=0.15)
             ax_radii.set_xticks(angles[:-1])
-            ax_radii.set_xticklabels(categories, fontsize=5.8, color=C_TEXT_SLATE, weight='bold')
+            ax_radii.set_xticklabels(categories, fontsize=5.5, color=TEXT_MUTED, weight='bold')
             ax_radii.set_yticklabels([])
-            ax_radii.grid(color='#1e3a2b', linestyle='--', linewidth=0.5)
-            ax_radii.spines['polar'].set_color(C_GREEN_BORDER)
-            ax_radii.legend(loc='lower center', bbox_to_anchor=(0.5, -0.26), ncol=1, fontsize=6.2, frameon=False, labelcolor='#34d399')
+            ax_radii.grid(color=LINE_LIGHT, linestyle='-', linewidth=0.5)
+            ax_radii.spines['polar'].set_color(LINE_BORDER)
+            ax_radii.spines['polar'].set_linewidth(0.5)
+            ax_radii.legend(loc='lower center', bbox_to_anchor=(0.5, -0.20), ncol=1, fontsize=5.8, frameon=False, labelcolor=COLOR_GREEN)
 
         # -------------------------------------------------------------------------
-        # DIVIDER 3
+        # 5. SECTION 3: STRUCTURED DIAGNOSTICS TABLE (CLEAN, NO OVERLAPPING CELLS)
         # -------------------------------------------------------------------------
-        draw_section_divider(fig1, 0.438, "SECTION 03: AUTONOMOUS SUBSYSTEM DIAGNOSTICS & TELEMETRY GRID")
+        draw_section_rule(fig1, 0.445, "3. Subsystem Diagnostics & Sensor Calibration")
 
-        # -------------------------------------------------------------------------
-        # 5. SECTION 3: STRUCTURED DIAGNOSTICS TELEMETRY GRID (NO OVERFLOWS)
-        # -------------------------------------------------------------------------
-        ax_tbl = fig1.add_axes([0.05, 0.155, 0.90, 0.275])
+        ax_tbl = fig1.add_axes([0.06, 0.175, 0.88, 0.250])
         ax_tbl.axis('off')
         
         if has_cyclone:
             diag_data = [
-                ["CenterNet Eye Fix", f"{eye_lat:.2f}° N, {eye_lon:.2f}° E", wrap_str("Hessian 2D Peak Sub-Pixel Refinement (< 2.5 km calibrated)", 44)],
-                ["Max Sustained Wind (MSW)", f"{msw_kts:.1f} KTS ({msw_kmh} km/h)", wrap_str("Deep Dvorak ConvNeXt-V2 Dual-Scale Convolutional Inference", 44)],
-                ["Central Pressure Deficit", f"{pressure_hpa:.1f} hPa (-{pressure_deficit:.0f} hPa)", wrap_str("Atkinson-Holliday Wind-Pressure Empirical Equilibrium", 44)],
-                ["Vortex Lifecycle State", wrap_str(lifecycle_stage, 22), wrap_str("Dual-Mode Inflow Log-Spiral Focus & Fast Radial Symmetry", 44)],
-                ["Cyclogenesis Risk Score", f"{risk_score:.1f}% Probability", wrap_str("Deep Convective Spatial Coherence & Vorticity Inflow Index", 44)],
-                ["Formative Eye Lead Time", wrap_str(lead_time, 22), wrap_str("Operational Early Pre-Genesis Watch Metric (24-48h Advance)", 44)]
+                ["CenterNet Keypoint Fix", f"{eye_lat:.2f}° N, {eye_lon:.2f}° E", "Hessian 2D continuous sub-pixel refinement (< 2.5 km error)"],
+                ["Max Sustained Wind (MSW)", f"{msw_kts:.1f} KTS ({msw_kmh} km/h)", "Deep Dvorak ConvNeXt-V2 dual-scale convective feature extraction"],
+                ["Central Pressure Deficit", f"{pressure_hpa:.1f} hPa (-{pressure_deficit:.0f} hPa)", "Atkinson-Holliday empirical equilibrium calibrated for NIO basin"],
+                ["Vortex Lifecycle State", wrap_str(lifecycle_stage, 25), "Dual-mode logarithmic spiral streamline correlation & FRST"],
+                ["Cyclogenesis Risk Score", f"{risk_score:.1f}% Probability", "Spatial convective coherence & mid-tropospheric vorticity focus"],
+                ["Formative Eye Lead Time", wrap_str(lead_time, 25), "Pre-genesis continuous watch metric (24-48h lead confirmation)"]
             ]
         else:
             diag_data = [
-                ["CenterNet Keypoint Localizer", "0.0% Detection Confidence", wrap_str("Clean sector pass — no closed rotation core detected (< 5%)", 44)],
-                ["Deep Dvorak Intensity", "T < 1.0 (Non-Depression)", wrap_str("Deep ConvNeXt confirms ambient tropical marine atmosphere", 44)],
-                ["Regional Barometric State", f"{pressure_hpa:.1f} hPa (Normal)", wrap_str("Nominal North Indian Ocean sea level pressure baseline", 44)],
-                ["Convective Cloud Morphology", "Dispersed Cellular Cumulus", wrap_str("Lack of organized banding or central dense overcast", 44)],
-                ["Vertical Wind Shear (VWS)", "24 kts (Hostile to Genesis)", wrap_str("High directional shear suppresses convective vortex spinup", 44)],
-                ["Cyclogenesis Potential Index", f"{risk_score:.1f}% (Quiescent)", wrap_str("Continuous 30-minute geostationary automated surveillance", 44)]
+                ["CenterNet Keypoint Localizer", "0.0% Detection Confidence", "Nominal sector pass — zero organized closed rotation detected"],
+                ["Deep Dvorak Intensity", "T < 1.0 (Non-Depression)", "ConvNeXt confirms quiescent background tropical marine atmosphere"],
+                ["Regional Barometric State", f"{pressure_hpa:.1f} hPa (Nominal)", "Normal sea-level ambient barometric baseline across basin"],
+                ["Convective Cloud Morphology", "Dispersed Cellular Cumulus", "Absence of organized spiral cloud bands or dense overcast"],
+                ["Vertical Wind Shear (VWS)", "24 kts (Hostile to Genesis)", "Elevated directional wind shear suppresses convective vortex spinup"],
+                ["Cyclogenesis Potential Index", f"{risk_score:.1f}% (Quiescent)", "Continuous geostationary automated monitoring active"]
             ]
         
         table = ax_tbl.table(
             cellText=diag_data,
-            colLabels=["METEOROLOGICAL PARAMETER", "CURRENT INFERRED VALUE", "VERIFICATION METHODOLOGY & SATELLITE SENSING ALGORITHM"],
+            colLabels=["METEOROLOGICAL PARAMETER", "CURRENT INFERRED VALUE", "VERIFICATION SENSING METHODOLOGY"],
             cellLoc='left',
-            colWidths=[0.27, 0.25, 0.48],
+            colWidths=[0.28, 0.26, 0.46],
             loc='center'
         )
         table.auto_set_font_size(False)
-        table.set_fontsize(6.8)
-        table.scale(1, 1.48)
+        table.set_fontsize(6.5)
+        table.scale(1, 1.45)
         
         for (row, col), cell in table.get_celld().items():
             if row == 0:
-                cell.set_facecolor('#240c33' if has_cyclone else '#08281a')
-                cell.set_text_props(color=C_TEXT_WHITE, weight='bold')
+                cell.set_facecolor(BG_HEADER)
+                cell.set_text_props(color=TEXT_MAIN, weight='bold')
+                cell.set_edgecolor(LINE_BORDER)
             else:
-                cell.set_facecolor(C_CARD_ALT if row % 2 == 0 else C_CARD)
+                cell.set_facecolor(BG_SUBTLE if row % 2 == 0 else BG_WHITE)
+                cell.set_edgecolor(LINE_LIGHT)
                 if col == 1:
-                    cell.set_text_props(weight='bold', color=C_CRIMSON if has_cyclone else C_GREEN)
+                    cell.set_text_props(weight='bold', color=COLOR_CRIMSON if has_cyclone else COLOR_GREEN)
+                elif col == 0:
+                    cell.set_text_props(weight='bold', color=TEXT_MAIN)
                 else:
-                    cell.set_text_props(color=C_TEXT_SLATE)
-            cell.set_edgecolor(C_BORDER if has_cyclone else C_GREEN_BORDER)
+                    cell.set_text_props(color=TEXT_MUTED)
+            cell.set_linewidth(0.5)
 
         # -------------------------------------------------------------------------
-        # DIVIDER 4
+        # 6. SECTION 4: DIRECTIVES CALLOUT (CLEAN BORDER STRIP, NO CLUNKY BOXES)
         # -------------------------------------------------------------------------
-        draw_section_divider(fig1, 0.142, "SECTION 04: EMERGENCY CIVIL DEFENSE & MARITIME DIRECTIVES")
+        draw_section_rule(fig1, 0.155, "4. Emergency Civil Defense & Operational Directives")
 
-        # -------------------------------------------------------------------------
-        # 6. SECTION 4: COASTAL ACTION DIRECTIVES BOX (CLEAN, NO OVERLAPPING TEXT)
-        # -------------------------------------------------------------------------
-        ax_ft1 = fig1.add_axes([0.05, 0.040, 0.90, 0.095])
+        ax_ft1 = fig1.add_axes([0.06, 0.050, 0.88, 0.088])
         ax_ft1.axis('off')
-        ft1_bg = '#1d0924' if has_cyclone else '#062016'
-        ft1_border = C_ROSE if has_cyclone else C_GREEN
-        ax_ft1.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.02",
-                                                facecolor=ft1_bg, edgecolor=ft1_border, linewidth=1.3))
-        lbl_action = "IMMEDIATE COASTAL ADVISORY (NDMA / COAST GUARD COMPLIANT):" if has_cyclone else "OPERATIONAL MARITIME CLEARANCE ADVISORY:"
-        ax_ft1.text(0.025, 0.74, lbl_action, fontsize=7.5, weight='bold', color=C_CRIMSON if has_cyclone else C_GREEN)
-        ax_ft1.text(0.025, 0.38, wrap_str(advisory, width=110), fontsize=6.8, color=C_TEXT_SLATE)
-        ax_ft1.text(0.975, 0.12, "VORTEXAI CYCLONE INTELLIGENCE DIVISION · Page 1 of 2", fontsize=6.8, color=C_TEXT_MUTED, ha='right')
+        
+        callout_bg = COLOR_CRIMSON_BG if has_cyclone else COLOR_GREEN_BG
+        ax_ft1.add_patch(patches.Rectangle((0, 0), 1, 1, facecolor=callout_bg, edgecolor=LINE_BORDER, linewidth=0.5))
+        stripe_color = COLOR_CRIMSON if has_cyclone else COLOR_GREEN
+        ax_ft1.add_patch(patches.Rectangle((0, 0), 0.008, 1, facecolor=stripe_color, edgecolor='none'))
+
+        lbl_action = "MANDATORY ACTION DIRECTIVE (NDMA / COAST GUARD COMPLIANT):" if has_cyclone else "OPERATIONAL MARITIME CLEARANCE STATUS:"
+        ax_ft1.text(0.025, 0.78, lbl_action, fontsize=6.8, weight='bold', color=stripe_color, transform=ax_ft1.transAxes)
+        ax_ft1.text(0.025, 0.42, wrap_str(advisory, width=115), fontsize=6.2, color=TEXT_MAIN, linespacing=1.2, transform=ax_ft1.transAxes)
+        ax_ft1.text(0.985, 0.12, "VortexAI Meteorological Surveillance Division · Page 1 of 2", fontsize=5.8, color=TEXT_LIGHT, ha='right', transform=ax_ft1.transAxes)
 
         pdf.savefig(fig1, bbox_inches='tight')
         plt.close(fig1)
@@ -377,66 +375,79 @@ def generate_cyclone_bulletin_pdf(report_data: dict, output_stream: io.BytesIO) 
         # PAGE 2: TRAJECTORY & LANDFALL SCHEDULE (OR 72H SYNOPTIC BASIN OUTLOOK)
         # =========================================================================
         fig2 = plt.figure(figsize=(8.27, 11.69), dpi=200)
-        fig2.patch.set_facecolor(C_BG)
+        fig2.patch.set_facecolor(BG_WHITE)
 
-        # 1. Page 2 Heading Alone (Border Radius Box)
-        ax_p2_hdr = fig2.add_axes([0.05, 0.910, 0.90, 0.055])
-        ax_p2_hdr.axis('off')
-        ax_p2_hdr.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.025", 
-                                                   facecolor=hdr_bg, edgecolor=hdr_border, linewidth=1.5))
-        p2_sub = "REGIONAL SPECIALIZED METEOROLOGICAL CENTRE (RSMC) · KINEMATIC FORECASTING" if has_cyclone else "REGIONAL SPECIALIZED METEOROLOGICAL CENTRE (RSMC) · SYNOPTIC MARITIME FORECAST"
-        ax_p2_hdr.text(0.5, 0.72, p2_sub,
-                       ha='center', va='center', color=C_CYAN, fontsize=7.5, weight='bold', fontfamily='sans-serif')
+        # 1. Page 2 Masthead
+        p2_sub = "REGIONAL SPECIALIZED METEOROLOGICAL CENTRE (RSMC) · KINEMATIC TRAJECTORY MODELING" if has_cyclone else "REGIONAL SPECIALIZED METEOROLOGICAL CENTRE (RSMC) · SYNOPTIC MARITIME FORECAST"
         p2_main = "48-HOUR FORWARD TRAJECTORY & LANDFALL SCHEDULE" if has_cyclone else "72-HOUR REGIONAL SYNOPTIC SURVEILLANCE & ENVIRONMENTAL OUTLOOK"
-        ax_p2_hdr.text(0.5, 0.30, p2_main,
-                       ha='center', va='center', color=C_TEXT_WHITE, fontsize=12.0, weight='bold', fontfamily='sans-serif')
+        fig2.text(0.06, 0.950, p2_sub, color=COLOR_NAVY, fontsize=6.8, weight='bold', fontfamily='sans-serif')
+        fig2.text(0.06, 0.925, p2_main, color=TEXT_MAIN, fontsize=11.5, weight='bold', fontfamily='sans-serif')
+        
+        ax_p2_mast_line = fig2.add_axes([0.06, 0.916, 0.88, 0.0012])
+        ax_p2_mast_line.axis('off')
+        ax_p2_mast_line.add_patch(patches.Rectangle((0, 0), 1, 1, facecolor=COLOR_NAVY, edgecolor='none'))
 
-        # 2. Page 2 Subheading Card
-        ax_p2_sub = fig2.add_axes([0.05, 0.845, 0.90, 0.055])
-        ax_p2_sub.axis('off')
-        ax_p2_sub.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.02",
-                                                   facecolor=sub_bg, edgecolor=sub_border, linewidth=1.2))
-        ax_p2_sub.text(0.025, 0.68, f"STORM SYSTEM: {storm_name}", fontsize=10.0, weight='bold', color=C_CRIMSON if has_cyclone else '#34d399')
-        ax_p2_sub.text(0.975, 0.68, f"TIMESTEP: T+0H TO T+48H", fontsize=8.5, weight='bold', color=C_TEXT_PINK if has_cyclone else '#6ee7b7', ha='right')
-        p2_meta = "INTEGRATED KINEMATICS: BETA-DRIFT + DEEP-LAYER STEERING + KAPLAN INLAND DECAY" if has_cyclone else "GEOSTATIONARY OCEAN-ATMOSPHERE COUPLING · ROUTINE STANDBY SURVEILLANCE"
-        ax_p2_sub.text(0.025, 0.26, p2_meta, fontsize=7.0, color=C_TEXT_SLATE, fontfamily='monospace')
+        # 2. Page 2 Sub-Header
+        fig2.text(0.06, 0.895, f"STORM SYSTEM: {storm_name}", fontsize=8.5, weight='bold', color=COLOR_CRIMSON if has_cyclone else COLOR_GREEN)
+        fig2.text(0.94, 0.895, "FORECAST HORIZON: T+0H TO T+48H", fontsize=8.0, weight='bold', color=COLOR_NAVY if has_cyclone else COLOR_GREEN, ha='right')
+        p2_meta = "Integrated Kinematic Advection: Deep-Layer Steering + Beta-Drift + Kaplan Inland Decay" if has_cyclone else "Geostationary Ocean-Atmosphere Coupling · Routine Standby Surveillance"
+        fig2.text(0.06, 0.878, p2_meta, fontsize=6.8, color=TEXT_MUTED, fontfamily='monospace')
 
-        # Divider 1
-        draw_section_divider(fig2, 0.832, "SECTION 01: PROJECTED FORWARD ADVECTION TRACK & CONE OF UNCERTAINTY")
+        # 3. Trajectory Map Pane (Clean White Theme)
+        draw_section_rule(fig2, 0.852, "1. Projected Forward Advection Track & Cone of Uncertainty")
 
-        # 3. Section 1: Map Plot Pane
-        ax_map = fig2.add_axes([0.05, 0.540, 0.90, 0.285])
-        ax_map.set_facecolor(C_CARD)
+        ax_map = fig2.add_axes([0.06, 0.565, 0.88, 0.265])
+        ax_map.set_facecolor(BG_WHITE)
         
         if has_cyclone:
             lons = [w["longitude"] for w in track_wps]
             lats = [w["latitude"] for w in track_wps]
             cones = [w.get("cone_km", w["horizon_h"] * 2.8 + 25) for w in track_wps]
 
-            cone_upper_lat = [lats[i] + (cones[i] / 111.0) * 0.4 for i in range(len(lats))]
-            cone_lower_lat = [lats[i] - (cones[i] / 111.0) * 0.4 for i in range(len(lats))]
-            ax_map.fill_between(lons, cone_lower_lat, cone_upper_lat, color=C_CRIMSON, alpha=0.18, label='Cone of Uncertainty (WMO / NHC Standard)')
+            # Construct normal polygon along curved trajectory so cone wraps seamlessly
+            left_lons, left_lats = [], []
+            right_lons, right_lats = [], []
+            for i in range(len(track_wps)):
+                c_km = cones[i]
+                c_deg = (c_km / 111.0) * 0.45
+                if i < len(track_wps) - 1:
+                    dx = lons[i + 1] - lons[i]
+                    dy = lats[i + 1] - lats[i]
+                else:
+                    dx = lons[i] - lons[i - 1]
+                    dy = lats[i] - lats[i - 1]
+                norm = math.hypot(dx, dy) or 1.0
+                nx = -dy / norm
+                ny = dx / norm
+                left_lons.append(lons[i] + nx * c_deg)
+                left_lats.append(lats[i] + ny * c_deg)
+                right_lons.append(lons[i] - nx * c_deg)
+                right_lats.append(lats[i] - ny * c_deg)
+            poly_lons = left_lons + right_lons[::-1]
+            poly_lats = left_lats + right_lats[::-1]
+            ax_map.fill(poly_lons, poly_lats, color=COLOR_CRIMSON, alpha=0.10, label='Cone of Uncertainty (WMO / NHC Standard)')
 
-            ax_map.plot(lons, lats, color=C_CRIMSON, linewidth=2.0, marker='o', markersize=4.5, markerfacecolor=C_TEXT_WHITE, markeredgewidth=1.6, label='Forecast Track (T+0 to T+48h)')
+            ax_map.plot(lons, lats, color=COLOR_CRIMSON, linewidth=1.8, marker='o', markersize=4.0, markerfacecolor=BG_WHITE, markeredgewidth=1.4, label='Forecast Track (T+0 to T+48h)')
 
             for idx, wp in enumerate(track_wps):
                 h = wp["horizon_h"]
                 is_lf = wp.get("is_landfall")
                 label_text = f"+{h}h (LANDFALL)" if is_lf else f"+{h}h"
-                color_lbl = C_CRIMSON if is_lf else C_CYAN
-                y_off = 10 if idx % 2 == 0 else -14
+                color_lbl = COLOR_CRIMSON if is_lf else COLOR_NAVY
+                y_off = 9 if idx % 2 == 0 else -13
                 ax_map.annotate(label_text, (wp["longitude"], wp["latitude"]),
                                 textcoords="offset points", xytext=(4, y_off),
-                                fontsize=6.8, weight='bold', color=C_TEXT_WHITE,
-                                bbox=dict(boxstyle="round,pad=0.2", facecolor=C_BG, edgecolor=color_lbl, alpha=0.9))
+                                fontsize=6.0, weight='bold', color=color_lbl,
+                                bbox=dict(boxstyle="square,pad=0.18", facecolor=BG_WHITE, edgecolor=LINE_BORDER, alpha=0.95))
 
-            ax_map.set_xlabel("Longitude (°E)", fontsize=7.5, weight='bold', color=C_TEXT_SLATE)
-            ax_map.set_ylabel("Latitude (°N)", fontsize=7.5, weight='bold', color=C_TEXT_SLATE)
-            ax_map.grid(True, linestyle='--', alpha=0.4, color='#382247')
-            ax_map.tick_params(colors=C_TEXT_MUTED, labelsize=6.5)
+            ax_map.set_xlabel("Longitude (°E)", fontsize=6.8, weight='bold', color=TEXT_MUTED)
+            ax_map.set_ylabel("Latitude (°N)", fontsize=6.8, weight='bold', color=TEXT_MUTED)
+            ax_map.grid(True, linestyle='--', alpha=0.6, color=LINE_LIGHT)
+            ax_map.tick_params(colors=TEXT_LIGHT, labelsize=6.0)
             for spine in ax_map.spines.values():
-                spine.set_color(C_BORDER)
-            ax_map.legend(loc='lower right', fontsize=6.8, framealpha=0.85, facecolor=C_BG, edgecolor=C_BORDER, labelcolor=C_TEXT_SLATE)
+                spine.set_color(LINE_BORDER)
+                spine.set_linewidth(0.6)
+            ax_map.legend(loc='lower right', fontsize=6.0, framealpha=0.92, facecolor=BG_WHITE, edgecolor=LINE_BORDER, labelcolor=TEXT_MUTED)
         else:
             stations = [
                 {"name": "Chennai", "lon": 80.27, "lat": 13.08, "p": 1011.2, "w": 6},
@@ -447,27 +458,27 @@ def generate_cyclone_bulletin_pdf(report_data: dict, output_stream: io.BytesIO) 
             ]
             s_lons = [s["lon"] for s in stations]
             s_lats = [s["lat"] for s in stations]
-            ax_map.scatter(s_lons, s_lats, color=C_GREEN, s=60, edgecolors=C_TEXT_WHITE, linewidth=1.5, label='Coastal & Marine Observation Buoys')
+            ax_map.scatter(s_lons, s_lats, color=COLOR_GREEN, s=45, edgecolors=TEXT_MAIN, linewidth=1.0, label='Observation Buoys & Coastal Radar')
             for s in stations:
                 ax_map.annotate(f"{s['name']}\n{s['p']} hPa · {s['w']}kts", (s["lon"], s["lat"]),
-                                textcoords="offset points", xytext=(8, 4),
-                                fontsize=6.8, weight='bold', color='#6ee7b7',
-                                bbox=dict(boxstyle="round,pad=0.2", facecolor=C_BG, edgecolor=C_GREEN_BORDER, alpha=0.9))
+                                textcoords="offset points", xytext=(6, 4),
+                                fontsize=5.8, weight='bold', color=TEXT_MAIN,
+                                bbox=dict(boxstyle="square,pad=0.18", facecolor=BG_WHITE, edgecolor=LINE_BORDER, alpha=0.95))
             ax_map.set_xlim(62, 94)
             ax_map.set_ylim(8, 24)
-            ax_map.set_xlabel("Longitude (°E)", fontsize=7.5, weight='bold', color=C_TEXT_SLATE)
-            ax_map.set_ylabel("Latitude (°N)", fontsize=7.5, weight='bold', color=C_TEXT_SLATE)
-            ax_map.grid(True, linestyle='--', alpha=0.4, color='#1e3a2b')
-            ax_map.tick_params(colors=C_TEXT_MUTED, labelsize=6.5)
+            ax_map.set_xlabel("Longitude (°E)", fontsize=6.8, weight='bold', color=TEXT_MUTED)
+            ax_map.set_ylabel("Latitude (°N)", fontsize=6.8, weight='bold', color=TEXT_MUTED)
+            ax_map.grid(True, linestyle='--', alpha=0.6, color=LINE_LIGHT)
+            ax_map.tick_params(colors=TEXT_LIGHT, labelsize=6.0)
             for spine in ax_map.spines.values():
-                spine.set_color(C_GREEN_BORDER)
-            ax_map.legend(loc='lower right', fontsize=6.8, framealpha=0.85, facecolor=C_BG, edgecolor=C_GREEN_BORDER, labelcolor='#34d399')
+                spine.set_color(LINE_BORDER)
+                spine.set_linewidth(0.6)
+            ax_map.legend(loc='lower right', fontsize=6.0, framealpha=0.92, facecolor=BG_WHITE, edgecolor=LINE_BORDER, labelcolor=TEXT_MUTED)
 
-        # Divider 2
-        draw_section_divider(fig2, 0.520, "SECTION 02: NUMERICAL WAYPOINT TIMETABLE & INTERCEPTION COORDINATES")
+        # 4. Numerical Waypoint Timetable Table
+        draw_section_rule(fig2, 0.495, "2. Numerical Waypoint Timetable & Interception Coordinates")
 
-        # 4. Section 2: Waypoint Timetable Box
-        ax_p2_tbl = fig2.add_axes([0.05, 0.280, 0.90, 0.230])
+        ax_p2_tbl = fig2.add_axes([0.06, 0.240, 0.88, 0.235])
         ax_p2_tbl.axis('off')
 
         if has_cyclone:
@@ -498,64 +509,48 @@ def generate_cyclone_bulletin_pdf(report_data: dict, output_stream: io.BytesIO) 
             ]
             table2 = ax_p2_tbl.table(
                 cellText=station_rows,
-                colLabels=["STATION IDENTIFIER", "GEOGRAPHIC COORDINATES", "SURFACE TEMP", "PRESSURE", "HUMIDITY", "WIND VECTOR"],
+                colLabels=["SURVEILLANCE BUOY", "COORDINATES", "SURFACE SST", "BAROMETRIC PRESSURE", "RELATIVE HUMIDITY", "CURRENT VECTOR"],
                 cellLoc='center',
-                colWidths=[0.20, 0.22, 0.14, 0.14, 0.12, 0.18],
+                colWidths=[0.22, 0.20, 0.14, 0.16, 0.14, 0.14],
                 loc='center'
             )
 
         table2.auto_set_font_size(False)
-        table2.set_fontsize(6.8)
-        table2.scale(1, 1.45)
-
+        table2.set_fontsize(6.5)
+        table2.scale(1, 1.40)
+        
         for (row, col), cell in table2.get_celld().items():
             if row == 0:
-                cell.set_facecolor('#240c33' if has_cyclone else '#08281a')
-                cell.set_text_props(color=C_TEXT_WHITE, weight='bold')
+                cell.set_facecolor(BG_HEADER)
+                cell.set_text_props(color=TEXT_MAIN, weight='bold')
+                cell.set_edgecolor(LINE_BORDER)
             else:
-                cell.set_facecolor(C_CARD_ALT if row % 2 == 0 else C_CARD)
-                if has_cyclone and col == 5 and "LANDFALL" in wp_rows[row-1][5]:
-                    cell.set_text_props(weight='bold', color=C_CRIMSON)
-                else:
-                    cell.set_text_props(color=C_TEXT_SLATE)
-            cell.set_edgecolor(C_BORDER if has_cyclone else C_GREEN_BORDER)
+                cell.set_facecolor(BG_SUBTLE if row % 2 == 0 else BG_WHITE)
+                cell.set_edgecolor(LINE_LIGHT)
+                cell.set_text_props(color=TEXT_MAIN if col != 5 else (COLOR_CRIMSON if "LANDFALL" in str(table2.get_celld()[(row, col)].get_text().get_text()) else TEXT_MUTED))
+            cell.set_linewidth(0.5)
 
-        # Divider 3
-        draw_section_divider(fig2, 0.260, "SECTION 03: EMERGENCY CIVIL PROTECTION DIRECTIVES & PORT WARNING SIGNALS")
+        # 5. Landfall Impact & Warning Signals Box
+        draw_section_rule(fig2, 0.210, "3. Coastal Impact & Maritime Signal Directives")
 
-        # 5. Section 3: Disaster Management Action Matrix Box
-        ax_p2_dir = fig2.add_axes([0.05, 0.075, 0.90, 0.175])
-        ax_p2_dir.axis('off')
-        ax_p2_dir.add_patch(patches.FancyBboxPatch((0, 0), 1, 1, boxstyle="round,pad=0.012,rounding_size=0.02",
-                                                   facecolor=ft1_bg, edgecolor=ft1_border, linewidth=1.4))
-        if has_cyclone:
-            ax_p2_dir.text(0.025, 0.86, "EMERGENCY CIVIL DEFENSE DIRECTIVES (NDMA / COAST GUARD COMPLIANT)",
-                           fontsize=8.0, weight='bold', color=C_CRIMSON)
-            ax_p2_dir.text(0.025, 0.68, "PORT WARNING SIGNALS: Great Danger Signal No. 8/9/10 hoisted at all vulnerable maritime ports.",
-                           fontsize=7.2, weight='bold', color=C_TEXT_WHITE)
-            ax_p2_dir.text(0.025, 0.50, "FISHERMEN ADVISORY: Total suspension of fishing operations along entire coastal stretch. High seas extremely rough.",
-                           fontsize=7.0, color=C_TEXT_SLATE)
-            ax_p2_dir.text(0.025, 0.32, f"SPECIAL DIRECTIVE: {wrap_str(advisory, width=95)}", fontsize=6.8, color=C_TEXT_SLATE)
-            ax_p2_dir.text(0.025, 0.12, "AUTHORIZED BY: VortexAI National Geostationary Cyclone Warning Division   ·   VALID UNTIL NEXT PASS",
-                           fontsize=6.8, weight='bold', color=C_TEXT_MUTED)
-        else:
-            ax_p2_dir.text(0.025, 0.86, "REGIONAL MARITIME & PORT OPERATIONS DIRECTIVE (ALL-CLEAR CLEARANCE)",
-                           fontsize=8.0, weight='bold', color='#34d399')
-            ax_p2_dir.text(0.025, 0.68, "PORT SIGNALS: Normal Weather Signal No. 1 hoisted at all ports. All commercial vessel movements permitted.",
-                           fontsize=7.2, weight='bold', color=C_TEXT_WHITE)
-            ax_p2_dir.text(0.025, 0.50, "FISHERMEN ADVISORY: Open sea operations cleared without weather restrictions across Bay of Bengal & Arabian Sea.",
-                           fontsize=7.0, color=C_TEXT_SLATE)
-            ax_p2_dir.text(0.025, 0.32, "SURVEILLANCE SCHEDULE: Next automated L1B geostationary synchronization cycle scheduled in 30 minutes.",
-                           fontsize=7.0, color=C_TEXT_SLATE)
-            ax_p2_dir.text(0.025, 0.12, "AUTHORIZED BY: VortexAI National Geostationary Cyclone Warning Division   ·   ROUTINE STANDBY CYCLE",
-                           fontsize=6.8, weight='bold', color='#6ee7b7')
-
-        # Page 2 Footer
-        ax_ft2 = fig2.add_axes([0.05, 0.030, 0.90, 0.035])
+        ax_ft2 = fig2.add_axes([0.06, 0.050, 0.88, 0.142])
         ax_ft2.axis('off')
-        ax_ft2.text(0, 0.5, "Official Meteorological Document · DeepCyclone Physics & Deep Dvorak Architecture · https://mausam.imd.gov.in",
-                    fontsize=6.8, color=C_TEXT_MUTED, url="https://mausam.imd.gov.in")
-        ax_ft2.text(1, 0.5, "Page 2 of 2", fontsize=7.2, color=C_TEXT_MUTED, ha='right')
+        ax_ft2.add_patch(patches.Rectangle((0, 0), 1, 1, facecolor=BG_SUBTLE, edgecolor=LINE_BORDER, linewidth=0.5))
+        ax_ft2.add_patch(patches.Rectangle((0, 0), 0.008, 1, facecolor=COLOR_NAVY, edgecolor='none'))
+
+        impact_notes = (
+            "1. STORM SURGE WARNING: Astronomical high-tide synchronization expected. Tidal surge of 3.5 to 5.0 meters above astronomical tide likely to inundate low-lying coastal areas.\n"
+            "2. GALE WIND INVASION: Gale wind speed reaching 65-75 kts gusting to 85 kts commencing 12 hours prior to landfall across coastal districts.\n"
+            "3. MARITIME SIGNALS: Hoist Great Danger Signal No. X (TEN) at Paradip, Dhamra, and Sagar ports. Fishing vessels advised not to venture into deep sea."
+        ) if has_cyclone else (
+            "1. MARITIME RECONNAISSANCE: All regional ocean-atmosphere buoys reporting barometric pressure within nominal seasonal baselines (1010-1012 hPa).\n"
+            "2. SEA SURFACE TEMPERATURE: Mean basin SST at 28.5°C with vertical wind shear of 22-26 knots, providing an environmental barrier against convective vortex organization.\n"
+            "3. HARBOR SIGNALS: All regional ports clear of cyclonic storm warnings. Routine fishing and navigation operations authorized across all sectors."
+        )
+
+        ax_ft2.text(0.025, 0.84, "COASTAL SURGE & IMPACT RISK SUMMARY:", fontsize=6.8, weight='bold', color=COLOR_NAVY, transform=ax_ft2.transAxes)
+        ax_ft2.text(0.025, 0.42, impact_notes, fontsize=6.0, color=TEXT_MAIN, linespacing=1.3, transform=ax_ft2.transAxes)
+        ax_ft2.text(0.985, 0.06, "VortexAI Meteorological Surveillance Division · Page 2 of 2", fontsize=5.8, color=TEXT_LIGHT, ha='right', transform=ax_ft2.transAxes)
 
         pdf.savefig(fig2, bbox_inches='tight')
         plt.close(fig2)

@@ -225,3 +225,20 @@
   animation: vortex-brand-enter 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
   will-change: transform, opacity, filter;
 }
+
+/* 6. Smooth Slide-In from Right Drawer for Notification & Alarm Sheet */
+@keyframes slide-in-right {
+  from {
+    transform: translate3d(100%, 0, 0);
+    opacity: 0.8;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-left {
+  animation: slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}

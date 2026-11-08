@@ -9,7 +9,9 @@ import ModelArchitectureSection from './components/ModelArchitectureSection';
 import DatasetSection from './components/DatasetSection';
 import Footer from './components/Footer';
 import GISConsoleModal from './components/GISConsoleModal';
+import CycloneBulletinModal from './components/CycloneBulletinModal';
 import NotificationCenterModal from './components/NotificationCenterModal';
+import SatelliteTimelapsePlayer from './components/SatelliteTimelapsePlayer';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -47,8 +49,13 @@ class ErrorBoundary extends Component {
 export default function App() {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadAlertCount, setUnreadAlertCount] = useState(2);
+  const [isBulletinOpen, setIsBulletinOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [activeBulletinData, setActiveBulletinData] = useState(null);
+  const [isTimelapseOpen, setIsTimelapseOpen] = useState(false);
+  const [timelapseInitialSeq, setTimelapseInitialSeq] = useState('live_insat');
+  const handleOpenTimelapse = (seqId) => { setTimelapseInitialSeq(seqId || 'live_insat'); setIsTimelapseOpen(true); };
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -68,6 +75,40 @@ export default function App() {
   }, []);
   const [selectedWorkbenchStormId, setSelectedWorkbenchStormId] = useState('fani');
   const [livePassOverride, setLivePassOverride] = useState(null);
+
+    const handleOpenBulletinForStorm = async (stormId) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/v1/forecast/wnc-ensemble/${stormId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const t0 = data.t0_analysis || {};
+        const curWp = data.consensus_track?.[0] || {};
+        setActiveBulletinData({
+          stormName: data.storm_name || 'TROPICAL CYCLONE',
+          bulletinId: `VORTEX-RSMC-${(data.storm_name || 'SYSTEM').toUpperCase().replace(/\s+/g, '-')}-20261107`,
+          issueTime: new Date().toUTCString(),
+          category: curWp.category_name || 'Severe Cyclonic Storm',
+          eyeLat: t0.lat || 19.5,
+          eyeLon: t0.lon || 85.8,
+          mswKnots: t0.msw_kts || 65.0,
+          mswKmh: Math.round((t0.msw_kts || 65.0) * 1.852),
+          pressureHpa: t0.central_pressure_hpa || 980.0,
+          pressureDeficit: Math.max(0, Math.round(1013.25 - (t0.central_pressure_hpa || 980.0))),
+          dvorakT: 4.5,
+          vortexStageName: 'Mature Cyclonic Eye Monitored',
+          cyclogenesisRiskScore: 92.0,
+          leadTimeToEye: 'Eye Formed & Monitored',
+          recommendedAction: 'Maintain mandatory evacuation along coastal belt. Total suspension of marine operations.',
+          imageSrc: '/images/TIR1_cyclone.png',
+          waypoints: data.consensus_track || [],
+          quadrantRadii: curWp.quadrant_wind_radii || null
+        });
+        setIsBulletinOpen(true);
+      }
+    } catch (e) {
+      console.error('Bulletin error:', e);
+    }
+  };
 
   const handleOpenInWorkbench = (liveData) => {
     setIsConsoleOpen(false);
@@ -91,7 +132,8 @@ export default function App() {
       <Navbar 
         onOpenConsole={() => setIsConsoleOpen(true)} 
         onOpenDemo={() => setIsDemoOpen(true)}
-        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        onOpenNotifications={() => setIsNotificationOpen(true)}
+        onOpenTimelapse={handleOpenTimelapse}
         unreadCount={unreadAlertCount}
       />
 
@@ -127,11 +169,25 @@ export default function App() {
           <div id="dataset">
             <DatasetSection />
           </div>
+
+
         </main>
       </ErrorBoundary>
 
       {/* Footer with BibTeX Citation & Project Info */}
       <Footer />
+
+            {/* Meteorological Alarm & Notification Center Modal */}
+      <NotificationCenterModal
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
+        onSelectStorm={(stormId) => {
+          setSelectedWorkbenchStormId(stormId);
+          setIsDemoOpen(true);
+        }}
+        onOpenBulletin={handleOpenBulletinForStorm}
+        onOpenTimelapse={handleOpenTimelapse}
+      />
 
       {/* Dedicated Interactive Cyclone Inference & Localization Demo Modal */}
       <DemoWorkbenchModal
@@ -151,23 +207,30 @@ export default function App() {
         onSelectStormId={(id) => setSelectedWorkbenchStormId(id)}
       />
 
+            {/* Official White-Theme Cyclone Bulletin Modal (WMO/IMD Standard) */}
+      <CycloneBulletinModal
+        isOpen={isBulletinOpen}
+        onClose={() => setIsBulletinOpen(false)}
+        reportData={activeBulletinData}
+      />
+
       {/* GIS Command Console Modal */}
       <GISConsoleModal
         isOpen={isConsoleOpen}
         onClose={() => setIsConsoleOpen(false)}
         onOpenInWorkbench={handleOpenInWorkbench}
+        onOpenTimelapse={handleOpenTimelapse}
       />
 
-      {/* Meteorological Early Warning & Email Dispatch Modal */}
-      <NotificationCenterModal
-        isOpen={isNotificationsOpen}
-        onClose={() => setIsNotificationsOpen(false)}
-        onSelectStorm={(stormId) => {
-          setIsNotificationsOpen(false);
-          setSelectedWorkbenchStormId(stormId);
-          setIsDemoOpen(true);
-        }}
+
+    
+      {/* 4D Satellite Timelapse & Kinematics Loop Player */}
+      <SatelliteTimelapsePlayer
+        isOpen={isTimelapseOpen}
+        onClose={() => setIsTimelapseOpen(false)}
+        initialSequence={timelapseInitialSeq}
       />
+
     </div>
   );
 }

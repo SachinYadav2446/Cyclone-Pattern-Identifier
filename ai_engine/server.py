@@ -1,3 +1,4 @@
+from ai_engine.services.timelapse_service import timelapse_service
 from ai_engine.models.atmospheric_service import get_point_atmospheric_data, get_all_stations_atmospheric_data
 """
 DeepCyclone Live Inference FastAPI Server
@@ -9,6 +10,7 @@ import io
 from typing import Dict, Any
 from ai_engine.services.bulletin_generator import generate_cyclone_bulletin_pdf
 from ai_engine.services.notification_service import notification_service
+from ai_engine.services.wnc_forecaster import wnc_forecaster
 from fastapi.middleware.cors import CORSMiddleware
 from ai_engine.models.live_vortex_analyzer import vortex_analyzer
 import uvicorn
@@ -152,34 +154,13 @@ def localize_cyclone_eye(payload: LocalizeEyeRequest):
                     pil_img = Image.open(io.BytesIO(img_bytes))
                     nn_pred = cyclone_neural_net.predict(pil_img)
                     if nn_pred:
-                        result["neural_net_prediction"] = nn_pred
-                        if result.get("status") == "SUCCESS" and result.get("predicted_eye"):
-                            classic_x = result["predicted_eye"]["pixel_x_percent"]
-                            classic_y = result["predicted_eye"]["pixel_y_percent"]
-                            dist = ((classic_x - nn_pred["eye_x_percent"])**2 + (classic_y - nn_pred["eye_y_percent"])**2)**0.5
-                            if dist > 7.0:
-                                result["predicted_eye"]["pixel_x_percent"] = nn_pred["eye_x_percent"]
-                                result["predicted_eye"]["pixel_y_percent"] = nn_pred["eye_y_percent"]
-                                result["predicted_eye"]["sub_dx"] = 0.0
-                                result["predicted_eye"]["sub_dy"] = 0.0
-                                result["predicted_eye"]["detection_mode"] = "DeepCyclone ResNet-18 Multi-Task Neural Net (HURSAT-Trained)"
-                                result["predicted_eye"]["neural_assisted"] = True
-                        elif not result.get("has_cyclone") and nn_pred.get("wind_knots", 0) >= 30.0:
-                            result["status"] = "SUCCESS"
-                            result["has_cyclone"] = True
-                            result["storm_name"] = "DETECTED TROPICAL CYCLONE"
-                            result["category"] = nn_pred["category"]
-                            result["predicted_eye"] = {
-                                "pixel_x_percent": nn_pred["eye_x_percent"],
-                                "pixel_y_percent": nn_pred["eye_y_percent"],
-                                "sub_dx": 0.0,
-                                "sub_dy": 0.0,
-                                "diameter_km": 42.0,
-                                "eyewall_thickness_km": 26.0,
-                                "symmetry_score": 0.82,
-                                "detection_mode": "DeepCyclone ResNet-18 Multi-Task Neural Net (HURSAT-Trained)",
-                                "neural_assisted": True
-                            }
+                        result["neural_net_comparison"] = {
+                            "model": "DeepCyclone ResNet-18 (4,200 HURSAT Benchmark)",
+                            "predicted_wind_knots": nn_pred.get("wind_knots"),
+                            "predicted_pressure_hpa": nn_pred.get("pressure_hpa"),
+                            "predicted_category": nn_pred.get("category"),
+                            "confidence": nn_pred.get("category_confidence")
+                        }
                 except Exception as ex:
                     print(f"Cyclone neural net inference error: {ex}")
 
@@ -240,20 +221,22 @@ def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
                     nn_pred = cyclone_neural_net.predict(pil_img)
                     if nn_pred:
                         res["neural_prediction"] = nn_pred
-                        res["model_architecture"] = "DeepCyclone ResNet-18 Multi-Task (HURSAT-Trained)"
-                        res["intensity_metrics"]["msw_knots"] = nn_pred["wind_knots"]
-                        res["intensity_metrics"]["msw_kmh"] = round(nn_pred["wind_knots"] * 1.852, 1)
-                        res["intensity_metrics"]["central_pressure_hpa"] = nn_pred["pressure_hpa"]
-                        res["intensity_metrics"]["pressure_deficit_hpa"] = round(1010.0 - nn_pred["pressure_hpa"], 1)
+                        # Fallback for intensity only if physical Dvorak ConvNeXt model was inactive
+                        if not res.get("has_cyclone") and nn_pred.get("wind_knots", 0) >= 30.0:
+                            res["has_cyclone"] = True
+                            res["model_architecture"] = "DeepCyclone ResNet-18 Multi-Task (HURSAT-Trained)"
+                            res["intensity_metrics"]["msw_knots"] = nn_pred["wind_knots"]
+                            res["intensity_metrics"]["msw_kmh"] = round(nn_pred["wind_knots"] * 1.852, 1)
+                            res["intensity_metrics"]["central_pressure_hpa"] = nn_pred["pressure_hpa"]
+                            res["intensity_metrics"]["pressure_deficit_hpa"] = round(1010.0 - nn_pred["pressure_hpa"], 1)
 
-                        cat_info = classify_imd_category(nn_pred["wind_knots"])
-                        res["intensity_metrics"]["imd_category_code"] = cat_info["code"]
-                        res["intensity_metrics"]["imd_category_name"] = cat_info["name"]
-                        res["intensity_metrics"]["imd_severity"] = cat_info["severity"]
-                        res["intensity_metrics"]["badge_color"] = cat_info["color"]
-                        res["intensity_metrics"]["neural_confidence"] = nn_pred["category_confidence"]
-
-                        res["quadrant_wind_radii"] = calculate_quadrant_radii(nn_pred["wind_knots"])
+                            cat_info = classify_imd_category(nn_pred["wind_knots"])
+                            res["intensity_metrics"]["imd_category_code"] = cat_info["code"]
+                            res["intensity_metrics"]["imd_category_name"] = cat_info["name"]
+                            res["intensity_metrics"]["imd_severity"] = cat_info["severity"]
+                            res["intensity_metrics"]["badge_color"] = cat_info["color"]
+                            res["intensity_metrics"]["neural_confidence"] = nn_pred["category_confidence"]
+                            res["quadrant_wind_radii"] = calculate_quadrant_radii(nn_pred["wind_knots"])
                 except Exception as ex:
                     print(f"Cyclone neural net intensity error: {ex}")
 
@@ -299,13 +282,15 @@ def forecast_cyclone_trajectory(payload: ForecastTrajectoryRequest):
     if payload.has_cyclone is False:
         return trajectory_forecaster.get_quiescent_track()
     
-    if payload.current_lat is not None and payload.current_lon is not None:
+    if (payload.current_lat is not None and payload.current_lon is not None) or payload.pixel_x_pct is not None:
+        lat = payload.current_lat if payload.current_lat is not None else 19.72
+        lon = payload.current_lon if payload.current_lon is not None else 86.42
         wind = payload.msw_knots or 65.0
         pressure = payload.central_pressure_hpa or 980.0
         delta_t = payload.core_delta_t_k if payload.core_delta_t_k is not None else 40.0
         return trajectory_forecaster.forecast_dynamic_track(
-            current_lat=payload.current_lat,
-            current_lon=payload.current_lon,
+            current_lat=lat,
+            current_lon=lon,
             current_wind_kts=wind,
             current_pressure_hpa=pressure,
             core_delta_t_k=delta_t,
@@ -317,6 +302,44 @@ def forecast_cyclone_trajectory(payload: ForecastTrajectoryRequest):
 
 import os
 
+
+
+# ---------------------------------------------------------------------------
+# WeatherNext Cyclones (WN-C Nature 2026) Operational Ensemble Endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/api/v1/forecast/wnc-ensemble/{storm_id}")
+def get_wnc_benchmark_ensemble(storm_id: str):
+    """
+    Returns 50-member Functional Generative Network (FGN) ensemble forecast,
+    probabilistic cones of uncertainty (68% and 95%), 4-quadrant asymmetric wind radii,
+    and peer-reviewed Nature 2026 verification scorecard for benchmark storms.
+    """
+    return wnc_forecaster.forecast_benchmark_storm(storm_id)
+
+class WNCForecastRequest(BaseModel):
+    current_lat: float
+    current_lon: float
+    msw_knots: Optional[float] = 65.0
+    central_pressure_hpa: Optional[float] = 980.0
+    bearing_deg: Optional[float] = 25.0
+    speed_kmh: Optional[float] = 16.0
+    basin: Optional[str] = "Bay of Bengal"
+
+@app.post("/api/v1/forecast/wnc-ensemble")
+def forecast_wnc_dynamic_ensemble(payload: WNCForecastRequest):
+    """
+    Dynamic 50-member WN-C ensemble forecast from live coordinate fixes.
+    """
+    return wnc_forecaster.forecast_dynamic_coordinates(
+        current_lat=payload.current_lat,
+        current_lon=payload.current_lon,
+        msw_kts=payload.msw_knots or 65.0,
+        central_pressure_hpa=payload.central_pressure_hpa or 980.0,
+        bearing_deg=payload.bearing_deg or 25.0,
+        speed_kmh=payload.speed_kmh or 16.0,
+        basin=payload.basin or "Bay of Bengal"
+    )
 
 @app.post("/api/v1/models/export-bulletin-pdf")
 def export_bulletin_pdf(payload: Dict[str, Any]):
@@ -345,9 +368,9 @@ class SendReportEmailRequest(BaseModel):
     storm_data: Optional[Dict[str, Any]] = None
 
 @app.get("/api/v1/notifications")
-def get_basin_notifications():
+def get_basin_notifications(mode: Optional[str] = "storm"):
     """Returns active real-time and synoptic notifications with unread counts."""
-    return notification_service.get_notifications()
+    return notification_service.get_notifications(mode=mode)
 
 @app.post("/api/v1/notifications/{notif_id}/read")
 def mark_notification_read(notif_id: str):
@@ -370,6 +393,46 @@ def send_report_email(payload: SendReportEmailRequest):
     return notification_service.send_report_email(
         recipient_email=payload.recipient_email,
         storm_data=payload.storm_data
+    )
+
+
+
+# ---------------------------------------------------------------------------
+# Satellite Timelapse & 4D Geostationary Loop Endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/api/v1/satellite/timelapse/sequences")
+def get_timelapse_sequences():
+    """Returns catalog of available 4D satellite timelapse loops."""
+    return {"sequences": timelapse_service.get_available_sequences()}
+
+@app.get("/api/v1/satellite/timelapse/{sequence_id}")
+def get_timelapse_sequence_details(sequence_id: str, band: Optional[str] = "ir1", mode: Optional[str] = None):
+    """
+    Returns timestamped multi-frame satellite loop with synchronized CenterNet
+    eye coordinates, Deep Dvorak intensity metrics, and cloud-top thermometry.
+    """
+    return timelapse_service.get_sequence_details(sequence_id=sequence_id, band=band or "ir1", mode=mode)
+
+
+
+@app.get("/api/v1/satellite/timelapse-frame/{sequence_id}/{frame_idx}")
+def get_timelapse_frame_image(sequence_id: str, frame_idx: int, band: Optional[str] = "ir1", palette: Optional[str] = "enhanced", mode: Optional[str] = None):
+    """
+    Serves actual distinct satellite pass image bytes for the requested frame index,
+    supporting Dvorak BD-curve false color enhancement or clean calibrated infrared.
+    """
+    img_bytes, media_type = timelapse_service.get_frame_image_bytes(
+        sequence_id=sequence_id,
+        frame_idx=frame_idx,
+        band=band or "ir1",
+        palette=palette or "enhanced",
+        mode=mode
+    )
+    return Response(
+        content=img_bytes,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=3600"}
     )
 
 

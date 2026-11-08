@@ -75,3 +75,8 @@ scratch/
 # Temporary assets
 *.png
 !frontend/public/**
+
+# SQLite database runtime files
+*.db
+*.db-shm
+*.db-wal
