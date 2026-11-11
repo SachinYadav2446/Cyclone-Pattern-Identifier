@@ -404,6 +404,51 @@ class EyeDetector:
         sat = (max_c - min_c) / (max_c + 1e-6)
         val = max_c / 255.0
 
+        high_sat_pct = float(np.mean(sat > 0.25) * 100.0)
+        cold_frac = float(np.mean(gray_np > 155) * 100.0)
+        max_gray = float(np.max(gray_np))
+
+        # Gate 1: Non-meteorological optical photo detection (everyday cameras, rooms, houses, landscapes)
+        # Scientific meteorological IR/WV radiometer imagery is monochrome/single-band with near-zero chromatic saturation
+        if high_sat_pct > 25.0:
+            elapsed_ms = round((time.perf_counter() - start_t) * 1000, 1)
+            return {
+                "status": "NON_METEOROLOGICAL_IMAGE",
+                "has_cyclone": False,
+                "storm_id": "non_satellite_rejected",
+                "storm_name": "NON-METEOROLOGICAL IMAGE DETECTED",
+                "category": "Invalid Input / Optical Camera Photo",
+                "predicted_eye": None,
+                "ground_truth": None,
+                "haversine_error_km": 0.0,
+                "operational_target_km": 30.0,
+                "verification_status": "REJECTED (NON-SATELLITE IMAGE)",
+                "message": "Uploaded image is not a valid meteorological satellite pass. Chromatic saturation profile indicates an optical photograph.",
+                "error_message": "Please upload a meteorological satellite pass (IR, VIS, or WV band).",
+                "inference_latency_ms": elapsed_ms,
+                "timestamp_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
+            }
+
+        # Gate 2: Quiescent marine basin (zero convective cloud towers / calm ocean)
+        # Deep convective clouds chill to Tb < -20°C (pixel > 155). Calm ocean water remains warm (> +20°C, pixel < 150)
+        if max_gray < 150.0 or (cold_frac < 0.05 and max_gray < 154.0):
+            elapsed_ms = round((time.perf_counter() - start_t) * 1000, 1)
+            return {
+                "status": "QUIESCENT_OCEAN",
+                "has_cyclone": False,
+                "storm_id": "calm_basin",
+                "storm_name": "QUIESCENT OCEANIC BASIN",
+                "category": "Quiescent Oceanic Basin / Zero Active Vortex",
+                "predicted_eye": None,
+                "ground_truth": None,
+                "haversine_error_km": 0.0,
+                "operational_target_km": 30.0,
+                "verification_status": "ALL CLEAR (NO CYCLONE)",
+                "message": "Open ocean detected with ambient thermal background. Zero deep convective cloud towers or cyclonic vortex circulation present.",
+                "inference_latency_ms": elapsed_ms,
+                "timestamp_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
+            }
+
         # 1. Primary Deep Learning Detection via CenterNet Keypoint Heatmap
         if self.centernet is not None:
             try:
@@ -416,6 +461,73 @@ class EyeDetector:
                 x_pct = cn_res['eye_x_percent']
                 y_pct = cn_res['eye_y_percent']
                 peak_score = cn_res['confidence']
+                candidates = cn_res.get('candidates', [])
+
+                # Multi-Candidate Physical Eyewall & Cavity Verification Gating
+                # If multiple local maxima exist, verify which one has an actual closed circular eyewall & hollow cavity
+                if len(candidates) > 1:
+                    eval_field = gaussian_filter(gray_np, 2.0)
+                    angles_36 = np.linspace(0, 2 * np.pi, 36, endpoint=False)
+                    radii_sweep = np.arange(4, 55, 2)
+                    scored_candidates = []
+
+                    for cand in candidates[:6]:
+                        c_px = int(np.clip((cand['x_pct'] / 100.0) * 512.0, 0, 511))
+                        c_py = int(np.clip((cand['y_pct'] / 100.0) * 512.0, 0, 511))
+                        core_val_c = float(eval_field[c_py, c_px])
+
+                        closed_count = 0
+                        eyewall_vals = []
+                        for a in angles_36:
+                            xs = np.clip(np.round(c_px + radii_sweep * np.cos(a)).astype(int), 0, 511)
+                            ys = np.clip(np.round(c_py + radii_sweep * np.sin(a)).astype(int), 0, 511)
+                            ray_vals = eval_field[ys, xs]
+                            max_idx = np.argmax(ray_vals)
+                            eyewall_vals.append(ray_vals[max_idx])
+                            if np.max(ray_vals) - core_val_c > 14.0:
+                                closed_count += 1
+
+                        closure_pct_c = (closed_count / 36.0) * 100.0
+                        contrast_c = float(np.mean(eyewall_vals)) - core_val_c
+
+                        # Physical Cavity Quality Score:
+                        # Genuine circular eyes (high closure, high contrast, lower core brightness) receive decisive endorsement
+                        cavity_bonus = (closure_pct_c / 100.0) * 0.45 + (np.clip(contrast_c, 0, 80) / 80.0) * 0.35 + (1.0 - core_val_c / 255.0) * 0.20
+                        total_cand_score = cand['score'] * 0.15 + cavity_bonus
+                        scored_candidates.append({
+                            **cand,
+                            'closure_pct': closure_pct_c,
+                            'contrast': contrast_c,
+                            'total_score': total_cand_score
+                        })
+
+                    scored_candidates.sort(key=lambda c: c['total_score'], reverse=True)
+                    # If top cavity candidate exhibits solid closure (>= 70%), lock to it
+                    if scored_candidates[0]['closure_pct'] >= 70.0:
+                        chosen = scored_candidates[0]
+                        x_pct = chosen['x_pct']
+                        y_pct = chosen['y_pct']
+                        peak_score = chosen.get('total_score', chosen['score'])
+
+                # Gate 3: CenterNet Keypoint Confidence Floor
+                # Filters low-confidence non-cyclonic atmospheric clouds/disorganized textures
+                if peak_score < 0.20:
+                    elapsed_ms = round((time.perf_counter() - start_t) * 1000, 1)
+                    return {
+                        "status": "NON_CYCLONIC_PATTERN",
+                        "has_cyclone": False,
+                        "storm_id": "non_cyclonic",
+                        "storm_name": "NON-CYCLONIC ATMOSPHERIC PATTERN",
+                        "category": "Non-Cyclonic Atmospheric Pattern / Disorganized Cloud",
+                        "predicted_eye": None,
+                        "ground_truth": None,
+                        "haversine_error_km": 0.0,
+                        "operational_target_km": 30.0,
+                        "verification_status": "ALL CLEAR (NO CYCLONE)",
+                        "message": "Atmospheric clouds detected, but vortex organization confidence is below threshold (< 0.20). No organized cyclone eye or LLCC.",
+                        "inference_latency_ms": elapsed_ms,
+                        "timestamp_utc": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
+                    }
 
                 final_px = (x_pct / 100.0) * 512.0
                 final_py = (y_pct / 100.0) * 512.0

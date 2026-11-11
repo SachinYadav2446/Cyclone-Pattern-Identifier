@@ -631,12 +631,12 @@ export default function NotificationCenterModal({
                 </span>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => onOpenTimelapse && onOpenTimelapse(feedMode === 'storm' ? 'phailin_super_cyclone' : 'live_insat')}
+                    onClick={() => onOpenTimelapse && onOpenTimelapse('live_insat')}
                     className="px-2.5 py-1 rounded text-[10px] font-mono font-bold bg-[#64104E] hover:bg-[#831862] text-white border border-[#B43067]/60 transition-all flex items-center gap-1 cursor-pointer shadow"
-                    title="Open 4D animated satellite timelapse player"
+                    title="Launch INSAT-3D/3DR Satellite Observatory"
                   >
-                    <Film className="w-3 h-3 text-amber-400" />
-                    <span>Watch 4D Loop</span>
+                    <Satellite className="w-3 h-3 text-cyan-400" />
+                    <span>Satellite Observatory</span>
                   </button>
                   <span className="text-[10px] text-zinc-500">
                     {hourlyPasses.length} Passes

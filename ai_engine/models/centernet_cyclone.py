@@ -198,26 +198,36 @@ class CenterNetCycloneModel(nn.Module):
             hm = heatmap[0, 0].cpu().numpy()  # (64, 64)
             off = offset[0].cpu().numpy()     # (2, 64, 64)
 
-            # Find peak coordinate on 64x64 grid
-            peak_flat_idx = np.argmax(hm)
-            gy, gx = np.unravel_index(peak_flat_idx, (64, 64))
-            conf = float(hm[gy, gx])
+            # Find local maxima candidate peaks on 64x64 grid
+            from scipy.ndimage import maximum_filter
+            local_max = (maximum_filter(hm, size=3) == hm)
+            peak_mask = local_max & (hm > 0.04)
+            gy_indices, gx_indices = np.where(peak_mask)
 
-            # Apply sub-pixel offset
-            dx = float(off[0, gy, gx])
-            dy = float(off[1, gy, gx])
+            candidates = []
+            for gy, gx in zip(gy_indices, gx_indices):
+                score = float(hm[gy, gx])
+                dx = float(off[0, gy, gx])
+                dy = float(off[1, gy, gx])
+                x_img = (gx + 0.5 + dx) * 4.0
+                y_img = (gy + 0.5 + dy) * 4.0
+                candidates.append({
+                    "x_pct": float(np.clip(x_img / 256.0 * 100.0, 0.0, 100.0)),
+                    "y_pct": float(np.clip(y_img / 256.0 * 100.0, 0.0, 100.0)),
+                    "score": round(score, 4),
+                    "dx": round(dx, 3),
+                    "dy": round(dy, 3)
+                })
 
-            # Convert 64x64 grid coords to percentage [0, 100]
-            # Heatmap stride is 4 relative to 256x256 image
-            x_img = (gx + 0.5 + dx) * 4.0
-            y_img = (gy + 0.5 + dy) * 4.0
-
-            x_pct = float(np.clip(x_img / 256.0 * 100.0, 0.0, 100.0))
-            y_pct = float(np.clip(y_img / 256.0 * 100.0, 0.0, 100.0))
+            candidates.sort(key=lambda c: c["score"], reverse=True)
+            top = candidates[0] if candidates else {
+                "x_pct": 50.0, "y_pct": 50.0, "score": 0.0, "dx": 0.0, "dy": 0.0
+            }
 
             return {
-                "eye_x_percent": round(x_pct, 2),
-                "eye_y_percent": round(y_pct, 2),
-                "confidence": round(conf, 4),
-                "heatmap": hm
+                "eye_x_percent": top["x_pct"],
+                "eye_y_percent": top["y_pct"],
+                "confidence": top["score"],
+                "heatmap": hm,
+                "candidates": candidates[:8]
             }

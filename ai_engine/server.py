@@ -149,7 +149,8 @@ def localize_cyclone_eye(payload: LocalizeEyeRequest):
             img_bytes = base64.b64decode(raw_b64)
             result = eye_detector.localize_image_array(img_bytes)
 
-            if cyclone_neural_net.is_loaded:
+            # Only invoke comparative regression net if meteorological cyclone is genuinely active
+            if result.get("has_cyclone") is not False and cyclone_neural_net.is_loaded:
                 try:
                     pil_img = Image.open(io.BytesIO(img_bytes))
                     nn_pred = cyclone_neural_net.predict(pil_img)
@@ -215,28 +216,12 @@ def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
             
             res = intensity_estimator.estimate_image_array(img_bytes, eye_x_pct=eye_x, eye_y_pct=eye_y)
 
-            if cyclone_neural_net.is_loaded:
+            if res.get("has_cyclone") is not False and cyclone_neural_net.is_loaded:
                 try:
                     pil_img = Image.open(io.BytesIO(img_bytes))
                     nn_pred = cyclone_neural_net.predict(pil_img)
                     if nn_pred:
                         res["neural_prediction"] = nn_pred
-                        # Fallback for intensity only if physical Dvorak ConvNeXt model was inactive
-                        if not res.get("has_cyclone") and nn_pred.get("wind_knots", 0) >= 30.0:
-                            res["has_cyclone"] = True
-                            res["model_architecture"] = "DeepCyclone ResNet-18 Multi-Task (HURSAT-Trained)"
-                            res["intensity_metrics"]["msw_knots"] = nn_pred["wind_knots"]
-                            res["intensity_metrics"]["msw_kmh"] = round(nn_pred["wind_knots"] * 1.852, 1)
-                            res["intensity_metrics"]["central_pressure_hpa"] = nn_pred["pressure_hpa"]
-                            res["intensity_metrics"]["pressure_deficit_hpa"] = round(1010.0 - nn_pred["pressure_hpa"], 1)
-
-                            cat_info = classify_imd_category(nn_pred["wind_knots"])
-                            res["intensity_metrics"]["imd_category_code"] = cat_info["code"]
-                            res["intensity_metrics"]["imd_category_name"] = cat_info["name"]
-                            res["intensity_metrics"]["imd_severity"] = cat_info["severity"]
-                            res["intensity_metrics"]["badge_color"] = cat_info["color"]
-                            res["intensity_metrics"]["neural_confidence"] = nn_pred["category_confidence"]
-                            res["quadrant_wind_radii"] = calculate_quadrant_radii(nn_pred["wind_knots"])
                 except Exception as ex:
                     print(f"Cyclone neural net intensity error: {ex}")
 
@@ -407,17 +392,17 @@ def get_timelapse_sequences():
     return {"sequences": timelapse_service.get_available_sequences()}
 
 @app.get("/api/v1/satellite/timelapse/{sequence_id}")
-def get_timelapse_sequence_details(sequence_id: str, band: Optional[str] = "ir1", mode: Optional[str] = None):
+def get_timelapse_sequence_details(sequence_id: str, band: Optional[str] = "ir1", mode: Optional[str] = None, hours: Optional[int] = 48):
     """
     Returns timestamped multi-frame satellite loop with synchronized CenterNet
     eye coordinates, Deep Dvorak intensity metrics, and cloud-top thermometry.
     """
-    return timelapse_service.get_sequence_details(sequence_id=sequence_id, band=band or "ir1", mode=mode)
+    return timelapse_service.get_sequence_details(sequence_id=sequence_id, band=band or "ir1", mode=mode, hours=hours or 48)
 
 
 
 @app.get("/api/v1/satellite/timelapse-frame/{sequence_id}/{frame_idx}")
-def get_timelapse_frame_image(sequence_id: str, frame_idx: int, band: Optional[str] = "ir1", palette: Optional[str] = "enhanced", mode: Optional[str] = None):
+def get_timelapse_frame_image(sequence_id: str, frame_idx: int, band: Optional[str] = "ir1", palette: Optional[str] = "enhanced", mode: Optional[str] = None, hours: Optional[int] = 48):
     """
     Serves actual distinct satellite pass image bytes for the requested frame index,
     supporting Dvorak BD-curve false color enhancement or clean calibrated infrared.
@@ -427,7 +412,8 @@ def get_timelapse_frame_image(sequence_id: str, frame_idx: int, band: Optional[s
         frame_idx=frame_idx,
         band=band or "ir1",
         palette=palette or "enhanced",
-        mode=mode
+        mode=mode,
+        hours=hours or 48
     )
     return Response(
         content=img_bytes,

@@ -96,25 +96,30 @@ class CycloneCenterNetDataset(Dataset):
         y_px = y_pct / 100.0 * self.img_size
 
         if self.is_train:
-            # Random translation up to +/- 20%
-            if random.random() < 0.7:
-                dx = random.uniform(-0.20, 0.20) * self.img_size
-                dy = random.uniform(-0.20, 0.20) * self.img_size
-                new_x = x_px + dx
-                new_y = y_px + dy
-                if 25.0 <= new_x <= (self.img_size - 25.0) and 25.0 <= new_y <= (self.img_size - 25.0):
-                    pil_img = pil_img.transform(
-                        (self.img_size, self.img_size),
-                        Image.Transform.AFFINE,
-                        (1, 0, -dx, 0, 1, -dy),
-                        resample=Image.Resampling.BILINEAR
-                    )
-                    x_px, y_px = new_x, new_y
+            # Extreme Multi-Quadrant Translation (Position-Agnostic Training):
+            # Places the eye freely across the entire frame: left (10-25%), right (75-90%), top, bottom, and center.
+            if random.random() < 0.85:
+                target_x = random.uniform(26.0, self.img_size - 26.0)
+                target_y = random.uniform(26.0, self.img_size - 26.0)
+                dx = target_x - x_px
+                dy = target_y - y_px
+                pil_img = pil_img.transform(
+                    (self.img_size, self.img_size),
+                    Image.Transform.AFFINE,
+                    (1, 0, -dx, 0, 1, -dy),
+                    resample=Image.Resampling.BILINEAR
+                )
+                x_px, y_px = target_x, target_y
 
             # Random horizontal flip
             if random.random() < 0.5:
                 pil_img = pil_img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
                 x_px = self.img_size - x_px
+
+            # Random vertical flip
+            if random.random() < 0.3:
+                pil_img = pil_img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+                y_px = self.img_size - y_px
 
             # Random Color Jitter
             if random.random() < 0.5:
@@ -177,7 +182,17 @@ def train_centernet(
     model = CenterNetCycloneModel(pretrained_backbone_path=pretrained_backbone)
     model.to(device)
 
-    # Freeze shallow backbone layers (conv1, layer1, layer2, layer3)
+    # Load warm-start weights if available
+    save_path = output_weights
+    if os.path.exists(save_path):
+        try:
+            ckpt = torch.load(save_path, map_location=device, weights_only=False)
+            model.load_state_dict(ckpt.get('model_state_dict', ckpt))
+            print(f"[OK] Warm-started CenterNet from: {save_path}")
+        except Exception as e:
+            print(f"Warm-start notice: {e}")
+
+    # Freeze shallow feature extractors (conv1, layer1, layer2); unfreeze layer3, layer4 and decoder
     for param in model.conv1.parameters():
         param.requires_grad = False
     for param in model.bn1.parameters():
@@ -185,8 +200,6 @@ def train_centernet(
     for param in model.layer1.parameters():
         param.requires_grad = False
     for param in model.layer2.parameters():
-        param.requires_grad = False
-    for param in model.layer3.parameters():
         param.requires_grad = False
 
     trainable_params = [p for p in model.parameters() if p.requires_grad]
@@ -308,4 +321,4 @@ def train_centernet(
 
 
 if __name__ == "__main__":
-    train_centernet(epochs=10, batch_size=32, lr=6e-4)
+    train_centernet(epochs=10, batch_size=32, lr=4e-4)

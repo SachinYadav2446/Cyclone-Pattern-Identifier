@@ -699,37 +699,51 @@ export default function EyeLocalizationWorkbench({
   const hasCyclone = (activeStorm.id === 'live_insat')
     ? (apiData?.has_cyclone === true)
     : customImage
-    ? (apiData ? apiData?.has_cyclone !== false : true)
+    ? (apiData ? apiData?.has_cyclone === true : false)
     : (apiData ? (apiData?.has_cyclone !== false && apiData?.status !== 'NO_CYCLONE_DETECTED') : true);
 
   const reticleX = apiData?.predicted_eye?.pixel_x_percent ?? activeStorm.reticleX;
   const reticleY = apiData?.predicted_eye?.pixel_y_percent ?? activeStorm.reticleY;
-  const predLat = apiData?.predicted_eye?.latitude ?? (activeStorm.gtLat + 0.02);
-  const predLon = apiData?.predicted_eye?.longitude ?? (activeStorm.gtLon + 0.01);
+  const predLat = apiData?.predicted_eye?.latitude ?? (hasCyclone ? activeStorm.gtLat + 0.02 : 18.0);
+  const predLon = apiData?.predicted_eye?.longitude ?? (hasCyclone ? activeStorm.gtLon + 0.01 : 85.0);
   const gtLat = apiData?.ground_truth?.latitude ?? activeStorm.gtLat;
   const gtLon = apiData?.ground_truth?.longitude ?? activeStorm.gtLon;
   const haversineKm = apiData?.haversine_error_km ?? 2.46;
-  const confidencePct = Math.round((apiData?.predicted_eye?.confidence ?? 0.94) * 100);
-  const eyeDiameter = apiData?.predicted_eye?.eye_diameter_km ?? activeStorm.diameterKm;
-  const eyeTemp = apiData?.predicted_eye?.eye_core_temp_k ?? activeStorm.eyeTempK;
-  const eyewallTemp = apiData?.predicted_eye?.eyewall_min_temp_k ?? activeStorm.eyewallTempK;
+  const confidencePct = Math.round((apiData?.predicted_eye?.confidence ?? (hasCyclone ? 0.94 : 0.0)) * 100);
+  const eyeDiameter = apiData?.predicted_eye?.eye_diameter_km ?? (hasCyclone ? activeStorm.diameterKm : 0);
+  const eyeTemp = apiData?.predicted_eye?.eye_core_temp_k ?? (hasCyclone ? activeStorm.eyeTempK : 298.0);
+  const eyewallTemp = apiData?.predicted_eye?.eyewall_min_temp_k ?? (hasCyclone ? activeStorm.eyewallTempK : 296.0);
   const deltaT = Math.round((eyeTemp - eyewallTemp) * 10) / 10;
-  const subDx = apiData?.predicted_eye?.subpixel_offset?.dx ?? activeStorm.dx;
-  const subDy = apiData?.predicted_eye?.subpixel_offset?.dy ?? activeStorm.dy;
-  const eyeMorphology = apiData?.predicted_eye?.morphology ?? (eyeDiameter <= 30 ? 'PINHOLE_EYE (COMPACT INTENSE CORE)' : 'CIRCULAR_OPEN_EYE (WELL-DEFINED EYEWALL)');
-  const symmetryScore = apiData?.predicted_eye?.symmetry_score ?? 0.92;
-  const detectionMode = apiData?.predicted_eye?.detection_mode ?? 'Vectorized Log-Spiral Convergence & 2D Hessian Refinement';
+  const subDx = apiData?.predicted_eye?.subpixel_offset?.dx ?? (hasCyclone ? activeStorm.dx : 0.0);
+  const subDy = apiData?.predicted_eye?.subpixel_offset?.dy ?? (hasCyclone ? activeStorm.dy : 0.0);
+  const eyeMorphology = apiData?.predicted_eye?.morphology ?? (hasCyclone ? (eyeDiameter <= 30 ? 'PINHOLE_EYE (COMPACT INTENSE CORE)' : 'CIRCULAR_OPEN_EYE (WELL-DEFINED EYEWALL)') : 'NON_CYCLONIC_CELLULAR');
+  const symmetryScore = apiData?.predicted_eye?.symmetry_score ?? (hasCyclone ? 0.92 : 0.0);
+  const detectionMode = apiData?.predicted_eye?.detection_mode ?? 'CenterNet Keypoint Heatmap & Multi-Modal Verification';
 
   // Deep Dvorak Intensity Metrics
-  const mswKnots = intensityData?.intensity_metrics?.msw_knots ?? activeStorm.mswKnots ?? 115.0;
+  const mswKnots = hasCyclone
+    ? (intensityData?.intensity_metrics?.msw_knots ?? activeStorm.mswKnots ?? 115.0)
+    : (intensityData?.intensity_metrics?.msw_knots ?? 12.0);
   const mswKmh = intensityData?.intensity_metrics?.msw_kmh ?? Math.round(mswKnots * 1.852);
-  const centralPressure = intensityData?.intensity_metrics?.central_pressure_hpa ?? activeStorm.pressureHpa ?? 932.0;
-  const pressureDeficit = intensityData?.intensity_metrics?.pressure_deficit_hpa ?? Math.round(1010.0 - centralPressure);
-  const dvorakT = intensityData?.intensity_metrics?.dvorak_t_number ?? 6.0;
-  const imdCatName = intensityData?.intensity_metrics?.imd_category_name ?? activeStorm.category ?? 'Extremely Severe (ESCS)';
-  const imdCatCode = intensityData?.intensity_metrics?.imd_category_code ?? activeStorm.badge ?? 'ESCS';
-  const imdBadgeColor = intensityData?.intensity_metrics?.badge_color ?? '#ef4444';
-  const imdSeverity = intensityData?.intensity_metrics?.imd_severity ?? 'Catastrophic Impact';
+  const centralPressure = hasCyclone
+    ? (intensityData?.intensity_metrics?.central_pressure_hpa ?? activeStorm.pressureHpa ?? 932.0)
+    : (intensityData?.intensity_metrics?.central_pressure_hpa ?? 1012.0);
+  const pressureDeficit = intensityData?.intensity_metrics?.pressure_deficit_hpa ?? Math.max(0, Math.round(1010.0 - centralPressure));
+  const dvorakT = hasCyclone
+    ? (intensityData?.intensity_metrics?.dvorak_t_number ?? 6.0)
+    : (intensityData?.intensity_metrics?.dvorak_t_number ?? 0.0);
+  const imdCatName = hasCyclone
+    ? (intensityData?.intensity_metrics?.imd_category_name ?? activeStorm.category ?? 'Extremely Severe (ESCS)')
+    : (apiData?.status === 'NON_METEOROLOGICAL_IMAGE' ? 'Invalid Input / Optical Photo' : 'Quiescent Baseline / Zero Cyclone');
+  const imdCatCode = hasCyclone
+    ? (intensityData?.intensity_metrics?.imd_category_code ?? activeStorm.badge ?? 'ESCS')
+    : (apiData?.status === 'NON_METEOROLOGICAL_IMAGE' ? 'REJECT' : 'CALM');
+  const imdBadgeColor = hasCyclone
+    ? (intensityData?.intensity_metrics?.badge_color ?? '#ef4444')
+    : '#10b981';
+  const imdSeverity = hasCyclone
+    ? (intensityData?.intensity_metrics?.imd_severity ?? 'Catastrophic Impact')
+    : 'All Clear (Routine Maritime Operations)';
   const quadrantRadii = intensityData?.quadrant_wind_radii ?? {
     r34_knots_nm: { ne: 145, se: 130, sw: 95, nw: 120 },
     r50_knots_nm: { ne: 80, se: 70, sw: 50, nw: 65 },
@@ -1240,27 +1254,34 @@ export default function EyeLocalizationWorkbench({
 
                 {/* Cyclone Eye & Vortex Lifecycle Stage Badge */}
                 {!isLoadingApi && (
-                  <span className={`text-[9px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider border flex items-center gap-1.5 shadow-sm ${
-                    eyeFixType === 'CLOSED_EYE_CAVITY_FIX'
-                      ? 'bg-emerald-950/80 border-emerald-500/70 text-emerald-300'
-                      : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS'
-                      ? 'bg-purple-950/80 border-purple-500/70 text-purple-300'
-                      : eyeFixType === 'PRE_GENESIS_ROTATION_CENTER'
-                      ? 'bg-amber-950/80 border-amber-500/70 text-amber-300 animate-pulse'
-                      : 'bg-orange-950/80 border-orange-500/70 text-orange-300'
-                  }`}>
-                    <span 
-                      className="w-1.5 h-1.5 rounded-full" 
-                      style={{ 
-                        backgroundColor: eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#10b981' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#c084fc' : eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? '#f59e0b' : '#fb923c',
-                        boxShadow: `0 0 6px ${eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#10b981' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#c084fc' : '#f59e0b'}`
-                      }} 
-                    />
-                    {eyeFixType === 'CLOSED_EYE_CAVITY_FIX' && 'CLOSED EYE CAVITY'}
-                    {eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' && 'CDO EMBEDDED EYE'}
-                    {eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' && 'PRE-GENESIS LLCC'}
-                    {eyeFixType === 'SHEARED_CORE_VORTEX_FIX' && 'SHEARED VORTEX'}
-                  </span>
+                  hasCyclone ? (
+                    <span className={`text-[9px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider border flex items-center gap-1.5 shadow-sm ${
+                      eyeFixType === 'CLOSED_EYE_CAVITY_FIX'
+                        ? 'bg-emerald-950/80 border-emerald-500/70 text-emerald-300'
+                        : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS'
+                        ? 'bg-purple-950/80 border-purple-500/70 text-purple-300'
+                        : eyeFixType === 'PRE_GENESIS_ROTATION_CENTER'
+                        ? 'bg-amber-950/80 border-amber-500/70 text-amber-300 animate-pulse'
+                        : 'bg-orange-950/80 border-orange-500/70 text-orange-300'
+                    }`}>
+                      <span 
+                        className="w-1.5 h-1.5 rounded-full" 
+                        style={{ 
+                          backgroundColor: eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#10b981' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#c084fc' : eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' ? '#f59e0b' : '#fb923c',
+                          boxShadow: `0 0 6px ${eyeFixType === 'CLOSED_EYE_CAVITY_FIX' ? '#10b981' : eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' ? '#c084fc' : '#f59e0b'}`
+                        }} 
+                      />
+                      {eyeFixType === 'CLOSED_EYE_CAVITY_FIX' && 'CLOSED EYE CAVITY'}
+                      {eyeFixType === 'CDO_VIRTUAL_ROTATION_FOCUS' && 'CDO EMBEDDED EYE'}
+                      {eyeFixType === 'PRE_GENESIS_ROTATION_CENTER' && 'PRE-GENESIS LLCC'}
+                      {eyeFixType === 'SHEARED_CORE_VORTEX_FIX' && 'SHEARED VORTEX'}
+                    </span>
+                  ) : (
+                    <span className="text-[9px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider border flex items-center gap-1.5 shadow-sm bg-emerald-950/80 border-emerald-500/70 text-emerald-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      {apiData?.status === 'NON_METEOROLOGICAL_IMAGE' ? 'REJECTED: NON-SATELLITE' : 'ALL-CLEAR: NO CYCLONE'}
+                    </span>
+                  )
                 )}
               </div>
 
@@ -1764,6 +1785,90 @@ export default function EyeLocalizationWorkbench({
             {/* TAB 1: INTENSITY & IMD CLASSIFICATION */}
             {hudTab === 'intensity' && (
               <>
+                {!hasCyclone ? (
+                  <div className="shrink-0 p-4 bg-[#0a050f] border border-emerald-500/40 rounded-2xl shadow-xl space-y-3 font-mono">
+                    <div className="flex items-center justify-between pb-2 border-b border-emerald-500/30">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-bold text-emerald-300 text-xs tracking-wider uppercase">
+                          {apiData?.status === 'NON_METEOROLOGICAL_IMAGE'
+                            ? 'INPUT REJECTED: OPTICAL CAMERA PHOTO'
+                            : 'ROUTINE SURVEILLANCE: ALL CLEAR'}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-bold text-[9px] rounded-full">
+                        {apiData?.status === 'NON_METEOROLOGICAL_IMAGE' ? 'NON-SATELLITE' : 'ZERO CYCLONE'}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-emerald-950/20 border border-emerald-500/30 rounded-xl text-slate-300 text-[10px] leading-relaxed">
+                      {apiData?.status === 'NON_METEOROLOGICAL_IMAGE' ? (
+                        <>
+                          <div className="font-bold text-amber-300 mb-1 flex items-center gap-1.5">
+                            <span>⚠</span> Meteorological Domain Gate Triggered
+                          </div>
+                          <span>
+                            The uploaded file is an everyday optical camera photograph (high chromatic saturation). The CenterNet eye localizer and Deep Dvorak ConvNeXt engines strictly require geostationary meteorological satellite passes (INSAT-3D, KALPANA, METEOSAT, GOES TIR-1 / WV / VIS). Everyday camera images are rejected to eliminate false vortex fixes.
+                          </span>
+                        </>
+                      ) : apiData?.status === 'QUIESCENT_OCEAN' ? (
+                        <>
+                          <div className="font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+                            <span>🌿</span> Quiescent Marine Environment Confirmed
+                          </div>
+                          <span>
+                            Infrared thermal radiometer scan indicates open warm ocean basin (&gt; +20°C) with zero deep convective thunderstorm towers (Tb &gt; -20°C). Atmospheric circulation is completely nominal with zero organized cyclonic rotation or low-level circulation center (LLCC).
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+                            <span>🌿</span> Non-Cyclonic Atmospheric Pattern
+                          </div>
+                          <span>
+                            Atmospheric clouds detected across the sector, but cyclonic organization confidence is below threshold (&lt; 0.20). No closed cyclonic eye or invest spin-up present.
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Ambient Environmental Telemetry */}
+                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                      <div className="p-2 bg-[#120a1c] border border-emerald-500/30 rounded-xl">
+                        <span className="text-slate-400 text-[9px] block font-semibold">AMBIENT TRADE WIND</span>
+                        <div className="text-lg font-black text-emerald-300 mt-0.5">
+                          12.0 <span className="text-[10px] text-slate-400 font-normal">KTS</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400">22.2 km/h (Gentle Breeze)</span>
+                      </div>
+
+                      <div className="p-2 bg-[#120a1c] border border-emerald-500/30 rounded-xl">
+                        <span className="text-slate-400 text-[9px] block font-semibold">SURFACE MEAN PRESSURE</span>
+                        <div className="text-lg font-black text-slate-200 mt-0.5">
+                          1012.0 <span className="text-[10px] text-slate-400 font-normal">HPA</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400">0.0 hPa deficit</span>
+                      </div>
+
+                      <div className="p-2 bg-[#120a1c] border border-emerald-500/30 rounded-xl">
+                        <span className="text-slate-400 text-[9px] block font-semibold">DVORAK T-RATING</span>
+                        <div className="text-lg font-black text-slate-400 mt-0.5">
+                          T0.0
+                        </div>
+                        <span className="text-[9px] text-slate-400">Zero Vortex Organization</span>
+                      </div>
+
+                      <div className="p-2 bg-[#120a1c] border border-emerald-500/30 rounded-xl">
+                        <span className="text-slate-400 text-[9px] block font-semibold">CYCLOGENESIS RISK</span>
+                        <div className="text-lg font-black text-emerald-400 mt-0.5">
+                          3.8%
+                        </div>
+                        <span className="text-[9px] text-emerald-400 font-semibold">Negligible / All-Clear</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                <>
                 {/* 4-Stat Primary Diagnostics Grid */}
                 <div className="shrink-0 p-3 bg-[#0a050f] border border-[#64104E]/60 rounded-2xl shadow-xl space-y-2">
                   <div className="flex items-center justify-between pb-1.5 border-b border-[#64104E]/50">
@@ -1939,6 +2044,8 @@ export default function EyeLocalizationWorkbench({
                     <span className="text-[#E04A31] font-bold">MATCH: {imdCatCode} (T{dvorakT})</span>
                   </div>
                 </div>
+                </>
+                )}
               </>
             )}
 

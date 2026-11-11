@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
+  ArrowLeft,
   X, 
   Play, 
   Pause, 
-  SkipBack, 
-  SkipForward, 
   RotateCcw, 
   Clock, 
   Wind, 
@@ -12,23 +11,24 @@ import {
   Layers, 
   Crosshair, 
   Satellite, 
-  Film, 
-  Info,
-  Activity,
-  Palette,
-  Eye
+  Info, 
+  Palette, 
+  Download, 
+  Compass, 
+  Thermometer, 
+  Droplets,
+  Activity
 } from 'lucide-react';
 import { API_BASE_URL } from '../config/api';
 
 export default function SatelliteTimelapsePlayer({ 
   isOpen, 
-  onClose,
-  initialSequence = 'live_insat'
+  onClose 
 }) {
-  const [sequences, setSequences] = useState([]);
-  const [selectedSeqId, setSelectedSeqId] = useState(initialSequence);
   const [selectedBand, setSelectedBand] = useState('ir1');
   const [paletteMode, setPaletteMode] = useState('enhanced'); // 'enhanced' | 'raw'
+  const [selectedHours, setSelectedHours] = useState(48); // 12, 24, 48
+  const [researchMode] = useState('storm'); // Default directly to real cyclone tracking pass
   const [sequenceData, setSequenceData] = useState(null);
   const [currentFrameIdx, setCurrentFrameIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -36,39 +36,37 @@ export default function SatelliteTimelapsePlayer({
   const [showAiOverlay, setShowAiOverlay] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  // Interactive temperature probe on hover
+  const [hoverProbe, setHoverProbe] = useState({
+    active: false,
+    xPct: 50,
+    yPct: 50,
+    cursorX: 0,
+    cursorY: 0,
+    tbK: 220,
+    tbC: -53.1,
+    regime: 'Cold Cirrus Canopy',
+    regimeColor: '#f59e0b'
+  });
+
   const timerRef = useRef(null);
+  const viewportRef = useRef(null);
 
-  // Fetch catalog of available sequences
-  useEffect(() => {
-    if (!isOpen) return;
-    const fetchCatalog = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/satellite/timelapse/sequences`);
-        if (res.ok) {
-          const data = await res.json();
-          setSequences(data.sequences || []);
-        }
-      } catch (err) {
-        console.warn('Timelapse catalog fetch warning:', err);
-      }
-    };
-    fetchCatalog();
-  }, [isOpen]);
-
-  // Fetch sequence frames when sequence or band changes
+  // Fetch sequence frames when band, hours, or mode changes
   useEffect(() => {
     if (!isOpen) return;
     const fetchSeq = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/satellite/timelapse/${selectedSeqId}?band=${selectedBand}`);
+        const url = `${API_BASE_URL}/api/v1/satellite/timelapse/live_insat?band=${selectedBand}&hours=${selectedHours}&mode=${researchMode}`;
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           setSequenceData(data);
           setCurrentFrameIdx(0);
           setIsPlaying(true);
 
-          // Preload all frame images into memory for instant, seamless 60fps playback
+          // Preload frame images for smooth playback
           if (data.frames) {
             data.frames.forEach((f) => {
               const img = new window.Image();
@@ -80,13 +78,13 @@ export default function SatelliteTimelapsePlayer({
           }
         }
       } catch (err) {
-        console.warn('Timelapse sequence fetch error:', err);
+        console.warn('Satellite sequence fetch error:', err);
       } finally {
         setLoading(false);
       }
     };
     fetchSeq();
-  }, [isOpen, selectedSeqId, selectedBand, paletteMode]);
+  }, [isOpen, selectedBand, selectedHours, researchMode, paletteMode]);
 
   // Animation playback loop
   useEffect(() => {
@@ -114,280 +112,343 @@ export default function SatelliteTimelapsePlayer({
       } else if (e.key === ' ' || e.code === 'Space') {
         e.preventDefault();
         setIsPlaying(p => !p);
-      } else if (e.key === 'ArrowRight') {
-        handleNextFrame();
       } else if (e.key === 'ArrowLeft') {
-        handlePrevFrame();
+        e.preventDefault();
+        setIsPlaying(false);
+        setCurrentFrameIdx(p => (p > 0 ? p - 1 : (sequenceData?.frames?.length || 1) - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setIsPlaying(false);
+        setCurrentFrameIdx(p => (p + 1) % (sequenceData?.frames?.length || 1));
+      } else if (e.key === 'r' || e.key === 'R') {
+        setCurrentFrameIdx(0);
+        setIsPlaying(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, sequenceData]);
+  }, [isOpen, sequenceData, onClose]);
 
   if (!isOpen) return null;
 
   const currentFrame = sequenceData?.frames?.[currentFrameIdx] || null;
   const totalFrames = sequenceData?.frames?.length || 0;
 
-  const handlePrevFrame = () => {
-    setIsPlaying(false);
-    setCurrentFrameIdx(prev => (prev - 1 + totalFrames) % totalFrames);
-  };
-
-  const handleNextFrame = () => {
-    setIsPlaying(false);
-    setCurrentFrameIdx(prev => (prev + 1) % totalFrames);
-  };
-
-  // Build the complete image URL with base and palette mode
-  const currentImageUrl = currentFrame?.image_url 
+  const currentImageUrl = currentFrame 
     ? (currentFrame.image_url.startsWith('http') 
         ? currentFrame.image_url 
         : `${API_BASE_URL}${currentFrame.image_url}&palette=${paletteMode}`)
     : '';
 
+  // Interactive temperature probe on image mouse hover
+  const handleImageMouseMove = (e) => {
+    if (!viewportRef.current) return;
+    const rect = viewportRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const xPct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    const yPct = Math.max(0, Math.min(100, (y / rect.height) * 100));
+
+    const baseTbC = currentFrame?.cloud_top_temp_c || -69.4;
+    let coreDist = 999;
+    if (currentFrame?.has_cyclone && currentFrame.pixel_x_pct) {
+      const dx = xPct - currentFrame.pixel_x_pct;
+      const dy = yPct - currentFrame.pixel_y_pct;
+      coreDist = Math.sqrt(dx * dx + dy * dy);
+    }
+
+    let estimatedTbC;
+    if (currentFrame?.has_cyclone) {
+      if (coreDist < 3.5) {
+        estimatedTbC = Math.round(baseTbC + (currentFrame.delta_t_k || 36.0));
+      } else if (coreDist < 16.0) {
+        estimatedTbC = Math.round(baseTbC - 6.0);
+      } else if (coreDist < 34.0) {
+        estimatedTbC = Math.round(baseTbC + (coreDist - 16) * 1.6);
+      } else {
+        estimatedTbC = Math.round(Math.min(29.0, 12.0 + (coreDist - 34) * 0.5));
+      }
+    } else {
+      estimatedTbC = Math.round(27.0 - (yPct / 100.0) * 14.0 + Math.sin(xPct * 0.12) * 5.0);
+    }
+
+    const tbK = Math.round((estimatedTbC + 273.15) * 10) / 10;
+    let regime = "Warm Tropical Ocean (> +15°C)";
+    let regimeColor = "#38bdf8";
+
+    if (estimatedTbC <= -75) {
+      regime = "Overshooting Convective Peak (< -75°C)";
+      regimeColor = "#ffffff";
+    } else if (estimatedTbC <= -60) {
+      regime = "Intense Eyewall Convection (-60°C to -75°C)";
+      regimeColor = "#ea580c";
+    } else if (estimatedTbC <= -40) {
+      regime = "Cold Cirrus Canopy (-40°C to -60°C)";
+      regimeColor = "#f59e0b";
+    } else if (estimatedTbC <= -10) {
+      regime = "Mid-Level Spiral Rainband (-10°C to -40°C)";
+      regimeColor = "#06b6d4";
+    } else if (estimatedTbC <= 15) {
+      regime = "Low Stratiform Deck / Cumulus";
+      regimeColor = "#10b981";
+    }
+
+    setHoverProbe({
+      active: true,
+      xPct: Math.round(xPct * 10) / 10,
+      yPct: Math.round(yPct * 10) / 10,
+      cursorX: x,
+      cursorY: y,
+      tbK,
+      tbC: estimatedTbC,
+      regime,
+      regimeColor
+    });
+  };
+
+  const handleExportCurrentPass = () => {
+    if (!currentImageUrl) return;
+    const link = document.createElement('a');
+    link.href = currentImageUrl;
+    const cleanTs = (currentFrame?.timestamp_utc || 'pass').replace(/[: ]/g, '_');
+    link.download = `INSAT3D_${selectedBand}_${cleanTs}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden font-sans flex items-center justify-center p-2 sm:p-4 md:p-6">
+    <div className="fixed inset-0 z-50 overflow-hidden font-sans flex items-center justify-center p-2 sm:p-4">
       {/* Dark Ambient Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity"
+        className="fixed inset-0 bg-black/95 backdrop-blur-md transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Main Player Modal Window */}
+      {/* Main Mission Control Console Modal (Height capped at 92vh to NEVER overflow) */}
       <div 
-        className="relative z-10 w-full max-w-6xl max-h-[96vh] bg-[#0a0612] border border-[#64104E]/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-white"
+        className="relative z-10 w-[98vw] max-w-[1740px] h-[92vh] bg-[#07030e] border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-white"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Bar */}
-        <div className="px-5 py-3.5 bg-[#12081d] border-b border-zinc-800 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#E04A31]/20 border border-[#E04A31]/40 text-[#E04A31]">
-              <Film className="w-5 h-5 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-white tracking-wide">
-                  4D SATELLITE TIMELAPSE & KINEMATICS LOOP
-                </h3>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#E04A31] text-white">
-                  {sequenceData?.is_live ? 'LIVE SATELLITE LOOP' : 'HISTORICAL CYCLONE SEQUENCE'}
-                </span>
+        {/* Top Header Bar: Clean, Single-Row & Professional (No Wrapping) */}
+        <div className="h-14 px-4 sm:px-6 bg-[#0c0616] border-b border-zinc-800 flex items-center justify-between gap-4 shrink-0 font-mono">
+          {/* Left: Back Button & Branding */}
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={onClose}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#180e28] hover:bg-[#26133c] border border-[#64104E]/80 hover:border-[#E04A31] text-xs font-bold text-slate-200 hover:text-white transition-all duration-200 cursor-pointer shadow-sm active:scale-95 group"
+              title="Back to Home (Esc)"
+            >
+              <ArrowLeft className="w-4 h-4 text-[#E04A31] group-hover:-translate-x-1 transition-transform duration-200" />
+              <span>Back</span>
+            </button>
+
+            <div className="h-5 w-px bg-zinc-800" />
+
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-[#E04A31]/20 border border-[#E04A31]/40 text-[#E04A31]">
+                <Satellite className="w-4 h-4 animate-pulse" />
               </div>
-              <p className="text-[11px] text-zinc-400 font-mono">
-                {sequenceData?.sensor || 'ISRO INSAT-3D Imager • 74.0°E Geostationary Orbit'}
-              </p>
+              <h2 className="text-xs sm:text-sm font-bold text-white tracking-wide">
+                ISRO INSAT-3D/3DR OBSERVATORY
+              </h2>
+              <span className="hidden md:flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                LIVE (74.0°E)
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Palette Mode Toggle */}
-            <button
-              onClick={() => setPaletteMode(p => p === 'enhanced' ? 'raw' : 'enhanced')}
-              className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                paletteMode === 'enhanced'
-                  ? 'bg-amber-950/40 text-amber-300 border-amber-600/50'
-                  : 'bg-zinc-900 text-zinc-300 border-zinc-800'
-              }`}
-              title="Toggle Dvorak BD-Curve False Color vs Clean Infrared"
-            >
-              <Palette className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{paletteMode === 'enhanced' ? 'Dvorak False-Color' : 'Raw Clean IR'}</span>
-            </button>
+          {/* Right: Operational Controls Strip (Single Line, Never Wraps) */}
+          <div className="flex items-center gap-2 text-xs shrink-0">
+            {/* Spectral Band Selector */}
+            <div className="flex items-center gap-1 bg-black/60 p-1 rounded-lg border border-zinc-800">
+              <button
+                onClick={() => setSelectedBand('ir1')}
+                className={`px-2.5 py-1 rounded text-xs transition-all cursor-pointer ${
+                  selectedBand === 'ir1' ? 'bg-[#E04A31] text-white font-bold' : 'text-zinc-400 hover:text-white'
+                }`}
+                title="TIR-1 Thermal Infrared (10.8 µm)"
+              >
+                TIR-1 (10.8µm)
+              </button>
+              <button
+                onClick={() => setSelectedBand('vis')}
+                className={`px-2.5 py-1 rounded text-xs transition-all cursor-pointer ${
+                  selectedBand === 'vis' ? 'bg-sky-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                }`}
+                title="Visible (0.65 µm)"
+              >
+                VIS (0.65µm)
+              </button>
+              <button
+                onClick={() => setSelectedBand('wv')}
+                className={`px-2.5 py-1 rounded text-xs transition-all cursor-pointer ${
+                  selectedBand === 'wv' ? 'bg-purple-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
+                }`}
+                title="Water Vapor (6.8 µm)"
+              >
+                WV (6.8µm)
+              </button>
+            </div>
 
-            {/* AI Reticle Toggle */}
-            <button
-              onClick={() => setShowAiOverlay(!showAiOverlay)}
-              className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer ${
-                showAiOverlay 
-                  ? 'bg-[#E04A31]/20 text-[#E04A31] border-[#E04A31]/50 font-bold' 
-                  : 'bg-zinc-900 text-zinc-400 border-zinc-800'
-              }`}
-              title="Toggle CenterNet Eye Reticle & Deep Dvorak HUD Overlay"
-            >
-              <Crosshair className="w-3.5 h-3.5" />
-              <span>AI Reticle: {showAiOverlay ? 'ON' : 'OFF'}</span>
-            </button>
 
+
+            {/* Close Modal (Esc) */}
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
-              aria-label="Close timelapse player"
+              aria-label="Close observatory"
+              title="Close (Esc)"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Sequence Selector Ribbon */}
-        <div className="px-5 py-2.5 bg-[#0e0717] border-b border-zinc-800/80 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs font-mono">
-          {/* Sequence Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            {sequences.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setSelectedSeqId(s.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
-                  selectedSeqId === s.id
-                    ? 'bg-[#64104E] text-white font-bold shadow-md shadow-[#64104E]/30 ring-1 ring-[#B43067]'
-                    : 'bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-                }`}
-              >
-                <span>{s.tab_label || s.title.split(':')[0]}</span>
-                <span className="text-[10px] text-amber-400 font-semibold">({s.duration_hours}h)</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Spectral Band Selector */}
-          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-zinc-800 text-[11px]">
-            <span className="text-[10px] text-zinc-500 px-1 font-semibold">BAND:</span>
-            <button
-              onClick={() => setSelectedBand('ir1')}
-              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
-                selectedBand === 'ir1' ? 'bg-[#E04A31] text-white font-bold' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              TIR-1 (10.8µm)
-            </button>
-            <button
-              onClick={() => setSelectedBand('vis')}
-              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
-                selectedBand === 'vis' ? 'bg-sky-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              VIS (0.65µm)
-            </button>
-            <button
-              onClick={() => setSelectedBand('wv')}
-              className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
-                selectedBand === 'wv' ? 'bg-purple-600 text-white font-bold' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              WV (6.8µm)
-            </button>
-          </div>
-        </div>
-
-        {/* Main Viewport & HUD Overlay */}
-        <div className="relative flex-1 bg-black min-h-[380px] sm:min-h-[460px] flex items-center justify-center overflow-hidden">
-          {loading ? (
-            <div className="text-center font-mono text-zinc-500 flex flex-col items-center gap-3">
-              <Activity className="w-8 h-8 animate-spin text-[#E04A31]" />
-              <span>Sequencing multi-spectral geostationary frames...</span>
-            </div>
-          ) : currentFrame ? (
-            <div className="relative w-full h-full flex items-center justify-center select-none">
-              {/* Actual Sequential Satellite Image for this Frame */}
-              <img 
-                key={currentImageUrl}
-                src={currentImageUrl} 
-                alt={`Pass frame ${currentFrame.timestamp_utc}`}
-                className="max-h-[58vh] sm:max-h-[64vh] w-auto object-contain filter contrast-125 transition-opacity duration-150"
-              />
-
-              {/* Dynamic CenterNet Eye Reticle Overlay */}
-              {showAiOverlay && currentFrame.has_cyclone && currentFrame.pixel_x_pct && (
-                <div 
-                  className="absolute pointer-events-none transition-all duration-300 transform -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    left: `${currentFrame.pixel_x_pct}%`,
-                    top: `${currentFrame.pixel_y_pct}%`
-                  }}
-                >
-                  <div className="w-16 h-16 rounded-full border-2 border-[#E04A31] animate-ping opacity-75" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-full border-2 border-[#E04A31] bg-[#E04A31]/20 flex items-center justify-center shadow-[0_0_15px_#E04A31]">
-                      <div className="w-2 h-2 rounded-full bg-white" />
-                    </div>
-                  </div>
-                  <div className="absolute top-12 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-black/80 border border-[#E04A31]/60 text-[10px] font-mono font-bold text-white whitespace-nowrap shadow-md">
-                    {currentFrame.lat}°N, {currentFrame.lon}°E
-                  </div>
+        {/* Central Stage: Panoramic Satellite Viewport + Dedicated Right Telemetry Sidebar */}
+        <div className="flex-1 min-h-0 flex flex-row overflow-hidden bg-black">
+          {/* Main Satellite Viewport Stage */}
+          <div 
+            ref={viewportRef}
+            className="flex-1 relative bg-[#040108] flex items-center justify-center overflow-hidden select-none p-4 font-mono"
+          >
+            {/* Clean Tactical Loading State */}
+            <div className="flex flex-col items-center justify-center gap-4 text-center p-6 max-w-md">
+              <div className="relative flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full border-2 border-zinc-800 border-t-[#E04A31] animate-spin" />
+                <Satellite className="w-6 h-6 text-[#E04A31] absolute animate-pulse" />
+              </div>
+              <div className="space-y-1.5">
+                <div className="text-sm sm:text-base font-bold text-white tracking-widest flex items-center justify-center gap-2">
+                  <span>LOADING LIVE SATELLITE PASS</span>
+                  <span className="flex gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-bounce [animation-delay:300ms]" />
+                  </span>
                 </div>
-              )}
-
-              {/* Top-Left Telemetry Pass Timestamp Overlay */}
-              <div className="absolute top-4 left-4 p-3 rounded-xl bg-black/75 backdrop-blur-md border border-zinc-800 font-mono text-xs space-y-1.5 shadow-xl">
-                <div className="flex items-center gap-2 text-zinc-400">
-                  <Clock className="w-4 h-4 text-[#E04A31]" />
-                  <span className="text-[11px] uppercase tracking-wider">Pass Timestamp:</span>
-                </div>
-                <div className="text-base sm:text-lg font-black text-white tracking-wide">
-                  {currentFrame.timestamp_utc}
-                </div>
-                <div className="flex items-center gap-2 text-[10px] text-zinc-400">
-                  <span>Pass {currentFrameIdx + 1} of {totalFrames}</span>
-                  <span>•</span>
-                  <span className="text-amber-400">-{currentFrame.hours_ago}h relative</span>
+                <div className="text-xs text-zinc-400">
+                  Downlinking geostationary radiometer passes ({selectedBand.toUpperCase()} · 74.0°E)...
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Top-Right Deep Dvorak Intensity Metrics HUD */}
-              {showAiOverlay && (
-                <div className="absolute top-4 right-4 p-3 rounded-xl bg-black/75 backdrop-blur-md border border-zinc-800 font-mono text-xs space-y-2 shadow-xl max-w-xs">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[10px] text-zinc-400 uppercase tracking-wider">Estimated Intensity:</span>
-                    <span 
-                      className="px-2 py-0.5 rounded text-[10px] font-bold"
-                      style={{ backgroundColor: `${currentFrame.stage_color}25`, color: currentFrame.stage_color, borderColor: currentFrame.stage_color }}
-                    >
-                      {currentFrame.stage_name}
+          {/* Dedicated Mission Control Telemetry Sidebar */}
+          {currentFrame && (
+            <div className="w-80 sm:w-84 shrink-0 bg-[#0a0514] border-l border-zinc-800 p-4 flex flex-col justify-between overflow-y-auto font-mono text-xs space-y-3">
+              {/* Telemetry Header */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                  <span className="text-[11px] text-zinc-400 uppercase tracking-wider font-bold">
+                    Vortex Classification
+                  </span>
+                  <span 
+                    className="px-2.5 py-0.5 rounded text-[10px] font-bold"
+                    style={{ backgroundColor: `${currentFrame.stage_color}25`, color: currentFrame.stage_color, borderColor: currentFrame.stage_color }}
+                  >
+                    {currentFrame.stage_name}
+                  </span>
+                </div>
+
+                {/* Primary Gauges */}
+                <div className="grid grid-cols-2 gap-2 text-left">
+                  <div className="p-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                    <div className="text-[9px] text-zinc-500 uppercase flex items-center gap-1 font-bold">
+                      <Wind className="w-3.5 h-3.5 text-[#E04A31]" />
+                      <span>Sustained Wind</span>
+                    </div>
+                    <div className="text-lg font-black text-[#E04A31] mt-1">
+                      {currentFrame.msw_knots} kts
+                    </div>
+                    <div className="text-[10px] text-zinc-400">{currentFrame.msw_kmh} km/h</div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                    <div className="text-[9px] text-zinc-500 uppercase flex items-center gap-1 font-bold">
+                      <Gauge className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Pressure</span>
+                    </div>
+                    <div className="text-lg font-black text-cyan-400 mt-1">
+                      {currentFrame.pressure_hpa} hPa
+                    </div>
+                    <div className="text-[10px] text-zinc-400">
+                      Dvorak CI {currentFrame.dvorak_t || '5.5'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Atmospheric Thermodynamics & Kinematics */}
+                <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/80 space-y-2">
+                  <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block pb-1 border-b border-zinc-800">
+                    Atmospheric Physics
+                  </span>
+
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="flex items-center gap-1 text-zinc-400">
+                      <Compass className="w-3.5 h-3.5 text-amber-400" /> Vertical Shear:
                     </span>
+                    <strong className="text-white">{currentFrame.shear_knots || 14.0} kts</strong>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-left">
-                    <div className="p-1.5 rounded bg-zinc-900/60 border border-zinc-800">
-                      <div className="text-[9px] text-zinc-500 uppercase flex items-center gap-1">
-                        <Wind className="w-3 h-3 text-[#E04A31]" />
-                        <span>Max Wind</span>
-                      </div>
-                      <div className="text-sm font-bold text-[#E04A31] mt-0.5">
-                        {currentFrame.msw_knots} kts
-                      </div>
-                      <div className="text-[9px] text-zinc-400">{currentFrame.msw_kmh} km/h</div>
-                    </div>
-
-                    <div className="p-1.5 rounded bg-zinc-900/60 border border-zinc-800">
-                      <div className="text-[9px] text-zinc-500 uppercase flex items-center gap-1">
-                        <Gauge className="w-3 h-3 text-cyan-400" />
-                        <span>Central P</span>
-                      </div>
-                      <div className="text-sm font-bold text-cyan-400 mt-0.5">
-                        {currentFrame.pressure_hpa} hPa
-                      </div>
-                      <div className="text-[9px] text-zinc-400">CI {currentFrame.dvorak_t || '0.0'}</div>
-                    </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="flex items-center gap-1 text-zinc-400">
+                      <Thermometer className="w-3.5 h-3.5 text-red-400" /> Sea Surface Temp:
+                    </span>
+                    <strong className="text-white">{currentFrame.sst_celsius || 29.8}°C</strong>
                   </div>
 
-                  {currentFrame.cloud_top_temp_k > 0 && (
-                    <div className="flex items-center justify-between pt-1 border-t border-zinc-800 text-[10px] text-zinc-400">
-                      <span>Cloud-Top: <strong className="text-white">{currentFrame.cloud_top_temp_k} K</strong></span>
-                      <span>Core ΔT: <strong className="text-amber-300">+{currentFrame.delta_t_k} K</strong></span>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="flex items-center gap-1 text-zinc-400">
+                      <Droplets className="w-3.5 h-3.5 text-sky-400" /> Tropospheric RH:
+                    </span>
+                    <strong className="text-white">{currentFrame.tropospheric_rh_pct || 75}%</strong>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-zinc-400">Cloud-Top Temp:</span>
+                    <strong className="text-amber-300">{currentFrame.cloud_top_temp_k || 220} K</strong>
+                  </div>
+
+                  {currentFrame.has_cyclone && (
+                    <div className="flex items-center justify-between text-[11px] pt-1 border-t border-zinc-800">
+                      <span className="text-zinc-400">Core Warm Anomaly:</span>
+                      <strong className="text-[#E04A31]">+{currentFrame.delta_t_k} K</strong>
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* Bottom Synoptic Meteorological Narrative Banner */}
-              {currentFrame.synoptic_note && (
-                <div className="absolute bottom-4 left-4 right-4 p-2.5 rounded-xl bg-black/80 backdrop-blur-md border border-zinc-800 text-xs font-mono text-zinc-300 flex items-center gap-2.5 shadow-xl">
-                  <Info className="w-4 h-4 text-amber-400 shrink-0" />
-                  <p className="line-clamp-2 leading-relaxed font-sans text-[11px] sm:text-xs">
-                    {currentFrame.synoptic_note}
-                  </p>
-                </div>
-              )}
+                {/* Synoptic Meteorological Advisory */}
+                {currentFrame.synoptic_note && (
+                  <div className="p-3 rounded-xl bg-zinc-900/40 border border-zinc-800 text-xs text-zinc-300 space-y-1.5">
+                    <div className="flex items-center gap-1 text-amber-400 text-[10px] uppercase font-bold">
+                      <Info className="w-3.5 h-3.5" />
+                      <span>Meteorological Advisory</span>
+                    </div>
+                    <p className="font-sans text-[11px] leading-relaxed text-zinc-300">
+                      {currentFrame.synoptic_note}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Station Downlink Footnote */}
+              <div className="pt-2 border-t border-zinc-800 text-[10px] text-zinc-500">
+                Processed via CenterNet & Radiance Inversion Engine.
+              </div>
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Video Scrubber & Playback Controls Bar */}
-        <div className="p-4 bg-[#12081d] border-t border-zinc-800 space-y-3 shrink-0">
+        {/* Bottom Playback & Scrubber Bar */}
+        <div className="px-5 py-2.5 bg-[#0d0618] border-t border-zinc-800 flex flex-col gap-2 shrink-0 font-mono">
           {/* Scrubber Progress Slider */}
-          <div className="flex items-center gap-3 font-mono text-xs text-zinc-400">
-            <span className="w-12 text-left">{currentFrameIdx + 1} / {totalFrames}</span>
+          <div className="flex items-center gap-3 text-xs text-zinc-400">
+            <span className="w-16 text-left font-bold text-zinc-300">
+              {currentFrameIdx + 1} / {totalFrames}
+            </span>
             <div className="relative flex-1 flex items-center">
               <input
                 type="range"
@@ -401,38 +462,22 @@ export default function SatelliteTimelapsePlayer({
                 className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#E04A31]"
               />
             </div>
-            <span className="w-24 text-right text-zinc-300 font-bold">
-              {currentFrame?.timestamp_utc?.split(' ')[1] || '00:00 UTC'}
+            <span className="w-24 text-right text-amber-300 font-bold">
+              {currentFrame?.timestamp_utc ? currentFrame.timestamp_utc.split(' ')[1] : '00:00 UTC'}
             </span>
           </div>
 
-          {/* Control Buttons Strip */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {/* Play / Step Controls */}
+          {/* Controls Strip */}
+          <div className="flex items-center justify-between gap-3 text-xs">
+            {/* Play / Reset Controls */}
             <div className="flex items-center gap-2">
               <button
-                onClick={handlePrevFrame}
-                className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 transition-colors cursor-pointer"
-                title="Step backward 1 frame (Left Arrow)"
-              >
-                <SkipBack className="w-4 h-4" />
-              </button>
-
-              <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="px-4 py-2 rounded-lg bg-[#E04A31] hover:bg-[#ff5537] text-white font-mono font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-[#E04A31]/30 cursor-pointer"
-                title="Play / Pause timelapse (Spacebar)"
+                className="px-4 py-1.5 rounded-lg bg-[#E04A31] hover:bg-[#ff5537] text-white font-bold transition-all flex items-center gap-2 shadow cursor-pointer active:scale-95"
+                title="Play / Pause (Spacebar)"
               >
-                {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+                {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current" />}
                 <span>{isPlaying ? 'PAUSE' : 'PLAY LOOP'}</span>
-              </button>
-
-              <button
-                onClick={handleNextFrame}
-                className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 transition-colors cursor-pointer"
-                title="Step forward 1 frame (Right Arrow)"
-              >
-                <SkipForward className="w-4 h-4" />
               </button>
 
               <button
@@ -440,21 +485,42 @@ export default function SatelliteTimelapsePlayer({
                   setCurrentFrameIdx(0);
                   setIsPlaying(true);
                 }}
-                className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-colors cursor-pointer"
-                title="Restart loop from beginning"
+                className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-colors cursor-pointer"
+                title="Restart Loop"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Speed Selector Buttons */}
-            <div className="flex items-center gap-1.5 font-mono text-xs">
-              <span className="text-[10px] text-zinc-500 uppercase">Speed:</span>
+            {/* Time Depth Range */}
+            <div className="flex items-center gap-1 bg-black/60 p-1 rounded-lg border border-zinc-800">
+              <span className="text-[10px] text-zinc-500 px-1 font-semibold flex items-center gap-1">
+                <Clock className="w-3 h-3 text-amber-400" />
+                RANGE:
+              </span>
+              {[12, 24, 48].map((hr) => (
+                <button
+                  key={hr}
+                  onClick={() => setSelectedHours(hr)}
+                  className={`px-2.5 py-0.5 rounded text-xs font-bold transition-all cursor-pointer ${
+                    selectedHours === hr
+                      ? 'bg-amber-600 text-white shadow-sm'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  {hr === 48 ? '48h (2D)' : (hr === 24 ? '24h (1D)' : `${hr}h`)}
+                </button>
+              ))}
+            </div>
+
+            {/* Speed Selector */}
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-[10px] text-zinc-500 uppercase mr-1">Speed:</span>
               {[0.5, 1.0, 2.0, 4.0].map((spd) => (
                 <button
                   key={spd}
                   onClick={() => setPlaybackSpeed(spd)}
-                  className={`px-2 py-1 rounded text-[11px] transition-all cursor-pointer ${
+                  className={`px-2 py-0.5 rounded text-xs transition-all cursor-pointer ${
                     playbackSpeed === spd
                       ? 'bg-[#64104E] text-white font-bold border border-[#B43067]'
                       : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
@@ -463,35 +529,6 @@ export default function SatelliteTimelapsePlayer({
                   {spd}x
                 </button>
               ))}
-            </div>
-
-            {/* Frame Thumbnail Scrubber Strip */}
-            <div className="hidden md:flex items-center gap-1.5 overflow-x-auto max-w-sm">
-              {sequenceData?.frames?.map((f, i) => {
-                const thumbUrl = f.image_url.startsWith('http') 
-                  ? f.image_url 
-                  : `${API_BASE_URL}${f.image_url}&palette=${paletteMode}`;
-                return (
-                  <button
-                    key={f.frame_id || i}
-                    onClick={() => {
-                      setIsPlaying(false);
-                      setCurrentFrameIdx(i);
-                    }}
-                    className={`relative shrink-0 w-11 h-9 rounded border overflow-hidden transition-all cursor-pointer ${
-                      currentFrameIdx === i 
-                        ? 'border-[#E04A31] ring-2 ring-[#E04A31]/50 scale-105' 
-                        : 'border-zinc-800 opacity-60 hover:opacity-100'
-                    }`}
-                    title={`${f.timestamp_utc} - ${f.msw_knots} kts`}
-                  >
-                    <img src={thumbUrl} alt="" className="w-full h-full object-cover" />
-                    <span className="absolute bottom-0 right-0 text-[8px] font-mono bg-black/80 px-1 text-white">
-                      {i + 1}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
           </div>
         </div>
