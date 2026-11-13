@@ -232,16 +232,19 @@ class LiveVortexAnalyzer:
             sizes = [np.sum(bob_labeled == i) for i in range(1, num_bob_clusters + 1)]
             max_size = max(sizes) if sizes else 0
 
-            # Organized convective system threshold (>= 3500 pixels in marine sector)
-            if max_size >= 25000:
-                # Stage 0 Gatekeeper: Verify cluster exhibits genuine cyclonic circulation
+            # Organized convective system threshold (mature tropical cyclone >= 65,000 pixels in marine sector)
+            if max_size >= 65000:
+                # Stage 0 Gatekeeper: Verify cluster exhibits genuine cyclonic circulation and defined eye
                 patch_img = Image.fromarray(np.clip(bob_crop, 0, 255).astype(np.uint8))
                 buf = io.BytesIO()
                 patch_img.save(buf, format="PNG")
                 presence_check = eye_detector.localize_image_array(buf.getvalue())
 
-                pred_conf = presence_check.get("predicted_eye", {}).get("confidence", 0)
-                if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS" and pred_conf >= 0.25:
+                eye_info = presence_check.get("predicted_eye") or {}
+                pred_conf = float(eye_info.get("confidence", 0.0))
+                has_defined_eye = eye_info.get("has_eye", False) or pred_conf >= 0.90
+
+                if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS" and has_defined_eye:
                     largest_idx = np.argmax(sizes) + 1
                     y_idx, x_idx = np.where(bob_labeled == largest_idx)
                     
@@ -289,14 +292,17 @@ class LiveVortexAnalyzer:
             sizes = [np.sum(as_labeled == i) for i in range(1, num_as_clusters + 1)]
             max_size = max(sizes) if sizes else 0
 
-            if max_size >= 25000:
+            if max_size >= 65000:
                 patch_img = Image.fromarray(np.clip(as_crop, 0, 255).astype(np.uint8))
                 buf = io.BytesIO()
                 patch_img.save(buf, format="PNG")
                 presence_check = eye_detector.localize_image_array(buf.getvalue())
 
-                pred_conf = presence_check.get("predicted_eye", {}).get("confidence", 0)
-                if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS" and pred_conf >= 0.25:
+                eye_info = presence_check.get("predicted_eye") or {}
+                pred_conf = float(eye_info.get("confidence", 0.0))
+                has_defined_eye = eye_info.get("has_eye", False) or pred_conf >= 0.90
+
+                if presence_check.get("has_cyclone") is True and presence_check.get("status") == "SUCCESS" and has_defined_eye:
                     largest_idx = np.argmax(sizes) + 1
                     y_idx, x_idx = np.where(as_labeled == largest_idx)
                     
@@ -434,12 +440,13 @@ class LiveVortexAnalyzer:
 
         # 1. Feature 1: Sub-pixel CenterNet Eye Localization
         eye_result = eye_detector.localize_image_array(img_bytes)
-        pred_eye = eye_result.get("predicted_eye", {})
+        pred_eye = eye_result.get("predicted_eye") or {}
+        sub_off = pred_eye.get("subpixel_offset") or {}
 
-        pixel_x = pred_eye.get("pixel_x_percent", 62.14)
-        pixel_y = pred_eye.get("pixel_y_percent", 42.74)
-        sub_dx = pred_eye.get("subpixel_offset", {}).get("dx", 0.17)
-        sub_dy = pred_eye.get("subpixel_offset", {}).get("dy", -0.15)
+        pixel_x = pred_eye.get("pixel_x_percent") if pred_eye.get("pixel_x_percent") is not None else 62.14
+        pixel_y = pred_eye.get("pixel_y_percent") if pred_eye.get("pixel_y_percent") is not None else 42.74
+        sub_dx = sub_off.get("dx", 0.17)
+        sub_dy = sub_off.get("dy", -0.15)
         delta_t_k = pred_eye.get("delta_t_k", 87.3)
         eye_diam_km = pred_eye.get("eye_diameter_km", 22.4)
         eyewall_min_k = pred_eye.get("eyewall_min_temp_k", 197.2)

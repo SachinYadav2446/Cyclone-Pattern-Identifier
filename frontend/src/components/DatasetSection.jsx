@@ -199,7 +199,7 @@ export default function DatasetSection() {
           <div 
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
-            className="lg:col-span-7 bg-[#020104] border border-[#64104E]/60 rounded-2xl relative overflow-hidden group/box min-h-[460px] flex flex-col justify-end shadow-2xl cursor-pointer"
+            className="lg:col-span-7 bg-[#020104] border border-[#64104E]/60 rounded-2xl relative overflow-hidden group/box min-h-[280px] sm:min-h-[460px] flex flex-col justify-end shadow-2xl cursor-pointer"
           >
             {/* Pure Satellite Imagery */}
             <div className="absolute inset-0 bg-[#020408] overflow-hidden flex items-center justify-center">

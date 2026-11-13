@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ShieldAlert, FileText, Download, CheckCircle2, MapPin, Users, Waves, ChevronRight } from 'lucide-react';
+import { ShieldAlert, FileText, Download, CheckCircle2, MapPin, Users, Waves, ChevronRight, Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 
 const districts = [
   {
@@ -50,6 +51,7 @@ const districts = [
 
 export default function DisasterMatrixSection() {
   const [showBulletinModal, setShowBulletinModal] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [simulatedWind, setSimulatedWind] = useState(115); // Knots (Category 4 VSCS)
 
   // Compute dynamic surge height based on simplified Jelesnianski SLOSH empirical scaling
@@ -270,6 +272,44 @@ POSTGIS SPATIAL RISK: ST_Intersects(predicted_cone, district_boundary)
 EXECUTION LATENCY: 6.4 ms
 TOTAL CITIZENS AT RISK: ~3.56 MILLION
 ================================================================================`;
+                    if (isDownloadingPdf) return;
+                    setIsDownloadingPdf(true);
+                    try {
+                      const payload = {
+                        storm_name: 'CYCLONE FANI',
+                        bulletin_id: `IMD-RSMC-BULLETIN-${Date.now()}`,
+                        category: simulatedWind >= 120 ? 'Super Cyclonic Storm (SuCS)' : (simulatedWind >= 90 ? 'Extremely Severe (ESCS)' : 'Very Severe (VSCS)'),
+                        msw_knots: simulatedWind,
+                        msw_kmh: Math.round(simulatedWind * 1.852),
+                        central_pressure_hpa: Math.round(1010 - Math.pow(simulatedWind / 6.7, 1 / 0.644)),
+                        eye_lat: 19.8,
+                        eye_lon: 85.8,
+                        recommended_action: 'RED ALERT: Evacuate coastal zones (0-5 km). Halt all deep-sea fishing and maritime operations immediately.'
+                      };
+                      const res = await fetch(`${API_BASE_URL}/api/v1/models/export-bulletin-pdf`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                      });
+                      if (res.ok) {
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `VortexAI_Official_Bulletin_${Date.now()}.pdf`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        setShowBulletinModal(false);
+                        return;
+                      }
+                    } catch (e) {
+                      console.warn('PDF export failed, using text fallback:', e);
+                    } finally {
+                      setIsDownloadingPdf(false);
+                    }
+
                     const blob = new Blob([bulletinText], { type: 'text/plain;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
@@ -281,10 +321,15 @@ TOTAL CITIZENS AT RISK: ~3.56 MILLION
                     URL.revokeObjectURL(url);
                     setShowBulletinModal(false);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-zinc-950 font-bold hover:bg-zinc-200 transition-colors"
+                  disabled={isDownloadingPdf}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-zinc-950 font-bold hover:bg-zinc-200 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download Advisory Bulletin</span>
+                  {isDownloadingPdf ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isDownloadingPdf ? 'Generating PDF...' : 'Download Official Bulletin (PDF)'}</span>
                 </button>
               </div>
             </div>

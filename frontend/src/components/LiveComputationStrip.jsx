@@ -12,19 +12,20 @@ export default function LiveComputationStrip({ onOpenConsole, onOpenDemo }) {
         const res = await fetch(`${API_BASE_URL}/api/v1/live/atmospheric-stations`);
         if (res.ok) {
           const data = await res.json();
-          if (data.status === 'success' && Array.isArray(data.stations) && mounted) {
-            setStationSoundings(data.stations);
+          const list = Array.isArray(data) ? data : (Array.isArray(data?.stations) ? data.stations : []);
+          if (list.length > 0 && mounted) {
+            setStationSoundings(list);
           }
         }
       } catch (err) {
         if (mounted) {
           setStationSoundings([
-            { id: 'delhi', name: 'New Delhi', temp_c: 19.2, humidity_pct: 88, wind_knots: 6.8 },
-            { id: 'jaipur', name: 'Jaipur', temp_c: 20.8, humidity_pct: 61, wind_knots: 7.2 },
-            { id: 'prayagraj', name: 'Prayagraj', temp_c: 20.1, humidity_pct: 72, wind_knots: 5.4 },
-            { id: 'mumbai', name: 'Mumbai', temp_c: 27.4, humidity_pct: 71, wind_knots: 9.1 },
-            { id: 'kolkata', name: 'Kolkata', temp_c: 23.2, humidity_pct: 85, wind_knots: 8.0 },
-            { id: 'bob', name: 'Bay of Bengal', temp_c: 28.6, humidity_pct: 92, wind_knots: 18.5 }
+            { id: 'delhi', name: 'New Delhi', temp_c: 21.6, humidity_pct: 68, wind_knots: 4.3, wind: '4.3 kts NE' },
+            { id: 'jaipur', name: 'Jaipur', temp_c: 23.0, humidity_pct: 58, wind_knots: 4.6, wind: '4.6 kts WSW' },
+            { id: 'prayagraj', name: 'Prayagraj', temp_c: 22.8, humidity_pct: 70, wind_knots: 2.9, wind: '2.9 kts SSW' },
+            { id: 'mumbai', name: 'Mumbai', temp_c: 28.9, humidity_pct: 65, wind_knots: 3.8, wind: '3.8 kts NW' },
+            { id: 'kolkata', name: 'Kolkata', temp_c: 25.3, humidity_pct: 78, wind_knots: 2.4, wind: '2.4 kts N' },
+            { id: 'bob', name: 'Central Bay of Bengal', temp_c: 28.4, humidity_pct: 82, wind_knots: 14.2, wind: '14.2 kts NE', is_marine: true }
           ]);
         }
       }
@@ -74,10 +75,10 @@ export default function LiveComputationStrip({ onOpenConsole, onOpenDemo }) {
       onClick: onOpenConsole,
     },
     ...stationSoundings.map((st) => ({
-      label: 'NWP SOUNDING',
+      label: st.is_marine ? 'MARINE SOUNDING' : 'NWP SOUNDING',
       title: st.name,
-      value: `${st.temp_c}°C · ${st.humidity_pct}% RH`,
-      detail: `Wind: ${st.wind_knots} kts (ICON/GFS)`,
+      value: `${st.temp_c || st.temp}°C · ${st.humidity_pct || st.humidity}% RH`,
+      detail: `Wind: ${st.wind || `${st.wind_knots || 5} kts`} · ${st.pressure_hpa ? `${st.pressure_hpa} hPa` : 'NWP'}`,
       onClick: onOpenConsole,
     })),
   ];
@@ -91,21 +92,21 @@ export default function LiveComputationStrip({ onOpenConsole, onOpenDemo }) {
       {/* Fixed Left Indicator - Minimal Typography Without Bulky Box */}
       <div 
         onClick={onOpenConsole}
-        className="shrink-0 h-full px-4 sm:px-6 bg-[#0c0616] border-r border-[#64104E]/40 flex items-center gap-2.5 font-mono text-[11px] cursor-pointer group z-20"
+        className="shrink-0 h-full px-2.5 sm:px-6 bg-[#0c0616] border-r border-[#64104E]/40 flex items-center gap-2 sm:gap-2.5 font-mono text-[11px] cursor-pointer group z-20"
         title="Open Real-Time GIS Telemetry & Soundings Console"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-pulse" />
-        <span className="font-black text-white tracking-wider group-hover:text-[#E04A31] transition-colors">
-          LIVE TELEMETRY
+        <span className="font-black text-white tracking-wider group-hover:text-[#E04A31] transition-colors text-[10px] sm:text-[11px]">
+          <span className="hidden xs:inline">LIVE </span>TELEMETRY
         </span>
-        <span className="text-slate-600 font-light">//</span>
+        <span className="text-slate-600 font-light hidden xs:inline">//</span>
         <span className="text-[#C3864D] text-[10px] hidden sm:inline font-semibold">
           74.0°E INSAT-3D
         </span>
       </div>
 
       {/* Side Fade Masks */}
-      <div className="pointer-events-none absolute left-[150px] sm:left-[260px] top-0 bottom-0 w-12 bg-gradient-to-r from-[#08040f] to-transparent z-10" />
+      <div className="pointer-events-none absolute left-[110px] sm:left-[260px] top-0 bottom-0 w-8 sm:w-12 bg-gradient-to-r from-[#08040f] to-transparent z-10" />
       <div className="pointer-events-none absolute right-[100px] sm:right-[130px] top-0 bottom-0 w-12 bg-gradient-to-l from-[#08040f] to-transparent z-10" />
 
       {/* Clean Single-Row Seamless Marquee Stream (No boxes, pure typographic flow) */}

@@ -12,9 +12,9 @@ export default function SatelliteObservatorySection({ onOpenObservatory }) {
         {/* Section Header - Compact, no subheading, no gradients */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-[#64104E]/30">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#140a20] text-cyan-300 border border-cyan-500/30 mb-1.5">
-              <Satellite className="w-3 h-3 text-cyan-400" />
-              <span>ISRO INSAT-3D / 3DR · 74.0°E GEOSTATIONARY DOWNLINK</span>
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#140a20] text-cyan-300 border border-cyan-500/30 mb-1.5 max-w-full">
+              <Satellite className="w-3 h-3 text-cyan-400 shrink-0" />
+              <span className="truncate">ISRO INSAT-3D / 3DR · 74.0°E GEOSTATIONARY DOWNLINK</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-white">
               Satellite Research &amp; Genesis Observatory
@@ -24,7 +24,7 @@ export default function SatelliteObservatorySection({ onOpenObservatory }) {
           {/* Observatory Launch Button with Premium Hover & Click Animation */}
           <button
             onClick={onOpenObservatory}
-            className="relative px-5 py-2.5 rounded-lg font-mono text-xs font-bold bg-[#E04A31] hover:bg-[#CF2F4B] text-white shadow-md hover:shadow-[0_0_25px_rgba(224,74,49,0.55)] transition-all duration-200 cursor-pointer hover:scale-[1.03] active:scale-[0.96] active:brightness-90 flex items-center gap-2.5 group"
+            className="w-full sm:w-auto justify-center relative px-4 sm:px-5 py-2.5 rounded-lg font-mono text-xs font-bold bg-[#E04A31] hover:bg-[#CF2F4B] text-white shadow-md hover:shadow-[0_0_25px_rgba(224,74,49,0.55)] transition-all duration-200 cursor-pointer hover:scale-[1.03] active:scale-[0.96] active:brightness-90 flex items-center gap-2.5 group"
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
@@ -123,8 +123,10 @@ export default function SatelliteObservatorySection({ onOpenObservatory }) {
               {/* Tactical Top Bar */}
               <div className="absolute top-0 inset-x-0 z-20 px-3 py-1.5 bg-black/80 backdrop-blur-sm border-b border-white/10 flex items-center justify-between text-[10.5px] font-mono text-slate-300">
                 <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span className="font-bold text-white">INSAT-3D/3DR VISIBLE SPECTRUM (VIS · 0.65µm)</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="font-bold text-white truncate max-w-[200px] sm:max-w-none">
+                    INSAT-3D/3DR VISIBLE<span className="hidden xs:inline"> SPECTRUM</span>
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-cyan-300 text-[9.5px]">
                   <span>EXPAND</span>

@@ -160,15 +160,14 @@ export default function PipelineSection() {
     <section 
       id="pipeline" 
       ref={containerRef}
-      className="relative border-b border-[#64104E]/40 bg-[#08050c] text-white"
-      style={{ height: '360vh' }}
+      className="relative border-b border-[#64104E]/40 bg-[#08050c] text-white py-8 lg:py-0 lg:h-[360vh]"
     >
       {/* Precision background dot pattern */}
       <div className="absolute inset-0 bg-grid-pattern opacity-45 pointer-events-none" />
       <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-[#64104E]/20 rounded-full blur-[170px] pointer-events-none" />
 
-      {/* Sticky Fullscreen Center Presentation Frame */}
-      <div className="sticky top-0 h-screen w-full flex flex-col justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-20 overflow-hidden">
+      {/* Presentation Frame: Sticky on desktop, Natural flow on mobile */}
+      <div className="relative lg:sticky lg:top-0 h-auto lg:h-screen w-full flex flex-col justify-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-20">
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
           <div>
@@ -186,7 +185,7 @@ export default function PipelineSection() {
         </div>
 
         {/* Engineering Workstation Card */}
-        <div className="relative border border-[#64104E]/60 bg-[#120a1c]/95 shadow-2xl p-5 sm:p-7 backdrop-blur-xl max-h-[82vh] flex flex-col justify-between overflow-hidden rounded-2xl text-white">
+        <div className="relative border border-[#64104E]/60 bg-[#120a1c]/95 shadow-2xl p-4 sm:p-7 backdrop-blur-xl h-auto lg:max-h-[82vh] flex flex-col justify-between rounded-2xl text-white">
           {/* Micro Corner Plus Marks */}
           <div className="absolute top-1.5 left-1.5 font-mono text-[9px] text-slate-600 select-none pointer-events-none">+</div>
           <div className="absolute top-1.5 right-1.5 font-mono text-[9px] text-slate-600 select-none pointer-events-none">+</div>
@@ -258,7 +257,7 @@ export default function PipelineSection() {
               {/* Right Column: Live Node Graph Canvas (High-Contrast Radar Terminal) */}
               <div className="lg:col-span-6">
                 <div 
-                  className="relative border border-[#64104E]/70 bg-[#07040d] overflow-hidden shadow-2xl p-4 sm:p-5 h-[340px] flex flex-col justify-between rounded-xl"
+                  className="relative border border-[#64104E]/70 bg-[#07040d] overflow-hidden shadow-2xl p-3 sm:p-5 h-[270px] sm:h-[340px] flex flex-col justify-between rounded-xl"
                   style={{ backgroundImage: 'radial-gradient(rgba(224, 74, 49, 0.16) 1px, transparent 1px)', backgroundSize: '16px 16px' }}
                 >
                   {/* Terminal Header */}
@@ -374,13 +373,14 @@ export default function PipelineSection() {
                     <button
                       key={step.id}
                       onClick={() => setActiveStepId(step.id)}
-                      className={`px-3 py-1.5 transition-all text-xs font-mono font-bold border rounded-lg cursor-pointer ${
+                      className={`px-2.5 sm:px-3 py-1.5 transition-all text-xs font-mono font-bold border rounded-lg cursor-pointer ${
                         isSelected
                           ? 'bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white border-transparent shadow-md shadow-[#E04A31]/20'
                           : 'bg-[#120a1c] border-[#64104E]/50 text-slate-300 hover:text-white hover:border-[#B43067]/60 hover:bg-[#1a0f28]'
                       }`}
                     >
-                      0{step.id} · {step.title.split(' ')[0]}
+                      <span>0{step.id}</span>
+                      <span className="hidden xs:inline"> · {step.title.split(' ')[0]}</span>
                     </button>
                   );
                 })}

@@ -1089,17 +1089,39 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                   </div>
                 )}
 
-                {/* 2. TEMPERATURE / SST OVERLAY */}
+                {/* 2. ADVANCED TEMPERATURE & SST THERMAL ISO-FIELD OVERLAY */}
                 {environmentalLayer === 'temperature' && (
                   <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
-                    {/* Thermal Gradient (Cool in North to Warm Coral Warm-Pool in Bay of Bengal) */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-rose-950/40 via-amber-950/30 to-purple-950/40 mix-blend-screen" />
+                    {/* Multi-Zone Thermodynamic Field: Cool Continental North to Warm Oceanic Pool */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-rose-900/40 via-amber-950/25 to-indigo-950/45 mix-blend-screen" />
+                    
+                    {/* Tropical Warm-Pool Core over Bay of Bengal (>28.5°C Cyclogenesis Engine) */}
+                    <div className="absolute w-72 h-72 rounded-full bg-rose-600/15 blur-3xl pointer-events-none" style={{ left: '60%', top: '48%' }} />
+                    <div className="absolute w-64 h-64 rounded-full bg-amber-600/15 blur-3xl pointer-events-none" style={{ left: '26%', top: '52%' }} />
+
+                    {/* SVG Isotherms with 26.5°C Cyclogenesis Threshold Boundary */}
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full opacity-45 pointer-events-none">
+                      {/* 28.0°C Warm-Pool Isotherm */}
+                      <path d="M 15 72 C 35 68 55 60 75 62 C 85 64 92 68 98 70" fill="none" stroke="#f43f5e" strokeWidth="0.5" strokeDasharray="2 2" />
+                      {/* 26.5°C Tropical Cyclogenesis Critical Threshold Isotherm */}
+                      <path d="M 10 58 C 30 52 50 48 70 50 C 82 52 90 56 98 58" fill="none" stroke="#fbbf24" strokeWidth="0.65" strokeDasharray="3 2" />
+                      {/* 24.0°C Subtropical Boundary */}
+                      <path d="M 5 44 C 25 38 48 35 72 38 C 85 40 92 42 98 44" fill="none" stroke="#34d399" strokeWidth="0.4" strokeDasharray="2 2" />
+                      {/* 20.0°C Continental Line */}
+                      <path d="M 5 30 C 25 24 50 22 75 25 C 85 26 92 28 98 30" fill="none" stroke="#38bdf8" strokeWidth="0.4" strokeDasharray="2 2" />
+                    </svg>
+
+                    {/* 26.5°C Threshold Label Pin */}
+                    <div className="absolute z-20 bg-black/80 border border-amber-500/80 text-amber-300 px-2 py-0.5 rounded font-mono text-[8px] font-bold shadow pointer-events-none" style={{ left: '68%', top: '50%' }}>
+                      <span>26.5°C CYCLOGENESIS THRESHOLD</span>
+                    </div>
 
                     {/* Thermal Station Temperature Badges */}
                     {liveStations.map((st) => {
                       const px = st.pixelX !== undefined ? st.pixelX : ((st.lon - 45.0) / 60.0) * 100;
                       const py = st.pixelY !== undefined ? st.pixelY : (4.8 + ((40.0 - st.lat) / 40.0) * 87.8);
                       if (px < 4 || px > 96 || py < 4 || py > 96) return null;
+                      const isHot = (st.sst || st.temp) >= 28.0;
                       return (
                         <div 
                           key={st.id} 
@@ -1107,70 +1129,101 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                           className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer group flex flex-col items-center select-none transition-transform hover:scale-110"
                           style={{ left: `${px}%`, top: `${py}%` }}
                         >
-                          <span className="text-[8.5px] font-sans font-medium text-slate-200 bg-black/80 backdrop-blur-sm px-1.5 py-0.2 rounded border border-amber-800/60 shadow group-hover:border-amber-400 group-hover:text-white transition-all whitespace-nowrap">
+                          <span className="text-[8.5px] font-sans font-medium text-slate-200 bg-black/85 backdrop-blur-sm px-1.5 py-0.2 rounded border border-[#64104E]/60 shadow group-hover:border-amber-400 group-hover:text-white transition-all whitespace-nowrap">
                             {st.name}
                           </span>
-                          <span className="mt-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-950/95 border border-amber-400 text-amber-200 shadow-[0_0_8px_rgba(245,158,11,0.4)]">
-                            {st.sst ? `SST ${st.sst}°C` : `${st.temp}°C`}
+                          <span className={`mt-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold border shadow ${
+                            st.is_marine 
+                              ? 'bg-rose-950/95 border-rose-400 text-rose-200 shadow-[0_0_8px_rgba(244,63,94,0.4)]' 
+                              : (isHot ? 'bg-amber-950/95 border-amber-400 text-amber-200 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'bg-sky-950/95 border-sky-400 text-sky-200')
+                          }`}>
+                            {st.sst ? `🌊 SST ${st.sst}°C` : `${st.temp}°C`}
                           </span>
                         </div>
                       );
                     })}
 
-                    {/* Temperature Scale Legend */}
+                    {/* Advanced Temperature & SST Scale Legend */}
                     <div className="absolute bottom-3 left-4 z-20 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-amber-800/70 text-[10px] font-mono shadow-xl flex items-center gap-3">
                       <span className="font-bold text-amber-300 flex items-center gap-1">
-                        <Thermometer className="w-3 h-3" /> °C
+                        <Thermometer className="w-3 h-3" /> SST / °C
                       </span>
                       <div className="w-32 h-2 rounded-full bg-gradient-to-r from-blue-700 via-emerald-500 via-amber-400 to-rose-600 shadow-inner" />
                       <div className="flex gap-2 text-[9px] text-slate-400">
-                        <span>15</span><span>20</span><span>25</span><span>30</span><span>35</span>
+                        <span>15</span><span>20</span><span>24</span><span className="text-amber-400 font-bold">26.5</span><span>30+</span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* 3. DYNAMIC WIND FIELD STREAMLINES OVERLAY (ACTIVE ON WIND OR WHEN FLOW IS TOGGLED ON) */}
+                {/* 3. DYNAMIC ADVANCED SYNOPTIC WIND STREAMLINES & ROTATING VECTOR FIELD */}
                 {(environmentalLayer === 'wind' || showWindStreamlines) && (
                   <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full opacity-65 pointer-events-none">
-                      {/* Curving Synoptic Wind Streamlines across NIO & South Asia */}
-                      <path d="M 5 28 Q 30 22 55 35 T 95 30" fill="none" stroke="#38bdf8" strokeWidth="0.5" className="animate-wind-flow" />
-                      <path d="M 10 45 Q 35 38 60 52 T 98 48" fill="none" stroke="#38bdf8" strokeWidth="0.6" className="animate-wind-flow-fast" />
-                      <path d="M 18 62 Q 42 55 68 70 T 96 65" fill="none" stroke="#38bdf8" strokeWidth="0.7" className="animate-wind-flow" />
-                      <path d="M 25 78 Q 50 68 75 82 T 98 76" fill="none" stroke="#38bdf8" strokeWidth="0.8" className="animate-wind-flow-slow" />
-                      <path d="M 35 90 Q 60 80 82 92 T 99 88" fill="none" stroke="#38bdf8" strokeWidth="0.6" className="animate-wind-flow-fast" />
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full opacity-70 pointer-events-none">
+                      {/* Subtropical Westerly Jet Streams (Northern Subcontinent) */}
+                      <path d="M 5 20 Q 30 16 55 24 T 98 18" fill="none" stroke="#38bdf8" strokeWidth="0.45" strokeDasharray="5 3" className="animate-wind-flow" />
+                      <path d="M 8 28 Q 32 23 58 32 T 96 26" fill="none" stroke="#38bdf8" strokeWidth="0.55" strokeDasharray="5 3" className="animate-wind-flow-fast" />
+
+                      {/* Continental Trade-Wind Confluence */}
+                      <path d="M 12 42 Q 38 35 62 45 T 98 40" fill="none" stroke="#38bdf8" strokeWidth="0.6" strokeDasharray="6 3" className="animate-wind-flow" />
                       
-                      {/* Tropical Oceanic Cyclonic Arc over Bay of Bengal */}
-                      <path d="M 65 42 C 85 45 92 65 80 75 C 72 82 62 70 66 58" fill="none" stroke="#38bdf8" strokeWidth="0.75" className="animate-wind-flow-fast" />
+                      {/* Northeast Monsoon Tropical Oceanic Trades over Bay of Bengal */}
+                      <path d="M 88 38 C 78 48 70 58 58 72 C 52 78 46 82 38 88" fill="none" stroke="#22d3ee" strokeWidth="0.75" strokeDasharray="6 3" className="animate-wind-flow-fast" />
+                      <path d="M 94 46 C 84 56 75 66 65 78 C 58 84 50 88 42 92" fill="none" stroke="#22d3ee" strokeWidth="0.8" strokeDasharray="6 3" className="animate-wind-flow" />
+                      <path d="M 80 32 C 72 42 64 52 54 65 C 48 72 42 76 34 82" fill="none" stroke="#22d3ee" strokeWidth="0.65" strokeDasharray="5 3" className="animate-wind-flow-fast" />
+
+                      {/* Arabian Sea Marine Inflow & Coastal Deflection */}
+                      <path d="M 20 62 Q 35 55 48 65 T 72 75" fill="none" stroke="#38bdf8" strokeWidth="0.7" strokeDasharray="6 3" className="animate-wind-flow" />
+                      <path d="M 18 75 Q 34 68 52 78 T 78 86" fill="none" stroke="#38bdf8" strokeWidth="0.75" strokeDasharray="6 3" className="animate-wind-flow-slow" />
+
+                      {/* Equatorial Cross-Equatorial Westerly Surge */}
+                      <path d="M 28 88 Q 50 82 72 90 T 99 86" fill="none" stroke="#34d399" strokeWidth="0.85" strokeDasharray="7 3" className="animate-wind-flow-fast" />
+                      <path d="M 32 94 Q 56 88 78 95 T 99 92" fill="none" stroke="#34d399" strokeWidth="0.7" strokeDasharray="6 3" className="animate-wind-flow" />
+
+                      {/* Cyclonic Inflow Loop over Bay of Bengal */}
+                      <path d="M 68 44 C 84 46 90 62 80 72 C 72 78 64 68 68 56" fill="none" stroke="#fbbf24" strokeWidth="0.85" strokeDasharray="5 2.5" className="animate-wind-flow-fast" />
                     </svg>
-                    {/* Wind Vector Stations and Legend only when Wind Layer is active */}
+
+                    {/* Direction-Aware Real Wind Vector Stations */}
                     {environmentalLayer === 'wind' && (
                       <>
-                        {liveStations.slice(0, 10).map((st) => {
+                        {liveStations.map((st) => {
                           const px = st.pixelX !== undefined ? st.pixelX : ((st.lon - 45.0) / 60.0) * 100;
                           const py = st.pixelY !== undefined ? st.pixelY : (4.8 + ((40.0 - st.lat) / 40.0) * 87.8);
+                          if (px < 4 || px > 96 || py < 4 || py > 96) return null;
+                          const windKts = st.wind_knots || parseFloat(st.wind) || 8;
+                          const windDeg = st.wind_deg !== undefined ? st.wind_deg : 45;
+                          const isHigh = windKts >= 15;
                           return (
                             <div 
                               key={`wind-${st.id}`} 
                               onClick={(e) => { e.stopPropagation(); fetchAtmosphericPoint(st.lat, st.lon, px, py); }}
-                              className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer flex items-center gap-1 bg-black/85 border border-sky-600/70 px-1.5 py-0.5 rounded-md text-[8.5px] font-mono text-sky-200 shadow"
+                              className={`absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer flex items-center gap-1 bg-black/90 border px-1.5 py-0.5 rounded-md text-[8.5px] font-mono shadow-md transition-transform hover:scale-110 ${
+                                isHigh 
+                                  ? 'border-amber-500/80 text-amber-200 shadow-amber-500/20' 
+                                  : 'border-sky-600/70 text-sky-200 shadow-sky-500/20'
+                              }`}
                               style={{ left: `${px}%`, top: `${py}%` }}
+                              title={`${st.name}: ${st.wind} (${windDeg}°)`}
                             >
-                              <Navigation className="w-2.5 h-2.5 text-sky-400 rotate-45" />
-                              <span>{st.wind}</span>
+                              {/* Truly Direction-Rotated Wind Compass Arrow */}
+                              <Navigation 
+                                className={`w-2.5 h-2.5 shrink-0 ${isHigh ? 'text-amber-400' : 'text-sky-400'}`} 
+                                style={{ transform: `rotate(${windDeg}deg)` }} 
+                              />
+                              <span className="font-bold">{st.wind}</span>
                             </div>
                           );
                         })}
 
-                        {/* Wind Scale Legend */}
+                        {/* Advanced Wind Scale Legend */}
                         <div className="absolute bottom-3 left-4 z-20 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-sky-800/70 text-[10px] font-mono shadow-xl flex items-center gap-3">
                           <span className="font-bold text-sky-300 flex items-center gap-1">
-                            <Wind className="w-3 h-3" /> KTS
+                            <Wind className="w-3 h-3" /> KTS (NWP GFS)
                           </span>
                           <div className="w-32 h-2 rounded-full bg-gradient-to-r from-sky-700 via-cyan-400 to-amber-400 shadow-inner" />
                           <div className="flex gap-2 text-[9px] text-slate-400">
-                            <span>0</span><span>10</span><span>20</span><span>35</span><span>50+</span>
+                            <span>0</span><span>10</span><span>15</span><span>25</span><span>35+</span>
                           </div>
                         </div>
                       </>

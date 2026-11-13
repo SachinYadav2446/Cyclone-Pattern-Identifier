@@ -415,10 +415,10 @@ export default function ModelArchitectureSection() {
                       </button>
                     </div>
                     
-                    <div className="text-sm font-mono font-semibold text-white tracking-tight">
+                    <div className="text-xs sm:text-sm font-mono font-semibold text-white tracking-tight break-all">
                       {activeModel.loss}
                     </div>
-                    <div className="text-xs font-mono text-[#C3864D]">
+                    <div className="text-xs font-mono text-[#C3864D] break-all">
                       {activeModel.formula}
                     </div>
                   </div>
@@ -464,7 +464,7 @@ export default function ModelArchitectureSection() {
                     <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold">
                       PHYSICALLY-CONSTRAINED LOSS FORMULATION
                     </div>
-                    <div className="text-sm font-mono font-semibold text-white">
+                    <div className="text-xs sm:text-sm font-mono font-semibold text-white break-all">
                       {activeTheory.lossFormula}
                     </div>
                   </div>

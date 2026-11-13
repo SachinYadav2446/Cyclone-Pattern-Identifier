@@ -8,6 +8,7 @@ Clean white theme with elegant, restrained typography and crisp data tables.
 
 import io
 import os
+import math
 import base64
 import datetime
 import textwrap

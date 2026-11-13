@@ -155,19 +155,89 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
           <div className="relative z-20 w-full lg:max-w-[48%] pt-2 pb-6 lg:py-4 flex flex-col justify-between">
             
             {/* Top Row: Main Headline (Drops with bounce) */}
-            <div className="pb-6 border-b border-[#64104E]/50 animate-hero-drop">
-              <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-black tracking-tight text-white leading-[1.14] font-mono">
+            <div className="pb-3 sm:pb-6 border-b border-[#64104E]/50 animate-hero-drop">
+              <h1 className="text-lg xs:text-xl sm:text-3xl lg:text-[2.65rem] font-black tracking-tight text-white leading-snug sm:leading-[1.14] font-mono">
                 Autonomous Sub-Pixel{' '}
-                <span className="text-[#E04A31] underline decoration-[#CF2F4B] decoration-2 underline-offset-6">
+                <span className="text-[#E04A31] underline decoration-[#CF2F4B] decoration-2 underline-offset-4 sm:underline-offset-6">
                   Eye Localization
                 </span>{' '}
                 &amp; Deep Dvorak.
               </h1>
             </div>
 
-            {/* Middle Row: Visual Thumbnail Box + Clear Description + Action Buttons (Drops with bounce) */}
-            <div className="my-6 animate-hero-drop-delayed">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            {/* ============================================================== */}
+            {/* MOBILE ONLY (< sm): SPACE-EFFICIENT HERO ROW & CARDS          */}
+            {/* ============================================================== */}
+            <div className="sm:hidden mt-3 space-y-2.5 animate-hero-drop-delayed">
+              {/* Row: Small Cyclone Image + Action Buttons right in front of it */}
+              <div className="flex items-stretch gap-2.5">
+                {/* Cyclone Eye Thumbnail with Reticle */}
+                <button
+                  onClick={onOpenDemo}
+                  className="w-[92px] h-[92px] min-w-[92px] min-h-[92px] max-w-[92px] max-h-[92px] rounded-2xl border border-[#64104E]/80 bg-[#120a1c] overflow-hidden relative shadow-lg shrink-0 group cursor-pointer hover:border-[#E04A31] transition-all active:scale-95"
+                  title="Click to launch Interactive Demo & Sub-Pixel Eye Workbench"
+                >
+                  <img
+                    src="/images/visible_cyclone_image.png"
+                    alt="Cyclone Eye Thumbnail"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                  {/* High-tech reticle overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40 p-1.5 flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-[8px] font-mono text-[#E04A31] font-bold">
+                      <span>10× EYE</span>
+                      <Target className="w-2.5 h-2.5 text-[#E04A31] animate-pulse" />
+                    </div>
+                    <div className="text-[8px] font-mono text-white font-bold bg-[#0d0714]/80 px-1 py-0.5 rounded text-center border border-[#64104E]/60">
+                      8.7 km Fix
+                    </div>
+                  </div>
+                </button>
+
+                {/* Buttons right in front of the image to save space */}
+                <div className="flex-1 flex flex-col justify-between gap-1.5">
+                  <button
+                    onClick={onOpenConsole}
+                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] hover:opacity-95 text-white font-mono font-bold text-xs flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(224,74,49,0.35)] active:scale-95 cursor-pointer transition-all"
+                  >
+                    <span>GIS Mission Control</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-white shrink-0" />
+                  </button>
+
+                  <button
+                    onClick={onOpenDemo}
+                    className="flex-1 py-2 px-3 rounded-xl border border-[#B43067]/60 bg-[#120a1a] hover:bg-[#1f102a] text-white font-mono font-semibold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer transition-all"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-[#B43067] shrink-0" />
+                    <span>Interactive Demo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Ultra-Compact Telemetry Bar (1-Line Pill) */}
+              <div className="flex items-center justify-around py-1.5 px-3 bg-[#120a1a]/85 border border-[#64104E]/60 rounded-xl font-mono text-[10px] shadow-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] text-slate-400 uppercase font-semibold">EYE FIX:</span>
+                  <span className="font-bold text-[#E04A31]">8.7 km</span>
+                </div>
+                <div className="w-px h-3 bg-[#64104E]/60" />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] text-slate-400 uppercase font-semibold">WIND:</span>
+                  <span className="font-bold text-[#fed7aa]">4.8 kts</span>
+                </div>
+                <div className="w-px h-3 bg-[#64104E]/60" />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] text-slate-400 uppercase font-semibold">GPU:</span>
+                  <span className="font-bold text-[#B43067]">&lt;35 ms</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ============================================================== */}
+            {/* TABLET & DESKTOP (sm+): BALANCED SIDE-BY-SIDE                  */}
+            {/* ============================================================== */}
+            <div className="hidden sm:block my-5 sm:my-6 animate-hero-drop-delayed">
+              <div className="flex sm:flex-row items-center gap-5">
                 {/* Thumbnail Card matching wireframe image placeholder with hills/sun */}
                 <button
                   onClick={onOpenDemo}
@@ -190,25 +260,25 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
                 </button>
 
                 {/* Short Clear Description & Action Buttons */}
-                <div className="flex-1 space-y-4">
+                <div className="flex-1 space-y-3 sm:space-y-4">
                   <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans max-w-md">
                     Unified multi-spectral deep learning pipeline for North Indian Ocean cyclones: continuous sub-pixel center pinpointing coupled with physical Atkinson-Holliday intensity regression in &lt;35 ms.
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
-                    {/* Outlined Pill Button (Shop in wireframe) */}
+                  <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 font-mono text-xs">
+                    {/* Outlined Pill Button */}
                     <button
                       onClick={onOpenDemo}
-                      className="px-5 py-2.5 rounded-full border border-[#B43067]/50 bg-[#120a1a] hover:bg-[#1f102a] hover:border-[#B43067] text-white font-bold transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-2"
+                      className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full border border-[#B43067]/50 bg-[#120a1a] hover:bg-[#1f102a] hover:border-[#B43067] text-white font-bold transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-2 text-xs"
                     >
                       <Zap className="w-3.5 h-3.5 text-[#B43067]" />
                       <span>Interactive Demo</span>
                     </button>
 
-                    {/* Filled High-Contrast Pill with Arrow (New Collection in wireframe) */}
+                    {/* Filled High-Contrast Pill with Arrow */}
                     <button
                       onClick={onOpenConsole}
-                      className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] hover:opacity-95 text-white font-bold transition-all duration-200 shadow-[0_0_25px_rgba(224,74,49,0.35)] active:scale-95 cursor-pointer flex items-center gap-2 group"
+                      className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] hover:opacity-95 text-white font-bold transition-all duration-200 shadow-[0_0_25px_rgba(224,74,49,0.35)] active:scale-95 cursor-pointer flex items-center gap-2 group text-xs"
                     >
                       <span>GIS Mission Control</span>
                       <ArrowRight className="w-3.5 h-3.5 text-white/90 group-hover:translate-x-0.5 transition-transform" />
@@ -218,18 +288,28 @@ export default function HeroSection({ onOpenConsole, onOpenDemo }) {
               </div>
             </div>
 
-            {/* Mobile/Tablet View for Media: Shown below content on smaller screens */}
-            <div className="lg:hidden mt-4 relative rounded-3xl bg-[#060a12] border border-[#64104E]/60 min-h-[320px] overflow-hidden flex items-center justify-center animate-hero-earth">
+            {/* Mobile/Tablet View for Media: Full Uncropped Earth Sphere on Mobile */}
+            <div className="lg:hidden mt-3 sm:mt-4 relative rounded-2xl sm:rounded-3xl bg-black border border-[#64104E]/60 w-full max-w-[360px] mx-auto aspect-square sm:aspect-auto sm:h-[320px] overflow-hidden flex items-center justify-center animate-hero-earth shadow-2xl">
               <img
                 src="/images/cyclone_earth_globe.png"
                 alt="Cyclone Vortex Over Earth"
-                className="absolute inset-0 w-full h-full object-cover object-[72%_48%] filter contrast-[1.08]"
+                className="w-full h-full object-contain filter contrast-[1.08] select-none pointer-events-none"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
-              {/* Mobile HUD strip */}
-              <div className="absolute bottom-3 right-3 bg-[#0d0714]/90 text-white text-[10px] font-mono px-3 py-1.5 rounded-xl border border-[#64104E]/80 z-20">
-                115 kts | 930.1 hPa · 18.23°N
+              {/* Orbit badge top-left */}
+              <div className="absolute top-2.5 left-2.5 font-mono text-[9px] text-[#C3864D] bg-[#120a1a]/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#64104E]/80 shadow font-semibold flex items-center gap-1.5 z-20">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-pulse" />
+                <span>INSAT-3D 74°E ORBIT</span>
+              </div>
+
+              {/* Mobile HUD strip bottom-right */}
+              <div className="absolute bottom-2.5 right-2.5 bg-[#0d0714]/90 backdrop-blur-md text-white text-[10px] font-mono px-3 py-1.5 rounded-xl border border-[#64104E]/80 z-20 flex items-center gap-2 shadow-lg">
+                <span className="text-[#E04A31] font-bold">BOB-SYS-01</span>
+                <span className="text-slate-500">|</span>
+                <span>115 kts</span>
+                <span className="text-slate-500">|</span>
+                <span className="text-[#fed7aa]">930 hPa</span>
               </div>
             </div>
 

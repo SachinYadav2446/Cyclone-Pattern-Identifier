@@ -390,14 +390,17 @@ def get_all_stations_atmospheric_data() -> List[Dict[str, Any]]:
         humidity = curr.get("relative_humidity_2m")
         ws = curr.get("wind_speed_10m")
         wdir = curr.get("wind_direction_10m", 45)
+        pressure = curr.get("surface_pressure")
         
         is_marine = st.get("type") == "marine"
         if temp is None:
-            temp = 29.0 if is_marine else round(22.0 - abs(st["lat"] - 20.0) * 0.3, 1)
+            temp = 28.8 if is_marine else round(22.0 - abs(st["lat"] - 20.0) * 0.3, 1)
         if humidity is None:
             humidity = 78 if is_marine else 68
         if ws is None:
             ws = 18.0 if is_marine else 8.0
+        if pressure is None:
+            pressure = 1012.8 - (st["lat"] - 10.0) * 0.2 if is_marine else 1014.0
 
         kts = round(ws / 1.852, 1)
         card = deg_to_cardinal(wdir)
@@ -417,10 +420,17 @@ def get_all_stations_atmospheric_data() -> List[Dict[str, Any]]:
             "pixelX": px,
             "pixelY": py,
             "temp": round(float(temp), 1),
+            "temp_c": round(float(temp), 1),
             "humidity": int(humidity),
+            "humidity_pct": int(humidity),
             "wind": wind_str,
+            "wind_knots": kts,
+            "wind_deg": int(wdir),
+            "wind_cardinal": card,
+            "pressure_hpa": round(float(pressure), 1),
             "sst": sst,
-            "is_marine": is_marine
+            "is_marine": is_marine,
+            "source": "Open-Meteo Global NWP (DWD ICON / ECMWF)"
         })
 
     _STATIONS_CACHE = {"data": results, "_timestamp": now}

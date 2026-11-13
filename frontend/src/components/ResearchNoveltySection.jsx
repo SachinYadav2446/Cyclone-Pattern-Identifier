@@ -139,6 +139,7 @@ export default function ResearchNoveltySection() {
   const progressBarRef = useRef(null);
   
   const [activeIndex, setActiveIndex] = useState(0);
+  const [mobileActiveIdx, setMobileActiveIdx] = useState(0);
   const [progressPercent, setProgressPercent] = useState(0);
 
   // Pinned Scrollytelling Engine: Screen stays pinned until all cards are scrolled horizontally
@@ -271,7 +272,7 @@ export default function ResearchNoveltySection() {
     <section 
       id="novelty" 
       ref={storyRef}
-      className="relative md:h-[380vh] bg-[#08050c] text-white border-b border-[#64104E]/40"
+      className="relative h-auto md:h-[380vh] bg-[#08050c] text-white border-b border-[#64104E]/40"
     >
       {/* ============================================================== */}
       {/* DESKTOP PINNED VIEWPORT: Locks screen until all cards scroll   */}
@@ -612,6 +613,264 @@ export default function ResearchNoveltySection() {
             <span className="text-slate-400">CLICK LEFT / RIGHT OR ARROW KEYS</span>
           </div>
         </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* MOBILE ADAPTIVE VIEW (MD:HIDDEN): High-Tech Cyber Deck         */}
+      {/* ============================================================== */}
+      <div className="md:hidden py-8 px-4 sm:px-6 relative z-10 font-mono">
+        {/* Mobile Section Header */}
+        <div className="pb-4 mb-4 border-b border-[#64104E]/40">
+          <div className="flex items-center gap-2 mb-1.5 text-xs">
+            <span className="text-[#fed7aa] font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#E04A31] animate-ping" />
+              STAGE {allCards[mobileActiveIdx]?.stageId || '00'} / 06
+            </span>
+            <span className="text-slate-600">·</span>
+            <span className="text-slate-300 font-medium truncate max-w-[200px]">
+              {allCards[mobileActiveIdx]?.category || 'Paradigm Shift'}
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
+            Research Novelties &amp; Breakthroughs
+          </h2>
+        </div>
+
+        {/* Cyber Stage Selector Pill Scroller */}
+        <div className="relative mb-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-1.5 px-0.5 scrollbar-none">
+            {allCards.map((card, idx) => {
+              const isActive = mobileActiveIdx === idx;
+              const shortLabels = {
+                '00': '00 Shift',
+                '01': '01 Sub-Pixel',
+                '02': '02 Physics',
+                '03': '03 24/7 IR',
+                '04': '04 Gatekeeper',
+                '05': '05 <35ms',
+                '06': '06 Synthesis',
+              };
+              return (
+                <button
+                  key={card.stageId}
+                  onClick={() => setMobileActiveIdx(idx)}
+                  className={`px-3 py-1.5 text-xs font-mono font-bold rounded-xl transition-all shrink-0 cursor-pointer flex items-center gap-1.5 border ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white border-[#E04A31] shadow-lg shadow-[#E04A31]/25 scale-[1.02]'
+                      : 'bg-[#12091c]/80 text-slate-400 hover:text-white border-[#64104E]/40 hover:border-[#B43067]/60'
+                  }`}
+                >
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#fed7aa] animate-pulse" />}
+                  <span>{shortLabels[card.stageId] || card.stageId}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mobile Active Card Presentation */}
+        {(() => {
+          const card = allCards[mobileActiveIdx];
+          const CardIcon = card.icon;
+
+          return (
+            <div className="rounded-2xl border border-[#64104E]/80 bg-gradient-to-b from-[#160a24] via-[#10061a] to-[#08030e] p-4 sm:p-5 shadow-2xl relative overflow-hidden space-y-4">
+              {/* Ambient Glow Aura */}
+              <div className="absolute -top-12 -right-12 w-36 h-36 bg-[#E04A31]/15 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Card Header Strip */}
+              <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#64104E]/40 relative z-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#240e2d] border border-[#B43067]/50 flex items-center justify-center text-[#fed7aa] shadow-inner shrink-0">
+                    <CardIcon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-mono text-[#fed7aa] uppercase font-bold tracking-wider block truncate">
+                      {card.tag}
+                    </span>
+                    <span className="text-xs font-bold text-slate-200 font-mono truncate block">
+                      {card.category}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-[#64104E]/60 text-[#fed7aa] border border-[#B43067]/60 shrink-0 shadow-sm">
+                  {card.gainBadge}
+                </span>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-base sm:text-lg font-bold text-white font-mono leading-snug relative z-10">
+                {card.title}
+              </h3>
+
+              {/* Stage 00 Overview */}
+              {card.type === 'overview' && (
+                <div className="space-y-3 relative z-10">
+                  <p className="text-xs text-slate-300 font-sans leading-relaxed">
+                    {card.summary}
+                  </p>
+                  <div className="space-y-2 border-t border-[#64104E]/40 pt-3">
+                    <span className="text-[10px] text-[#fed7aa] uppercase font-bold tracking-wider block font-mono">
+                      Core Methodological Innovations
+                    </span>
+                    {card.pillars.map((p) => (
+                      <div key={p.id} className="flex items-center gap-2.5 p-2 rounded-xl bg-[#14081c]/80 border border-[#64104E]/40">
+                        <span className="w-6 h-6 rounded-lg bg-[#270e30] border border-[#B43067]/50 text-[#fed7aa] font-bold text-[10px] flex items-center justify-center shrink-0">
+                          {p.id}
+                        </span>
+                        <span className="text-xs font-medium text-slate-200 font-mono">
+                          {p.title}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Novelty Stages 01 to 05 */}
+              {card.type === 'novelty' && (
+                <div className="space-y-3.5 relative z-10">
+                  {/* Glowing Benchmark Spotlight HUD */}
+                  <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#1d0b28] to-[#0d0515] border border-[#B43067]/50 p-3.5 shadow-lg">
+                    <div className="absolute top-0 right-0 w-28 h-28 bg-[#E04A31]/15 rounded-full blur-xl pointer-events-none" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[9px] text-zinc-400 uppercase tracking-widest font-mono font-bold block">
+                          PRIMARY BENCHMARK
+                        </span>
+                        <div className="flex items-baseline gap-2 mt-0.5">
+                          <span className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-100 to-[#fed7aa] font-mono">
+                            {card.highlightMetric}
+                          </span>
+                          <span className="text-xs text-[#fed7aa] font-mono font-bold">
+                            {card.highlightLabel}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-[#E04A31]/20 text-[#fed7aa] border border-[#E04A31]/40 shadow-sm shrink-0">
+                        VALIDATED
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Terminal Formulation Box */}
+                  <div className="rounded-xl bg-[#0a0410] border border-[#64104E]/60 p-3 font-mono">
+                    <div className="flex items-center justify-between text-[10px] text-zinc-400 mb-1.5 pb-1 border-b border-[#64104E]/30">
+                      <span className="text-[#fed7aa] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-pulse" />
+                        MATHEMATICAL FORMULATION
+                      </span>
+                      <span className="text-zinc-500 text-[9px] font-mono">L_Coupled</span>
+                    </div>
+                    <div className="text-[11px] sm:text-xs text-rose-200/90 bg-[#14081c] p-2 rounded-lg border border-[#B43067]/30 overflow-x-auto scrollbar-none font-mono">
+                      {card.formula}
+                    </div>
+                  </div>
+
+                  {/* High-Contrast Architecture Face-off */}
+                  <div className="space-y-2 text-xs font-mono">
+                    {/* Conventional */}
+                    <div className="p-2.5 rounded-xl bg-[#0e0716]/90 border border-zinc-800/80 flex items-start gap-2.5">
+                      <XCircle className="w-4 h-4 text-rose-400/80 shrink-0 mt-0.5" />
+                      <div className="text-[11px] leading-relaxed">
+                        <span className="font-bold text-rose-400/90 mr-1.5 uppercase text-[9px] tracking-wider block sm:inline">
+                          Conventional:
+                        </span>
+                        <span className="text-slate-400">{card.baselineText}</span>
+                      </div>
+                    </div>
+
+                    {/* vortexAI Novelty */}
+                    <div className="p-2.5 rounded-xl bg-gradient-to-r from-[#290c29]/90 to-[#15071f]/90 border border-[#E04A31]/60 flex items-start gap-2.5 shadow-md">
+                      <CheckCircle2 className="w-4 h-4 text-[#E04A31] shrink-0 mt-0.5" />
+                      <div className="text-[11px] leading-relaxed">
+                        <span className="font-bold text-[#fed7aa] mr-1.5 uppercase text-[9px] tracking-wider block sm:inline">
+                          vortexAI Novelty:
+                        </span>
+                        <span className="text-white font-medium">{card.innovationText}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Physical Rationale */}
+                  <div className="pt-2.5 border-t border-[#64104E]/30">
+                    <div className="flex items-center gap-1.5 text-[9.5px] text-[#fed7aa] uppercase font-bold tracking-wider mb-1 font-mono">
+                      <Compass className="w-3.5 h-3.5 text-[#E04A31]" />
+                      <span>Physical Rationale</span>
+                    </div>
+                    <p className="text-xs text-slate-300 font-sans leading-relaxed">
+                      {card.rationale}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Stage 06 Synthesis */}
+              {card.type === 'synthesis' && (
+                <div className="space-y-4 relative z-10">
+                  <p className="text-xs text-slate-300 font-sans leading-relaxed">
+                    {card.summary}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 text-center font-mono">
+                    {card.metrics.map((m, idx) => (
+                      <div key={idx} className="p-2.5 rounded-xl bg-[#160a20] border border-[#64104E]/50">
+                        <span className="text-[9px] text-[#fed7aa] uppercase tracking-wider block font-semibold mb-0.5">
+                          {m.label}
+                        </span>
+                        <span className="text-lg font-black text-white">{m.value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={goToModels}
+                    className="w-full py-2.5 px-4 bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white font-mono font-bold text-xs rounded-xl flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-[#E04A31]/20 cursor-pointer"
+                  >
+                    <span>Explore Modular Deep Learning Stack</span>
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Quick Navigation Footer with Step Dots */}
+              <div className="pt-3 border-t border-[#64104E]/30 flex items-center justify-between text-xs font-mono relative z-10">
+                {/* Step indicator dots */}
+                <div className="flex items-center gap-1.5">
+                  {allCards.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setMobileActiveIdx(idx)}
+                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                        mobileActiveIdx === idx
+                          ? 'w-5 bg-[#E04A31]'
+                          : 'w-1.5 bg-zinc-700 hover:bg-zinc-500'
+                      }`}
+                      aria-label={`Jump to stage ${idx}`}
+                    />
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setMobileActiveIdx(prev => (prev === 0 ? allCards.length - 1 : prev - 1))}
+                    className="px-2.5 py-1 rounded-lg bg-[#14081c] border border-[#64104E]/50 text-slate-300 hover:text-white text-xs active:scale-95 transition-all cursor-pointer"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    onClick={() => setMobileActiveIdx(prev => (prev === allCards.length - 1 ? 0 : prev + 1))}
+                    className="px-3 py-1 rounded-lg bg-gradient-to-r from-[#E04A31] to-[#CF2F4B] text-white text-xs font-bold active:scale-95 shadow-sm transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>Next</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </section>
   );

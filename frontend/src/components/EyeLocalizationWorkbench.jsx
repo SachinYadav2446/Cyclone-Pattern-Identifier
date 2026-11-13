@@ -1349,10 +1349,11 @@ export default function EyeLocalizationWorkbench({
                   onClick={handleDirectDownloadPdf}
                   disabled={isDownloadingPdf}
                   title="Directly download official WMO/IMD-standard 2-Page Tropical Cyclone Advisory Bulletin PDF"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] bg-gradient-to-r from-[#B43067] to-[#E04A31] hover:brightness-110 border border-[#E04A31] text-white rounded-lg transition-all cursor-pointer shadow-md shadow-[#E04A31]/20 active:scale-95 font-semibold disabled:opacity-60"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] bg-gradient-to-r from-[#B43067] to-[#E04A31] hover:brightness-110 border border-[#E04A31] text-white rounded-lg transition-all cursor-pointer shadow-md shadow-[#E04A31]/20 active:scale-95 font-semibold disabled:opacity-60"
                 >
                   <Download className={`w-3.5 h-3.5 text-[#fbcfe8] ${isDownloadingPdf ? 'animate-bounce' : ''}`} />
-                  <span>{isDownloadingPdf ? 'DOWNLOADING PDF...' : 'DOWNLOAD BULLETIN (PDF)'}</span>
+                  <span className="hidden xs:inline">{isDownloadingPdf ? 'DOWNLOADING PDF...' : 'DOWNLOAD BULLETIN (PDF)'}</span>
+                  <span className="xs:hidden">{isDownloadingPdf ? 'PDF...' : 'PDF'}</span>
                 </button>
               </div>
             </div>
@@ -1362,7 +1363,7 @@ export default function EyeLocalizationWorkbench({
               ref={canvasRef}
               onMouseMove={handleMouseMove}
               onMouseLeave={() => setMouseCoords(null)}
-              className="relative w-full aspect-[4/3] min-h-[500px] md:min-h-[580px] lg:min-h-[640px] bg-black overflow-hidden flex items-center justify-center cursor-default select-none"
+              className="relative w-full aspect-[4/3] min-h-[260px] sm:min-h-[420px] md:min-h-[560px] lg:min-h-[640px] bg-black overflow-hidden flex items-center justify-center cursor-default select-none"
             >
               {/* 1. Underlying Satellite Frame */}
               <img
@@ -2266,9 +2267,9 @@ export default function EyeLocalizationWorkbench({
 
         {/* 1. TOP HEADER APP BAR (AEROSPACE CLEAN & PROPORTIONED, h-13) */}
         <header className="sticky top-0 shrink-0 z-50 w-full border-b border-[#64104E]/50 bg-[#09050d]/95 backdrop-blur-xl shadow-2xl h-14 flex items-center">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between gap-4">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full flex items-center justify-between gap-2 sm:gap-4">
             {/* Left: Brand Identity & Telemetry Status */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#1c0f2b] border border-[#64104E]/60 flex items-center justify-center relative shadow-inner">
                 <Target className="w-4 h-4 text-[#E04A31]" />
                 <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[#E04A31] animate-pulse shadow-[0_0_8px_#E04A31]" />
@@ -2276,7 +2277,7 @@ export default function EyeLocalizationWorkbench({
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="font-bold text-xs sm:text-sm text-white tracking-widest uppercase">
-                    CYCLONE INFERENCE DEMO
+                    CYCLONE DEMO
                   </h1>
                   <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold font-mono tracking-wider bg-[#241026] border border-[#B43067]/60 text-[#fbcfe8]">
                     STAGE 01 &amp; 02
@@ -2289,11 +2290,11 @@ export default function EyeLocalizationWorkbench({
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-2 text-xs font-mono">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono">
               {hasInputImage && (
                 <button
                   onClick={handleResetUpload}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#180e24] hover:bg-[#251236] text-white text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95 border border-[#64104E]/80"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#180e24] hover:bg-[#251236] text-white text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95 border border-[#64104E]/80"
                   title="Upload Another Satellite Pass Image"
                 >
                   <Upload className="w-3.5 h-3.5 text-[#E04A31]" />
@@ -2318,7 +2319,7 @@ export default function EyeLocalizationWorkbench({
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#180e24] hover:bg-[#251236] text-white text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95 border border-[#64104E]/60"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-[#180e24] hover:bg-[#251236] text-white text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95 border border-[#64104E]/60"
                   title="Close Demo Workbench"
                 >
                   <X className="w-3.5 h-3.5" />

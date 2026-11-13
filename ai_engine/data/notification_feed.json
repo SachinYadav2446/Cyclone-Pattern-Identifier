@@ -1,0 +1,196 @@
+{
+  "events": [
+    {
+      "id": "EVT-PASS-1794543800",
+      "timestamp_utc": "2026-11-13 04:23 UTC",
+      "timestamp_iso": "2026-11-13T04:23:18.939177+00:00",
+      "satellite_platform": "ISRO INSAT-3D/3DR (74.0\u00b0E Geostationary Downlink)",
+      "channel": "TIR-1 (10.8 \u00b5m Window)",
+      "has_cyclone": false,
+      "status_code": "HOURLY_PASS_NOMINAL",
+      "severity": "REPORT",
+      "title": "Ocean Observation Pass: Quiescent Baseline (04:23 UTC)",
+      "summary": "Routine ISRO INSAT-3D pass | Surface wind: 13.7 kts NE | Pressure: 1014.1 hPa | SST: 28.6\u00b0C | All sectors clear.",
+      "detail": {
+        "basin_status": "Quiescent Marine Baseline",
+        "surface_wind_vector": "13.7 kts NE",
+        "surface_wind_kts": 13.7,
+        "surface_pressure": "1014.1 hPa",
+        "sea_surface_temp": "28.6\u00b0C",
+        "quadrant_status": "All Monitored Quadrants Nominal \u00b7 Zero Vortices",
+        "source": "Live ECMWF / NOAA Marine Assimilation (15.0\u00b0N, 88.0\u00b0E)"
+      },
+      "is_read": true
+    },
+    {
+      "id": "EVT-PASS-1794543065",
+      "timestamp_utc": "2026-11-13 04:11 UTC",
+      "timestamp_iso": "2026-11-13T04:11:05.006004+00:00",
+      "satellite_platform": "ISRO INSAT-3D/3DR (74.0\u00b0E Geostationary Downlink)",
+      "channel": "TIR-1 (10.8 \u00b5m Window)",
+      "has_cyclone": false,
+      "status_code": "HOURLY_PASS_NOMINAL",
+      "severity": "REPORT",
+      "title": "Ocean Observation Pass: Quiescent Baseline (04:11 UTC)",
+      "summary": "Routine ISRO INSAT-3D pass | Surface wind: 10.1 kts ENE | Pressure: 1013.4 hPa | SST: 29.1\u00b0C | All sectors clear.",
+      "detail": {
+        "basin_status": "Quiescent Marine Baseline",
+        "surface_wind_vector": "10.1 kts ENE",
+        "surface_wind_kts": 10.1,
+        "surface_pressure": "1013.4 hPa",
+        "sea_surface_temp": "29.1\u00b0C",
+        "quadrant_status": "All Monitored Quadrants Nominal \u00b7 Zero Vortices",
+        "source": "Synoptic Ocean Baseline Simulation"
+      },
+      "is_read": true
+    },
+    {
+      "id": "EVT-PASS-1794538150",
+      "timestamp_utc": "2026-11-13 02:49 UTC",
+      "timestamp_iso": "2026-11-13T02:49:09.575729+00:00",
+      "satellite_platform": "ISRO INSAT-3D/3DR (74.0\u00b0E Geostationary Downlink)",
+      "channel": "TIR-1 (10.8 \u00b5m Window)",
+      "has_cyclone": false,
+      "status_code": "HOURLY_PASS_NOMINAL",
+      "severity": "REPORT",
+      "title": "Ocean Observation Pass: Quiescent Baseline (02:49 UTC)",
+      "summary": "Routine ISRO INSAT-3D pass | Surface wind: 14.2 kts NE | Pressure: 1014.1 hPa | SST: 28.4\u00b0C | All sectors clear.",
+      "detail": {
+        "basin_status": "Quiescent Marine Baseline",
+        "surface_wind_vector": "14.2 kts NE",
+        "surface_wind_kts": 14.2,
+        "surface_pressure": "1014.1 hPa",
+        "sea_surface_temp": "28.4\u00b0C",
+        "quadrant_status": "All Monitored Quadrants Nominal \u00b7 Zero Vortices",
+        "source": "Live ECMWF / NOAA Marine Assimilation (15.0\u00b0N, 88.0\u00b0E)"
+      },
+      "is_read": true
+    },
+    {
+      "id": "EVT-PASS-1794535200",
+      "timestamp_utc": "2026-11-13 02:00 UTC",
+      "timestamp_iso": "2026-11-13T02:00:00+00:00",
+      "satellite_platform": "ISRO INSAT-3D (74.0\u00b0E)",
+      "channel": "TIR-1 (10.8 \u00b5m)",
+      "has_cyclone": false,
+      "status_code": "HOURLY_PASS_NOMINAL",
+      "severity": "REPORT",
+      "title": "Ocean Observation Pass: Quiescent Baseline (02:00 UTC)",
+      "summary": "Routine ISRO INSAT-3D pass | Surface wind: 13.9 kts NE | Pressure: 1013.4 hPa | SST: 28.4\u00b0C | All sectors clear.",
+      "detail": {
+        "basin_status": "Quiescent Marine Baseline",
+        "surface_wind_vector": "13.9 kts NE",
+        "surface_wind_kts": 13.9,
+        "surface_pressure": "1013.4 hPa",
+        "sea_surface_temp": "28.4\u00b0C",
+        "quadrant_status": "All Monitored Quadrants Nominal",
+        "source": "Live ECMWF / NOAA Marine Assimilation"
+      },
+      "is_read": true
+    },
+    {
+      "id": "EVT-PASS-1794531600",
+      "timestamp_utc": "2026-11-13 01:00 UTC",
+      "timestamp_iso": "2026-11-13T01:00:00+00:00",
+      "satellite_platform": "ISRO INSAT-3D (74.0\u00b0E)",
+      "channel": "TIR-1 (10.8 \u00b5m)",
+      "has_cyclone": false,
+      "status_code": "HOURLY_PASS_NOMINAL",
+      "severity": "REPORT",
+      "title": "Ocean Observation Pass: Quiescent Baseline (01:00 UTC)",
+      "summary": "Routine ISRO INSAT-3D pass | Surface wind: 13.7 kts NE | Pressure: 1012.6 hPa | SST: 28.3\u00b0C | All sectors clear.",
+      "detail": {
+        "basin_status": "Quiescent Marine Baseline",
+        "surface_wind_vector": "13.7 kts NE",
+        "surface_wind_kts": 13.7,
+        "surface_pressure": "1012.6 hPa",
+        "sea_surface_temp": "28.3\u00b0C",
+        "quadrant_status": "All Monitored Quadrants Nominal",
+        "source": "Live ECMWF / NOAA Marine Assimilation"
+      },
+      "is_read": true
+    },
+    {
+      "id": "EVT-PASS-1794528000",
+      "timestamp_utc": "2026-11-13 00:00 UTC",
+      "timestamp_iso": "2026-11-13T00:00:00+00:00",
+      "satellite_platform": "ISRO INSAT-3D (74.0\u00b0E)",
+      "channel": "TIR-1 (10.8 \u00b5m)",
+      "has_cyclone": false,
+      "status_code": "HOURLY_PASS_NOMINAL",
+      "severity": "REPORT",
+      "title": "Ocean Observation Pass: Quiescent Baseline (00:00 UTC)",
+      "summary": "Routine ISRO INSAT-3D pass | Surface wind: 14.0 kts NE | Pressure: 1011.8 hPa | SST: 28.2\u00b0C | All sectors clear.",
+      "detail": {
+        "basin_status": "Quiescent Marine Baseline",
+        "surface_wind_vector": "14.0 kts NE",
+        "surface_wind_kts": 14.0,
+        "surface_pressure": "1011.8 hPa",
+        "sea_surface_temp": "28.2\u00b0C",
+        "quadrant_status": "All Monitored Quadrants Nominal",
+        "source": "Live ECMWF / NOAA Marine Assimilation"
+      },
+      "is_read": true
+    },
+    {
+      "id": "EVT-PASS-1794524400",
+      "timestamp_utc": "2026-11-12 23:00 UTC",
+      "timestamp_iso": "2026-11-12T23:00:00+00:00",
+      "satellite_platform": "ISRO INSAT-3D (74.0\u00b0E)",
+      "channel": "TIR-1 (10.8 \u00b5m)",
+      "has_cyclone": false,
+      "status_code": "HOURLY_PASS_NOMINAL",
+      "severity": "REPORT",
+      "title": "Ocean Observation Pass: Quiescent Baseline (23:00 UTC)",
+      "summary": "Routine ISRO INSAT-3D pass | Surface wind: 14.7 kts NE | Pressure: 1011.4 hPa | SST: 28.2\u00b0C | All sectors clear.",
+      "detail": {
+        "basin_status": "Quiescent Marine Baseline",
+        "surface_wind_vector": "14.7 kts NE",
+        "surface_wind_kts": 14.7,
+        "surface_pressure": "1011.4 hPa",
+        "sea_surface_temp": "28.2\u00b0C",
+        "quadrant_status": "All Monitored Quadrants Nominal",
+        "source": "Live ECMWF / NOAA Marine Assimilation"
+      },
+      "is_read": true
+    },
+    {
+      "id": "EVT-PASS-1794520800",
+      "timestamp_utc": "2026-11-12 22:00 UTC",
+      "timestamp_iso": "2026-11-12T22:00:00+00:00",
+      "satellite_platform": "ISRO INSAT-3D (74.0\u00b0E)",
+      "channel": "TIR-1 (10.8 \u00b5m)",
+      "has_cyclone": false,
+      "status_code": "HOURLY_PASS_NOMINAL",
+      "severity": "REPORT",
+      "title": "Ocean Observation Pass: Quiescent Baseline (22:00 UTC)",
+      "summary": "Routine ISRO INSAT-3D pass | Surface wind: 14.9 kts NE | Pressure: 1011.0 hPa | SST: 28.1\u00b0C | All sectors clear.",
+      "detail": {
+        "basin_status": "Quiescent Marine Baseline",
+        "surface_wind_vector": "14.9 kts NE",
+        "surface_wind_kts": 14.9,
+        "surface_pressure": "1011.0 hPa",
+        "sea_surface_temp": "28.1\u00b0C",
+        "quadrant_status": "All Monitored Quadrants Nominal",
+        "source": "Live ECMWF / NOAA Marine Assimilation"
+      },
+      "is_read": true
+    }
+  ],
+  "unread_ids": [],
+  "latest_telemetry": {
+    "status": "ALL_CLEAR",
+    "status_label": "Basin All Clear",
+    "timestamp_utc": "2026-11-13 04:23 UTC",
+    "timestamp_iso": "2026-11-13T04:23:18.939177+00:00",
+    "satellite_platform": "ISRO INSAT-3D/3DR (74.0\u00b0E Geostationary Downlink)",
+    "channel": "TIR-1 (10.8 \u00b5m Window)",
+    "ambient_wind": "13.7 kts NE",
+    "surface_pressure": "1014.1 hPa",
+    "sst": "28.6\u00b0C",
+    "active_systems_count": 0,
+    "organized_vortex": "Zero organized cyclonic vortices in monitored marine sector.",
+    "source": "Live ECMWF / NOAA Marine Assimilation (15.0\u00b0N, 88.0\u00b0E)"
+  },
+  "last_status": "ALL_CLEAR"
+}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Component } from 'react';
+import { API_BASE_URL } from './config/api';
 import Navbar from './components/Navbar';
 import LiveComputationStrip from './components/LiveComputationStrip';
 import HeroSection from './components/HeroSection';
@@ -50,7 +51,7 @@ class ErrorBoundary extends Component {
 export default function App() {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
-  const [unreadAlertCount, setUnreadAlertCount] = useState(2);
+  const [unreadAlertCount, setUnreadAlertCount] = useState(0);
   const [isBulletinOpen, setIsBulletinOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [activeBulletinData, setActiveBulletinData] = useState(null);
@@ -61,7 +62,7 @@ export default function App() {
   useEffect(() => {
     const fetchUnread = async () => {
       try {
-        const res = await fetch('http://127.0.0.1:8000/api/v1/notifications');
+        const res = await fetch(`${API_BASE_URL}/api/v1/notifications/unread-count`);
         if (res.ok) {
           const data = await res.json();
           setUnreadAlertCount(data.unread_count || 0);

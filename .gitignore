@@ -71,10 +71,12 @@ scratch/
 # Temporary assets
 *.png
 !frontend/public/**
+!demo_showcase_cyclones/**
 
 # Temporary assets
 *.png
 !frontend/public/**
+!demo_showcase_cyclones/**
 
 # SQLite database runtime files
 *.db

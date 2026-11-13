@@ -74,7 +74,7 @@ export default function Navbar({ onOpenConsole, onOpenNotifications, onOpenTimel
         ? 'border-b border-[#64104E]/50 bg-[#08050c]/95 backdrop-blur-xl shadow-[0_4px_25px_rgba(0,0,0,0.7)]'
         : 'border-b border-transparent bg-[#08050c] shadow-none'
     }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo */}
         <a href="#" className="flex items-center group shrink-0 pl-1 sm:pl-2">
           <span className="font-black text-lg tracking-tight font-mono text-white group-hover:text-[#E04A31] transition-colors">
@@ -106,22 +106,23 @@ export default function Navbar({ onOpenConsole, onOpenNotifications, onOpenTimel
         </nav>
 
         {/* Right CTA Actions - Clean, uncluttered layout */}
-        <div className="flex items-center gap-2.5 sm:gap-3 font-mono shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 font-mono shrink-0">
           {/* GIS Console Pill */}
           <button
             onClick={onOpenConsole}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-[#E04A31] hover:bg-[#CF2F4B] text-white shadow-[0_0_20px_rgba(224,74,49,0.35)] transition-all cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-4 py-1.5 rounded-full text-xs font-bold bg-[#E04A31] hover:bg-[#CF2F4B] text-white shadow-[0_0_20px_rgba(224,74,49,0.35)] transition-all cursor-pointer active:scale-95"
             title="Launch Real-Time 4-Band Satellite GIS Mission Control"
           >
-            <span>GIS Console</span>
+            <Radio className="w-3 h-3 hidden xs:inline" />
+            <span><span className="hidden xs:inline">GIS </span>Console</span>
           </button>
 
-          {/* Meteorological Alarm Bell (Icon Only with Badge) */}
+          {/* Notification Center Bell */}
           <button
             onClick={onOpenNotifications}
             className="group relative p-2 rounded-full bg-[#1a0f28] hover:bg-[#251538] text-slate-200 border border-[#B43067]/40 hover:border-[#B43067] transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center"
-            title="Open Meteorological Alarms & Early Warning Feed"
-            aria-label="Meteorological Alerts"
+            title="Live Cyclone Notification Center"
+            aria-label="Cyclone Notifications"
           >
             <Bell className="w-4 h-4 text-[#E04A31] group-hover:scale-110 transition-transform" />
             {unreadCount > 0 && (
@@ -172,8 +173,8 @@ export default function Navbar({ onOpenConsole, onOpenNotifications, onOpenTimel
                 onOpenNotifications();
               }}
               className="p-2 rounded-lg bg-[#1a0f28] border border-[#B43067]/50 text-slate-200 font-bold text-xs relative flex items-center justify-center"
-              title="Open Meteorological Alarms"
-              aria-label="Meteorological Alerts"
+              title="Open Notification Center"
+              aria-label="Cyclone Notifications"
             >
               <Bell className="w-4 h-4 text-[#E04A31]" />
               {unreadCount > 0 && (
