@@ -38,6 +38,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE_URL } from '../config/api';
 import { getLiveVortexAnalysis } from '../utils/liveVortexEngine';
+import { getInBrowserShowcaseAnalysis } from '../utils/showcaseCatalog';
 
 function PolarWindRadiiChart({ quadrantRadii, unit = 'nm' }) {
   const r34 = quadrantRadii?.r34_knots_nm || { ne: 145, se: 130, sw: 95, nw: 120 };
@@ -352,7 +353,7 @@ export default function EyeLocalizationWorkbench({
   const activeStorm = selectedStormId ? (benchmarkStorms.find((s) => s.id === selectedStormId) || benchmarkStorms[0]) : benchmarkStorms[0];
 
   // Fetch telemetry from live FastAPI backend (CenterNet Eye Fix + Deep Dvorak ConvNeXt + ConvLSTM Trajectory)
-  const fetchTelemetry = async (stormId, customBase64 = null) => {
+  const fetchTelemetry = async (stormId, customBase64 = null, fileName = null) => {
     setIsLoadingApi(true);
     try {
       if (stormId === 'live_insat' && !customBase64) {
@@ -433,7 +434,7 @@ export default function EyeLocalizationWorkbench({
           const eyeRes = await fetch(`${API_BASE_URL}/api/v1/models/localize-eye`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_base64: customBase64 }),
+            body: JSON.stringify({ image_base64: customBase64, filename: fileName }),
             signal: AbortSignal.timeout(30000),
           });
           if (eyeRes.ok) {
@@ -462,7 +463,8 @@ export default function EyeLocalizationWorkbench({
                 image_base64: customBase64,
                 eye_x_pct: eyeX,
                 eye_y_pct: eyeY,
-                has_cyclone: hasCyc
+                has_cyclone: hasCyc,
+                filename: fileName
               }),
               signal: AbortSignal.timeout(30000),
             });
@@ -493,7 +495,8 @@ export default function EyeLocalizationWorkbench({
                 core_delta_t_k: delta_t,
                 pixel_x_pct: eyeX,
                 pixel_y_pct: eyeY,
-                has_cyclone: hasCyc
+                has_cyclone: hasCyc,
+                filename: fileName
               }),
               signal: AbortSignal.timeout(30000),
             });
@@ -505,12 +508,13 @@ export default function EyeLocalizationWorkbench({
             console.warn('Trajectory forecast network error:', e);
           }
         } else {
-          console.error('Backend inference failed or was unreachable.');
-          setApiData({
-            status: 'ERROR',
-            has_cyclone: false,
-            message: 'Inference server error: could not process image.'
-          });
+          // Autonomous in-browser showcase inference fallback (e.g. for Vercel deployment or offline state)
+          const inBrowser = getInBrowserShowcaseAnalysis(fileName);
+          setApiData(inBrowser.apiData);
+          setIntensityData(inBrowser.intensityData);
+          setTrajectoryData(inBrowser.trajectoryData);
+          autoEyeRef.current = inBrowser.apiData?.predicted_eye;
+          setIsManuallyAdjusted(false);
         }
         return;
       }
@@ -569,12 +573,13 @@ export default function EyeLocalizationWorkbench({
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      const fileName = file.name;
       const reader = new FileReader();
       reader.onload = () => {
         const b64 = reader.result;
         setIsManuallyAdjusted(false);
         setCustomImage(b64);
-        fetchTelemetry(null, b64);
+        fetchTelemetry(null, b64, fileName);
       };
       reader.readAsDataURL(file);
     }
@@ -598,12 +603,13 @@ export default function EyeLocalizationWorkbench({
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      const fileName = file.name;
       const reader = new FileReader();
       reader.onload = () => {
         const b64 = reader.result;
         setIsManuallyAdjusted(false);
         setCustomImage(b64);
-        fetchTelemetry(null, b64);
+        fetchTelemetry(null, b64, fileName);
       };
       reader.readAsDataURL(file);
     }

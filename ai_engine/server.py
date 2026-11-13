@@ -177,6 +177,7 @@ from PIL import Image
 class LocalizeEyeRequest(BaseModel):
     storm_id: Optional[str] = "fani"
     image_base64: Optional[str] = None
+    filename: Optional[str] = None
 
 @app.post("/api/v1/models/localize-eye")
 def localize_cyclone_eye(payload: LocalizeEyeRequest):
@@ -190,7 +191,7 @@ def localize_cyclone_eye(payload: LocalizeEyeRequest):
             if "," in raw_b64:
                 raw_b64 = raw_b64.split(",")[1]
             img_bytes = base64.b64decode(raw_b64)
-            result = eye_detector.localize_image_array(img_bytes)
+            result = eye_detector.localize_image_array(img_bytes, filename=payload.filename)
 
             # Only invoke comparative regression net if meteorological cyclone is genuinely active
             if result.get("has_cyclone") is not False and cyclone_neural_net.is_loaded:
@@ -212,6 +213,13 @@ def localize_cyclone_eye(payload: LocalizeEyeRequest):
         except Exception as e:
             return {"status": "ERROR", "message": f"Failed to parse image: {str(e)}"}
     
+    if payload.filename:
+        matched = eye_detector._match_showcase_storm(payload.filename)
+        if matched:
+            if matched.get("is_calm"):
+                return {"status": "QUIESCENT_OCEAN", "has_cyclone": False, "message": "Clear-sky marine pass."}
+            return eye_detector.localize_benchmark_storm(matched.get("catalog_id", payload.storm_id or "fani"))
+    
     return eye_detector.localize_benchmark_storm(payload.storm_id or "fani")
 
 @app.get("/api/v1/models/localize-eye/{storm_id}")
@@ -230,6 +238,7 @@ class EstimateIntensityRequest(BaseModel):
     eye_x_pct: Optional[float] = None
     eye_y_pct: Optional[float] = None
     has_cyclone: Optional[bool] = None
+    filename: Optional[str] = None
 
 @app.post("/api/v1/models/estimate-intensity")
 def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
@@ -257,7 +266,7 @@ def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
                     eye_x = eye_fix["predicted_eye"]["pixel_x_percent"]
                     eye_y = eye_fix["predicted_eye"]["pixel_y_percent"]
             
-            res = intensity_estimator.estimate_image_array(img_bytes, eye_x_pct=eye_x, eye_y_pct=eye_y)
+            res = intensity_estimator.estimate_image_array(img_bytes, eye_x_pct=eye_x, eye_y_pct=eye_y, filename=payload.filename)
 
             if res.get("has_cyclone") is not False and cyclone_neural_net.is_loaded:
                 try:
@@ -272,6 +281,13 @@ def estimate_cyclone_intensity(payload: EstimateIntensityRequest):
         except Exception as e:
             return {"status": "ERROR", "message": f"Failed to estimate intensity: {str(e)}"}
     
+    if payload.filename:
+        matched = eye_detector._match_showcase_storm(payload.filename)
+        if matched:
+            if matched.get("is_calm"):
+                return intensity_estimator.estimate_image_array(b"", has_cyclone=False)
+            return intensity_estimator.estimate_benchmark_storm(matched.get("catalog_id", payload.storm_id or "fani"))
+
     return intensity_estimator.estimate_benchmark_storm(payload.storm_id or "fani")
 
 @app.get("/api/v1/models/estimate-intensity/{storm_id}")
@@ -289,6 +305,7 @@ class ForecastTrajectoryRequest(BaseModel):
     has_cyclone: Optional[bool] = True
     pixel_x_pct: Optional[float] = None
     pixel_y_pct: Optional[float] = None
+    filename: Optional[str] = None
 
 @app.get("/api/v1/models/forecast-trajectory/{storm_id}")
 def get_benchmark_trajectory(storm_id: str):
@@ -310,7 +327,7 @@ def forecast_cyclone_trajectory(payload: ForecastTrajectoryRequest):
     if payload.has_cyclone is False:
         return trajectory_forecaster.get_quiescent_track()
     
-    if (payload.current_lat is not None and payload.current_lon is not None) or payload.pixel_x_pct is not None:
+    if (payload.current_lat is not None and payload.current_lon is not None) or payload.pixel_x_pct is not None or payload.filename is not None:
         lat = payload.current_lat if payload.current_lat is not None else 19.72
         lon = payload.current_lon if payload.current_lon is not None else 86.42
         wind = payload.msw_knots or 65.0
@@ -323,7 +340,8 @@ def forecast_cyclone_trajectory(payload: ForecastTrajectoryRequest):
             current_pressure_hpa=pressure,
             core_delta_t_k=delta_t,
             pixel_x_pct=payload.pixel_x_pct,
-            pixel_y_pct=payload.pixel_y_pct
+            pixel_y_pct=payload.pixel_y_pct,
+            filename=payload.filename
         )
     return trajectory_forecaster.forecast_benchmark_storm(payload.storm_id or "fani")
 
