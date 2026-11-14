@@ -45,9 +45,6 @@ weights/*
 !weights/.gitkeep
 *.pt
 *.pth
-!ai_engine/models/weights/centernet_cyclone_model.pth
-!ai_engine/models/weights/best_cyclone_model.pth
-!ai_engine/models/weights/trajectory_motion_model.pth
 *.onnx
 *.pkl
 

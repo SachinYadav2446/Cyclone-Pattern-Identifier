@@ -1001,6 +1001,11 @@ class TrajectoryForecaster:
             self.model.eval()
             self.neural_trajectory_net = DeepCycloneTrajectoryNet(input_dim=14, hidden_dim=256, num_blocks=4).to(self.device)
             weights_path = os.path.join(os.path.dirname(__file__), 'weights', 'trajectory_motion_model.pth')
+            if os.environ.get("RENDER") or os.environ.get("LOW_MEMORY"):
+                print("[INFO] TrajectoryForecaster: Cloud free tier detected -> using synoptic Beta-drift physics engine")
+                self.neural_trajectory_net = None
+                return
+
             if os.path.exists(weights_path):
                 ckpt = torch.load(weights_path, map_location=self.device, weights_only=False)
                 self.neural_trajectory_net.load_state_dict(ckpt['model_state_dict'])

@@ -74,6 +74,10 @@ class CycloneNeuralNet:
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
+        if os.environ.get("RENDER") or os.environ.get("LOW_MEMORY"):
+            print("[INFO] CycloneNeuralNet: Cloud free tier detected -> using lightweight Dvorak ConvNeXt physics engine")
+            return
+
         if os.path.exists(weights_path):
             try:
                 model = DeepCycloneModel()

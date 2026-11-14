@@ -40,8 +40,9 @@ async def _run_pipeline_scan():
         print(f"[VortexAI Scanner] Pipeline scan error: {exc}")
 
 async def _scheduled_scanner():
-    """Runs immediately on startup, then every 30 min."""
-    # First scan immediately so the feed isn't empty
+    """Runs after startup delay so Uvicorn binds port instantly, then every 30 min."""
+    # Wait 45 seconds to ensure server passes cloud health checks before background scanning
+    await asyncio.sleep(45)
     await _run_pipeline_scan()
     while True:
         await asyncio.sleep(SCAN_INTERVAL_SECONDS)
