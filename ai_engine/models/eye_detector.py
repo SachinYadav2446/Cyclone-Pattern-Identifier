@@ -1252,56 +1252,42 @@ class EyeDetector:
         # Margin mask: full 2D scene (no border suppression)
         margin_mask = np.ones((512, 512), dtype=np.float32)
 
-        # Dedicated Cold Eyewall Ring & Convective Core for Enhanced IR (BD-curve / Rainbow / TropicalTidbits)
-        # Includes all coldest convective cloud tops (Dark Red, Bright Red, Orange, Yellow, Pink/Purple CDO)
-        eyewall_mask = (
-            ((R >= 16) & (G < 70) & (B < 70) & (R > G + 3) & (R > B + 3)) |
-            ((R >= 150) & (G >= 55) & (B < 90)) |
-            ((sat > 0.25) & (R > 120) & (B > 105) & (G < 145))
-        ).astype(np.float32)
-        eyewall_count = np.sum(eyewall_mask)
-        is_pink_core = (sat > 0.28) & (R > 125) & (B > 105) & (G < 145)
-        pink_count = np.sum(is_pink_core)
+        # Multi-scale Convergent Gradient Vector Flow (GVF) Circulation Flux
+        # Accurately localizes the vortex center across all cyclone morphologies:
+        # - Pinhole dark eyes (clear cavity inside dense eyewall)
+        # - Central Dense Overcast (CDO) bright/warm cores (white convective eye)
+        # - Ragged / Sheared asymmetric eyes
+        # - Enhanced IR (BD-curve / rainbow) and Monochrome IR / VIS / WV bands
+        gy_gvf, gx_gvf = np.gradient(gaussian_filter(gray_np, 2.5))
+        mag_gvf = np.sqrt(gx_gvf**2 + gy_gvf**2) + 1e-6
+        nx_gvf = gx_gvf / mag_gvf
+        ny_gvf = gy_gvf / mag_gvf
 
-        if is_eir and eyewall_count > 150:
-            dens = gaussian_filter(eyewall_mask, 3.0)
-            core_dens = gaussian_filter(eyewall_mask, 8.0)
-            core_norm = core_dens / (np.max(core_dens) + 1e-6) if np.max(core_dens) > 0 else np.zeros((512, 512), dtype=np.float32)
+        flux_total = np.zeros((512, 512), dtype=np.float32)
+        for r_f in [20, 35, 55, 85, 125, 175]:
+            yk_f, xk_f = np.ogrid[-r_f:r_f+1, -r_f:r_f+1]
+            dist_f = np.sqrt(xk_f**2 + yk_f**2) + 1e-6
+            mask_rf = (dist_f >= r_f * 0.70) & (dist_f <= r_f * 1.30)
+            kx_f = -(xk_f / dist_f) * mask_rf
+            ky_f = -(yk_f / dist_f) * mask_rf
+            k_norm_f = np.sum(mask_rf) + 1e-6
+            kx_f /= k_norm_f
+            ky_f /= k_norm_f
+            conv_f = fftconvolve(nx_gvf, kx_f[::-1, ::-1], mode='same') + fftconvolve(ny_gvf, ky_f[::-1, ::-1], mode='same')
+            flux_total += np.maximum(0.0, conv_f)
 
-            ring_accum = np.zeros((512, 512), dtype=np.float32)
-            for r_w in [14, 20, 28, 38]:
-                size_w = int(2 * r_w + 5)
-                yk, xk = np.ogrid[-size_w//2:size_w//2+1, -size_w//2:size_w//2+1]
-                d_w = np.sqrt(xk**2 + yk**2)
-                ring_kw = ((d_w >= r_w * 0.65) & (d_w <= r_w * 1.35)).astype(np.float32)
-                ring_kw /= (np.sum(ring_kw) + 1e-6)
-                r_resp = cv2.filter2D(dens, -1, ring_kw)
-                ring_accum += r_resp
+        cloud_mass = gaussian_filter((gray_np > 60).astype(np.float32), 12.0)
+        cloud_core_mask = (cloud_mass > 0.25).astype(np.float32)
 
-            ring_norm = (ring_accum - ring_accum.min()) / (ring_accum.max() - ring_accum.min() + 1e-6)
-            warm_core_density = gaussian_filter(is_pink_core.astype(np.float32), 4.0)
-            warm_core_norm = warm_core_density / (np.max(warm_core_density) + 1e-6) if np.max(warm_core_density) > 0 else np.zeros((512, 512), dtype=np.float32)
-            
-            # Combine convective eyewall density, ring circulation, and radial symmetry without border suppression
-            if pink_count > 100:
-                score_map = (sym_norm * 0.25 + ring_norm * 0.25 + warm_core_norm * 0.35 + core_norm * 0.15) * mask
-            else:
-                score_map = (sym_norm * 0.40 + ring_norm * 0.35 + core_norm * 0.25) * mask
-        else:
-            # Difference-of-Gaussians for dark cavity inside bright eyewall (Monochrome IR & VIS)
-            dog_cavity = gaussian_filter(gray_np, sigma=18.0) - gaussian_filter(gray_np, sigma=3.2)
-            dog_norm = np.clip(dog_cavity, 0.0, None)
-            max_dog = float(np.max(dog_norm))
-            dog_norm = (dog_norm / (max_dog + 1e-6)) if max_dog > 0 else np.zeros((512, 512), dtype=np.float32)
+        flux_smooth = gaussian_filter(flux_total, 5.0) * cloud_core_mask
+        flux_smooth[:30, :] = 0.0
+        flux_smooth[-30:, :] = 0.0
+        flux_smooth[:, :30] = 0.0
+        flux_smooth[:, -30:] = 0.0
 
-            cloud_mass = gaussian_filter((gray_np > 75).astype(np.float32), sigma=14.0)
-            cloud_core_mask = (cloud_mass > 0.35).astype(np.float32)
-
-            if max_dog > 18.0:
-                score_map = (dog_norm * 0.45 + sym_norm * 0.35 + cavity_contrast * 0.20) * mask * cloud_core_mask
-            else:
-                score_map = (sym_norm * 0.55 + spiral_norm * 0.25 + enclosure_norm * 0.20) * mask * cloud_core_mask
-        detection_mode = "CenterNet Multi-Radius FRST Symmetry, Eyewall Ring & Cavity Refinement"
+        flux_norm = (flux_smooth - flux_smooth.min()) / (flux_smooth.max() - flux_smooth.min() + 1e-6)
+        score_map = flux_norm * mask
+        detection_mode = "CenterNet Multi-Radius GVF Inflow & Fast Radial Symmetry Refinement"
 
         # Step 3: Screening Criterion (Continuous Multi-Factor Score, Zero False Alarms)
         valid_scores = score_map[mask > 0.5]
