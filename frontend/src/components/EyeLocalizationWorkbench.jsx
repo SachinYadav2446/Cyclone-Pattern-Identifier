@@ -1143,7 +1143,8 @@ export default function EyeLocalizationWorkbench({
       const res = await fetch(`${API_BASE_URL}/api/v1/models/export-bulletin-pdf`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(90000)
       });
 
       if (!res.ok) {
@@ -1162,13 +1163,14 @@ export default function EyeLocalizationWorkbench({
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Failed to download PDF:', err);
-      alert('Unable to generate PDF bulletin. Ensure backend server is active.');
+      alert('PDF generation failed. If this is your first request, the server may be waking up — please wait 30 seconds and try again.');
     } finally {
       setIsDownloadingPdf(false);
     }
   };
 
   const isModal = Boolean(onClose);
+  const isCustomUploading = isLoadingApi && Boolean(customImage);
 
   const hasInputImage = Boolean(customImage);
 
@@ -1893,31 +1895,31 @@ export default function EyeLocalizationWorkbench({
                     <div className="p-2 bg-[#120a1c] border border-[#64104E]/50 rounded-xl">
                       <span className="text-slate-400 text-[9px] block font-semibold">MSW SUSTAINED WIND</span>
                       <div className="text-xl font-black text-white mt-0.5">
-                        {mswKnots} <span className="text-[10px] text-slate-400 font-normal">KTS</span>
+                        {isCustomUploading ? '--' : mswKnots} <span className="text-[10px] text-slate-400 font-normal">KTS</span>
                       </div>
-                      <span className="text-[9px] text-[#E04A31] font-semibold">{mswKmh} km/h</span>
+                      <span className="text-[9px] text-[#E04A31] font-semibold">{isCustomUploading ? '--' : mswKmh} km/h</span>
                     </div>
 
                     <div className="p-2 bg-[#120a1c] border border-[#64104E]/50 rounded-xl">
                       <span className="text-slate-400 text-[9px] block font-semibold">CENTRAL MIN PRESSURE</span>
                       <div className="text-xl font-black text-white mt-0.5">
-                        {centralPressure} <span className="text-[10px] text-slate-400 font-normal">HPA</span>
+                        {isCustomUploading ? '--' : centralPressure} <span className="text-[10px] text-slate-400 font-normal">HPA</span>
                       </div>
-                      <span className="text-[9px] text-[#C3864D] font-semibold">-{pressureDeficit} hPa deficit</span>
+                      <span className="text-[9px] text-[#C3864D] font-semibold">{isCustomUploading ? '-- hPa deficit' : `-${pressureDeficit} hPa deficit`}</span>
                     </div>
 
                     <div className="p-2 bg-[#120a1c] border border-[#64104E]/50 rounded-xl">
                       <span className="text-slate-400 text-[9px] block font-semibold">DVORAK INTENSITY</span>
                       <div className="text-xl font-black text-white mt-0.5">
-                        T{dvorakT}
+                        {isCustomUploading ? 'T--' : `T${dvorakT}`}
                       </div>
-                      <span className="text-[9px] text-slate-300 font-semibold">CI {dvorakT} Rating</span>
+                      <span className="text-[9px] text-slate-300 font-semibold">{isCustomUploading ? 'Processing...' : `CI ${dvorakT} Rating`}</span>
                     </div>
 
                     <div className="p-2 bg-[#120a1c] border border-[#64104E]/50 rounded-xl">
                       <span className="text-slate-400 text-[9px] block font-semibold">SUB-PIXEL EYE CENTER</span>
                       <div className="text-xs font-black text-white mt-0.5 truncate">
-                        {predLat}°N, {predLon}°E
+                        {isCustomUploading ? '--°N, --°E' : `${predLat}°N, ${predLon}°E`}
                       </div>
                       <span className="text-[9px] text-slate-400 font-semibold">Δx={subDx}, Δy={subDy}</span>
                     </div>
@@ -1928,7 +1930,7 @@ export default function EyeLocalizationWorkbench({
                     <div className="px-2 py-1 bg-[#120a1c]/80 border border-[#64104E]/40 rounded-lg">
                       <span className="text-[8px] text-slate-400 block uppercase">EYEWALL COMPLETION</span>
                       <span className="font-bold text-cyan-300 block text-[10.5px]">
-                        {apiData?.predicted_eye?.eyewall_completeness_pct !== undefined ? `${apiData.predicted_eye.eyewall_completeness_pct}%` : '86.5%'}
+                        {isCustomUploading ? '--' : (apiData?.predicted_eye?.eyewall_completeness_pct !== undefined ? `${apiData.predicted_eye.eyewall_completeness_pct}%` : '86.5%')}
                       </span>
                       <span className="text-[7.5px] text-slate-400 block truncate">
                         {apiData?.predicted_eye?.azimuthal_closed_sectors || '31/36 Closed Rays'}
@@ -1938,20 +1940,20 @@ export default function EyeLocalizationWorkbench({
                     <div className="px-2 py-1 bg-[#120a1c]/80 border border-[#64104E]/40 rounded-lg">
                       <span className="text-[8px] text-slate-400 block uppercase">ELLIPTICITY (a/b)</span>
                       <span className="font-bold text-amber-300 block text-[10.5px]">
-                        {apiData?.predicted_eye?.ellipticity_ratio || 1.15}
+                        {isCustomUploading ? '--' : (apiData?.predicted_eye?.ellipticity_ratio || 1.15)}
                       </span>
                       <span className="text-[7.5px] text-slate-400 block truncate">
-                        {(apiData?.predicted_eye?.ellipticity_ratio || 1.15) > 1.35 ? 'Sheared Core' : 'Axisymmetric Core'}
+                        {isCustomUploading ? '...' : ((apiData?.predicted_eye?.ellipticity_ratio || 1.15) > 1.35 ? 'Sheared Core' : 'Axisymmetric Core')}
                       </span>
                     </div>
 
                     <div className="px-2 py-1 bg-[#120a1c]/80 border border-[#64104E]/40 rounded-lg">
                       <span className="text-[8px] text-slate-400 block uppercase">MEASURED EYE Ø</span>
                       <span className="font-bold text-white block text-[10.5px]">
-                        {eyeDiameter} km
+                        {isCustomUploading ? '--' : eyeDiameter} km
                       </span>
                       <span className="text-[7.5px] text-[#C3864D] block truncate">
-                        {apiData?.predicted_eye?.morphology ? apiData.predicted_eye.morphology.split(' (')[0] : 'CIRCULAR EYE'}
+                        {isCustomUploading ? '...' : (apiData?.predicted_eye?.morphology ? apiData.predicted_eye.morphology.split(' (')[0] : 'CIRCULAR EYE')}
                       </span>
                     </div>
                   </div>
