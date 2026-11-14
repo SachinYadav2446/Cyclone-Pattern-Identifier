@@ -80,7 +80,7 @@ export default function App() {
 
     const handleOpenBulletinForStorm = async (stormId) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/forecast/wnc-ensemble/${stormId}`);
+      const res = await fetch(`${API_BASE_URL}/api/v1/forecast/wnc-ensemble/${stormId}`);
       if (res.ok) {
         const data = await res.json();
         const t0 = data.t0_analysis || {};

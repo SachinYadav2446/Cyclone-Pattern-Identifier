@@ -1282,7 +1282,19 @@ class EyeDetector:
             else:
                 score_map = (sym_norm * 0.40 + ring_norm * 0.35 + core_norm * 0.25) * mask
         else:
-            score_map = (sym_norm * 0.60 + spiral_norm * 0.25 + enclosure_norm * 0.15) * mask
+            # Difference-of-Gaussians for dark cavity inside bright eyewall (Monochrome IR & VIS)
+            dog_cavity = gaussian_filter(gray_np, sigma=18.0) - gaussian_filter(gray_np, sigma=3.2)
+            dog_norm = np.clip(dog_cavity, 0.0, None)
+            max_dog = float(np.max(dog_norm))
+            dog_norm = (dog_norm / (max_dog + 1e-6)) if max_dog > 0 else np.zeros((512, 512), dtype=np.float32)
+
+            cloud_mass = gaussian_filter((gray_np > 75).astype(np.float32), sigma=14.0)
+            cloud_core_mask = (cloud_mass > 0.35).astype(np.float32)
+
+            if max_dog > 18.0:
+                score_map = (dog_norm * 0.45 + sym_norm * 0.35 + cavity_contrast * 0.20) * mask * cloud_core_mask
+            else:
+                score_map = (sym_norm * 0.55 + spiral_norm * 0.25 + enclosure_norm * 0.20) * mask * cloud_core_mask
         detection_mode = "CenterNet Multi-Radius FRST Symmetry, Eyewall Ring & Cavity Refinement"
 
         # Step 3: Screening Criterion (Continuous Multi-Factor Score, Zero False Alarms)

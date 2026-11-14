@@ -1367,9 +1367,10 @@ export default function EyeLocalizationWorkbench({
             {/* Viewport Canvas with CenterNet Eye Reticle + Overlays */}
             <div
               ref={canvasRef}
+              onClick={handleCanvasClick}
               onMouseMove={handleMouseMove}
               onMouseLeave={() => setMouseCoords(null)}
-              className="relative w-full aspect-[4/3] min-h-[260px] sm:min-h-[420px] md:min-h-[560px] lg:min-h-[640px] bg-black overflow-hidden flex items-center justify-center cursor-default select-none"
+              className="relative w-full aspect-[4/3] min-h-[260px] sm:min-h-[420px] md:min-h-[560px] lg:min-h-[640px] bg-black overflow-hidden flex items-center justify-center cursor-crosshair select-none"
             >
               {/* 1. Underlying Satellite Frame */}
               <img
