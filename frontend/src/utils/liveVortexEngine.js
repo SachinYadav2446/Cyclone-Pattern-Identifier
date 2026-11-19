@@ -22,7 +22,7 @@ export function getLiveVortexAnalysis(channelId = 'ir1', mode = 'live') {
   };
 
   // Quiescent real-time baseline when user switches to live clear-sky downlink
-  if (mode === 'live') {
+  if (mode === 'quiescent' || mode === 'clear') {
     return {
       status: 'QUIESCENT_BASELINE',
       source: 'INSAT-3D 74.0°E Live Satellite Downlink',

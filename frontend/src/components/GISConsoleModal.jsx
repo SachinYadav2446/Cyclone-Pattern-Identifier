@@ -127,7 +127,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
   const [hoverCoords, setHoverCoords] = useState(null);
 
   // Operational Live Downlink Mode (74.0°E IMD Geostationary All 4 Channels)
-  const [surveillanceMode, setSurveillanceMode] = useState('live');
+  const [surveillanceMode, setSurveillanceMode] = useState('storm');
 
   // Environmental NWP Layer: 'satellite' | 'humidity' | 'temperature' | 'wind' | 'pressure'
   const [environmentalLayer, setEnvironmentalLayer] = useState('satellite');
@@ -558,6 +558,32 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                 INSAT-3D · 74.0°E
               </span>
             </div>
+          </div>
+
+          {/* Center Mode Switcher: Active Storm vs Quiescent */}
+          <div className="hidden md:flex items-center p-0.5 bg-[#120a1c] border border-[#64104E]/50 rounded-lg text-[10.5px]">
+            <button
+              onClick={() => handleModeChange('storm')}
+              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                surveillanceMode === 'storm'
+                  ? 'bg-gradient-to-r from-[#B43067] to-[#E04A31] text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
+              <span>ACTIVE VORTEX (BOB-SYS-01)</span>
+            </button>
+            <button
+              onClick={() => handleModeChange('quiescent')}
+              className={`px-3 py-1 rounded-md font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                surveillanceMode === 'quiescent' || surveillanceMode === 'live'
+                  ? 'bg-emerald-800 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>QUIESCENT (ALL CLEAR)</span>
+            </button>
           </div>
 
           {/* Right: Controls & Actions */}
@@ -1458,12 +1484,16 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                     <span className="text-[11px] font-medium">Analyzing Multi-Spectral Satellite Pass...</span>
                   </div>
                 ) : hasActiveSystems ? (
-                  <div className="absolute bottom-3 right-3 bg-black/90 border border-[#B43067]/50 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs text-slate-100 shadow-xl pointer-events-none">
-                    <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shadow-[0_0_6px_#ea580c]" />
-                    <span className="text-[11px] font-bold text-white tracking-wide">
-                      TARGET LOCKED: {detectedSystems[0]?.name || 'SEVERE CYCLONIC STORM (BOB-SYS-01)'} ({eyeLat}°N, {eyeLon}°E)
+                  <button
+                    onClick={() => onOpenInWorkbench && onOpenInWorkbench(liveAnalysis)}
+                    className="absolute bottom-3 right-3 bg-black/90 border border-[#E04A31] hover:border-white backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs text-slate-100 shadow-xl transition-all cursor-pointer z-30 group"
+                    title="Click to inspect this vortex in the Sub-Pixel AI Workbench"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-red-400 animate-ping shadow-[0_0_8px_#E04A31]" />
+                    <span className="text-[11px] font-bold text-white tracking-wide group-hover:text-amber-200">
+                      TARGET LOCKED: {detectedSystems[0]?.name || 'SEVERE CYCLONIC STORM (BOB-SYS-01)'} ({eyeLat}°N, {eyeLon}°E) · INSPECT ➔
                     </span>
-                  </div>
+                  </button>
                 ) : (
                   <div className="absolute bottom-3 right-3 bg-black/85 border border-[#64104E]/50 backdrop-blur-md px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs text-slate-200 shadow-xl pointer-events-none">
                     <span className="w-2 h-2 rounded-full bg-orange-400" />
@@ -1603,6 +1633,15 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                           T{intensity?.dvorak_t_number || '3.5'}
                         </span>
                       </div>
+
+                      {/* Launch Sub-Pixel AI Workbench Action */}
+                      <button
+                        onClick={() => onOpenInWorkbench && onOpenInWorkbench(liveAnalysis)}
+                        className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-r from-[#B43067] via-[#E04A31] to-[#C3864D] hover:brightness-110 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer active:scale-98 border border-[#E04A31]/50"
+                      >
+                        <Radio className="w-4 h-4 animate-pulse text-amber-200" />
+                        <span>ANALYZE VORTEX IN AI WORKBENCH ➔</span>
+                      </button>
 
                       {/* Primary Numerical Telemetry Grid */}
                       <div className="grid grid-cols-2 gap-2 text-xs">

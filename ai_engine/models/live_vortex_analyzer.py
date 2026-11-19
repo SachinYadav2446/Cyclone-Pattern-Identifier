@@ -233,7 +233,7 @@ class LiveVortexAnalyzer:
             max_size = max(sizes) if sizes else 0
 
             # Organized convective system threshold (mature tropical cyclone >= 65,000 pixels in marine sector)
-            if max_size >= 65000:
+            if max_size >= 6000:
                 # Stage 0 Gatekeeper: Verify cluster exhibits genuine cyclonic circulation and defined eye
                 patch_img = Image.fromarray(np.clip(bob_crop, 0, 255).astype(np.uint8))
                 buf = io.BytesIO()
@@ -292,7 +292,7 @@ class LiveVortexAnalyzer:
             sizes = [np.sum(as_labeled == i) for i in range(1, num_as_clusters + 1)]
             max_size = max(sizes) if sizes else 0
 
-            if max_size >= 65000:
+            if max_size >= 6000:
                 patch_img = Image.fromarray(np.clip(as_crop, 0, 255).astype(np.uint8))
                 buf = io.BytesIO()
                 patch_img.save(buf, format="PNG")
