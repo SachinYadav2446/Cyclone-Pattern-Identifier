@@ -397,10 +397,10 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
     effectiveEyeFix?.has_eye !== false
   );
 
-  const reticleX = effectiveEyeFix?.pixel_x_percent ?? (hasActiveSystems ? 62.14 : null);
-  const reticleY = effectiveEyeFix?.pixel_y_percent ?? (hasActiveSystems ? 42.74 : null);
-  const eyeLat = effectiveEyeFix?.latitude ?? 18.23;
-  const eyeLon = effectiveEyeFix?.longitude ?? 85.74;
+  const reticleX = effectiveEyeFix?.pixel_x_percent ?? (hasActiveSystems ? 64.5 : null);
+  const reticleY = effectiveEyeFix?.pixel_y_percent ?? (hasActiveSystems ? 63.2 : null);
+  const eyeLat = effectiveEyeFix?.latitude ?? 17.50;
+  const eyeLon = effectiveEyeFix?.longitude ?? 86.50;
 
   const intensity = liveAnalysis?.intensity_analysis || null;
   const quadrantRadii = liveAnalysis?.quadrant_wind_radii || {
@@ -410,8 +410,8 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
   };
   const trajectoryForecast = liveAnalysis?.trajectory_forecast || null;
   const rawWaypoints = trajectoryForecast?.waypoints_48h || [];
-  const baseT0X = rawWaypoints[0]?.pixel_x ?? 62.14;
-  const baseT0Y = rawWaypoints[0]?.pixel_y ?? 42.74;
+  const baseT0X = rawWaypoints[0]?.pixel_x ?? 64.5;
+  const baseT0Y = rawWaypoints[0]?.pixel_y ?? 63.2;
   const shiftDx = (reticleX !== null) ? (reticleX - baseT0X) : 0;
   const shiftDy = (reticleY !== null) ? (reticleY - baseT0Y) : 0;
 

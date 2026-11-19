@@ -133,24 +133,24 @@ export function getLiveVortexAnalysis(channelId = 'ir1', mode = 'live') {
 
   // Active Multi-Spectral Cyclone Surveillance Mode (BOB-SYS-01)
   const channelCoords = {
-    ir1: { x: 62.14, y: 42.74, dx: 0.17, dy: -0.15, deltaT: 87.3, diam: 22.4 },
-    vis: { x: 45.51, y: 62.89, dx: 0.0, dy: 0.0, deltaT: 49.3, diam: 18.0 },
-    wv: { x: 52.48, y: 37.85, dx: 0.04, dy: -0.04, deltaT: 62.1, diam: 24.0 },
-    ctbt: { x: 65.07, y: 50.78, dx: 0.16, dy: 0.01, deltaT: 85.0, diam: 21.0 },
+    ir1: { x: 64.5, y: 63.2, dx: 0.17, dy: -0.15, deltaT: 87.3, diam: 28.4 },
+    vis: { x: 64.5, y: 63.2, dx: 0.0, dy: 0.0, deltaT: 49.3, diam: 25.0 },
+    wv: { x: 64.5, y: 63.2, dx: 0.04, dy: -0.04, deltaT: 62.1, diam: 28.0 },
+    ctbt: { x: 64.5, y: 63.2, dx: 0.16, dy: 0.01, deltaT: 85.0, diam: 26.0 },
   };
 
   const ch = channelCoords[channelId] || channelCoords.ir1;
-  const lat = 18.23;
-  const lon = 85.74;
+  const lat = 17.50;
+  const lon = 86.50;
 
   const waypoints = [
-    { hour: 0, label: 'T0 (Analysis Fix)', lat: 18.23, lon: 85.74, wind_kts: 55.0, pressure_hpa: 985.8, category: 'Severe Cyclonic Storm', pixel_x: ch.x, pixel_y: ch.y },
-    { hour: 6, label: '+6h', lat: 18.95, lon: 85.98, wind_kts: 62.0, pressure_hpa: 980.2, category: 'Severe Cyclonic Storm', pixel_x: ch.x + 0.8, pixel_y: ch.y - 3.2 },
-    { hour: 12, label: '+12h', lat: 19.82, lon: 86.32, wind_kts: 70.0, pressure_hpa: 974.1, category: 'Very Severe Cyclonic Storm', pixel_x: ch.x + 1.8, pixel_y: ch.y - 7.1 },
-    { hour: 18, label: '+18h (Landfall: Puri)', lat: 20.71, lon: 86.85, wind_kts: 75.0, pressure_hpa: 969.5, category: 'Very Severe Cyclonic Storm', pixel_x: ch.x + 3.2, pixel_y: ch.y - 11.2 },
-    { hour: 24, label: '+24h', lat: 21.45, lon: 87.42, wind_kts: 65.0, pressure_hpa: 978.0, category: 'Severe Cyclonic Storm', pixel_x: ch.x + 4.8, pixel_y: ch.y - 14.8 },
-    { hour: 36, label: '+36h', lat: 22.80, lon: 88.50, wind_kts: 45.0, pressure_hpa: 990.2, category: 'Cyclonic Storm', pixel_x: ch.x + 7.5, pixel_y: ch.y - 20.5 },
-    { hour: 48, label: '+48h', lat: 24.10, lon: 89.65, wind_kts: 30.0, pressure_hpa: 998.5, category: 'Deep Depression', pixel_x: ch.x + 10.2, pixel_y: ch.y - 25.8 }
+    { hour: 0, label: 'T0 (Analysis Fix)', lat: 17.50, lon: 86.50, wind_kts: 65.0, pressure_hpa: 980.0, category: 'Severe Cyclonic Storm', pixel_x: ch.x, pixel_y: ch.y },
+    { hour: 6, label: '+6h', lat: 18.25, lon: 86.15, wind_kts: 70.0, pressure_hpa: 974.0, category: 'Very Severe Cyclonic Storm', pixel_x: ch.x - 0.7, pixel_y: ch.y - 3.8 },
+    { hour: 12, label: '+12h', lat: 19.10, lon: 85.85, wind_kts: 80.0, pressure_hpa: 965.0, category: 'Very Severe Cyclonic Storm', pixel_x: ch.x - 1.5, pixel_y: ch.y - 7.6 },
+    { hour: 18, label: '+18h (Landfall: Puri)', lat: 19.80, lon: 85.80, wind_kts: 75.0, pressure_hpa: 969.5, category: 'Very Severe Cyclonic Storm', pixel_x: ch.x - 2.2, pixel_y: ch.y - 11.4 },
+    { hour: 24, label: '+24h', lat: 20.60, lon: 85.95, wind_kts: 55.0, pressure_hpa: 985.0, category: 'Severe Cyclonic Storm', pixel_x: ch.x - 2.0, pixel_y: ch.y - 15.2 },
+    { hour: 36, label: '+36h', lat: 21.80, lon: 86.50, wind_kts: 40.0, pressure_hpa: 994.0, category: 'Cyclonic Storm', pixel_x: ch.x - 0.8, pixel_y: ch.y - 20.8 },
+    { hour: 48, label: '+48h', lat: 23.10, lon: 87.40, wind_kts: 28.0, pressure_hpa: 1000.0, category: 'Deep Depression', pixel_x: ch.x + 1.2, pixel_y: ch.y - 26.2 }
   ];
 
   // WeatherNext Cyclones (WN-C Nature 2026) 10-Member Ensemble Tracks
