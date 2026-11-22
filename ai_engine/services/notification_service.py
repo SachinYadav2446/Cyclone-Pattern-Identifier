@@ -163,13 +163,19 @@ class NotificationService:
             eye_diam_km = float(eye.get("eye_diameter_km", 28.5))
             delta_t_k = float(eye.get("delta_t_k", 52.3))
 
-            storm_name = prim.get("name") or ("SUPER CYCLONIC STORM FANI" if msw_kts >= 110 else "CYCLONIC STORM")
+            basin_id = prim.get("basin", "Bay of Bengal")
+            is_arabian_sea = ("arabian" in basin_id.lower()) or (lon < 76.0)
+            storm_name = prim.get("name") or (f"{cat_name} ({prim.get('id', 'VORTEX-01')})")
 
             # Trajectory & Landfall timing
             landfall_proj = traj.get("landfall_projection") or {}
             landfall_eta_hrs = float(landfall_proj.get("hours_to_landfall", 28.5))
             distance_to_coast_km = float(landfall_proj.get("distance_to_coast_km", 270.0))
-            landfall_target = landfall_proj.get("landfall_target_district", "Puri District Coastline, Odisha")
+            lf_dist = landfall_proj.get("landfall_target_district") or landfall_proj.get("district")
+            if not lf_dist or str(lf_dist).strip() == "None":
+                landfall_target = "Kutch & Saurashtra Coastline, Gujarat" if is_arabian_sea else "Puri District Coastline, Odisha"
+            else:
+                landfall_target = str(lf_dist)
             landfall_lat = float(landfall_proj.get("landfall_latitude", 19.80))
             landfall_lon = float(landfall_proj.get("landfall_longitude", 85.85))
 
@@ -262,59 +268,116 @@ class NotificationService:
                 }
             ]
 
-            district_matrix = [
-                {
-                    "district": "Puri",
-                    "state": "Odisha",
-                    "threat_level": "EXTREME (RED)",
-                    "badge_bg": "bg-red-950 text-red-300 border-red-700",
-                    "est_surge_m": surge_m,
-                    "port_signal": "Great Danger Signal No. 10",
-                    "mandate": "Immediate mandatory evacuation of Zone A & B coastal fringe to cyclone shelters."
-                },
-                {
-                    "district": "Jagatsinghpur (Paradip)",
-                    "state": "Odisha",
-                    "threat_level": "CRITICAL (ORANGE)",
-                    "badge_bg": "bg-orange-950 text-orange-300 border-orange-700",
-                    "est_surge_m": round(surge_m * 0.82, 1),
-                    "port_signal": "Great Danger Signal No. 10",
-                    "mandate": "Port closed. All bunkering stopped; commercial vessels shifted to deep outer anchorage."
-                },
-                {
-                    "district": "Kendrapara",
-                    "state": "Odisha",
-                    "threat_level": "SEVERE (ORANGE)",
-                    "badge_bg": "bg-amber-950 text-amber-300 border-amber-700",
-                    "est_surge_m": round(surge_m * 0.68, 1),
-                    "port_signal": "Danger Signal No. 8",
-                    "mandate": "Breach alert on saline embankments and tidal creeks. NDRF flood teams deployed."
-                },
-                {
-                    "district": "Ganjam (Gopalpur)",
-                    "state": "Odisha",
-                    "threat_level": "MODERATE (AMBER)",
-                    "badge_bg": "bg-yellow-950 text-yellow-300 border-yellow-700",
-                    "est_surge_m": round(surge_m * 0.45, 1),
-                    "port_signal": "Local Cautionary Signal No. 3",
-                    "mandate": "Squall wind precaution. Fishermen advised not to venture into deep sea."
-                },
-                {
-                    "district": "East Medinipur (Digha)",
-                    "state": "West Bengal",
-                    "threat_level": "ADVISORY (YELLOW)",
-                    "badge_bg": "bg-blue-950 text-blue-300 border-blue-700",
-                    "est_surge_m": round(surge_m * 0.35, 1),
-                    "port_signal": "Local Cautionary Signal No. 3",
-                    "mandate": "Sea beaches closed to public and tourists; mechanized trawlers harbor bound."
-                }
-            ]
+            # Basin-specific early warning and coastal threat matrix
+            basin_id = prim.get("basin", "Bay of Bengal")
+            is_arabian_sea = ("arabian" in basin_id.lower()) or (lon < 76.0)
+
+            if is_arabian_sea:
+                basin_display = "Arabian Sea (North Indian Ocean)"
+                default_target = "Kutch and Saurashtra Coastline, Gujarat"
+                district_matrix = [
+                    {
+                        "district": "Devbhumi Dwarka and Porbandar",
+                        "state": "Gujarat",
+                        "threat_level": "EXTREME (RED)",
+                        "badge_bg": "bg-red-950 text-red-300 border-red-700",
+                        "est_surge_m": surge_m,
+                        "port_signal": "Great Danger Signal No. 10",
+                        "mandate": "Immediate mandatory evacuation of coastal fringe and low-lying island wards."
+                    },
+                    {
+                        "district": "Kutch (Kandla / Mundra / Jakhau)",
+                        "state": "Gujarat",
+                        "threat_level": "CRITICAL (ORANGE)",
+                        "badge_bg": "bg-orange-950 text-orange-300 border-orange-700",
+                        "est_surge_m": round(surge_m * 0.85, 1),
+                        "port_signal": "Great Danger Signal No. 9",
+                        "mandate": "Major ports suspended. Cargo handling stopped; commercial vessels shifted to deep outer anchorage."
+                    },
+                    {
+                        "district": "Jamnagar and Morbi",
+                        "state": "Gujarat",
+                        "threat_level": "SEVERE (ORANGE)",
+                        "badge_bg": "bg-amber-950 text-amber-300 border-amber-700",
+                        "est_surge_m": round(surge_m * 0.70, 1),
+                        "port_signal": "Danger Signal No. 8",
+                        "mandate": "Tidal creek flooding alert. Pre-positioned NDRF flood rescue teams deployed."
+                    },
+                    {
+                        "district": "Greater Mumbai and Raigad",
+                        "state": "Maharashtra",
+                        "threat_level": "MODERATE (AMBER)",
+                        "badge_bg": "bg-yellow-950 text-yellow-300 border-yellow-700",
+                        "est_surge_m": round(surge_m * 0.45, 1),
+                        "port_signal": "Local Cautionary Signal No. 3",
+                        "mandate": "High squall wind alert. Fishermen advised against venturing into deep sea."
+                    },
+                    {
+                        "district": "Ratnagiri and Sindhudurg",
+                        "state": "Maharashtra",
+                        "threat_level": "ADVISORY (YELLOW)",
+                        "badge_bg": "bg-blue-950 text-blue-300 border-blue-700",
+                        "est_surge_m": round(surge_m * 0.35, 1),
+                        "port_signal": "Local Cautionary Signal No. 3",
+                        "mandate": "Beach access restricted. Coastal craft advised to remain in sheltered harbour berths."
+                    }
+                ]
+            else:
+                basin_display = "Bay of Bengal (North Indian Ocean)"
+                default_target = "Puri District Coastline, Odisha"
+                district_matrix = [
+                    {
+                        "district": "Puri",
+                        "state": "Odisha",
+                        "threat_level": "EXTREME (RED)",
+                        "badge_bg": "bg-red-950 text-red-300 border-red-700",
+                        "est_surge_m": surge_m,
+                        "port_signal": "Great Danger Signal No. 10",
+                        "mandate": "Immediate mandatory evacuation of Zone A & B coastal fringe to cyclone shelters."
+                    },
+                    {
+                        "district": "Jagatsinghpur (Paradip)",
+                        "state": "Odisha",
+                        "threat_level": "CRITICAL (ORANGE)",
+                        "badge_bg": "bg-orange-950 text-orange-300 border-orange-700",
+                        "est_surge_m": round(surge_m * 0.82, 1),
+                        "port_signal": "Great Danger Signal No. 10",
+                        "mandate": "Port closed. All bunkering stopped; commercial vessels shifted to deep outer anchorage."
+                    },
+                    {
+                        "district": "Kendrapara and Bhadrak",
+                        "state": "Odisha",
+                        "threat_level": "SEVERE (ORANGE)",
+                        "badge_bg": "bg-amber-950 text-amber-300 border-amber-700",
+                        "est_surge_m": round(surge_m * 0.68, 1),
+                        "port_signal": "Danger Signal No. 8",
+                        "mandate": "Breach alert on saline embankments and tidal creeks. NDRF flood teams deployed."
+                    },
+                    {
+                        "district": "Ganjam (Gopalpur)",
+                        "state": "Odisha",
+                        "threat_level": "MODERATE (AMBER)",
+                        "badge_bg": "bg-yellow-950 text-yellow-300 border-yellow-700",
+                        "est_surge_m": round(surge_m * 0.45, 1),
+                        "port_signal": "Local Cautionary Signal No. 3",
+                        "mandate": "Squall wind precaution. Fishermen advised not to venture into deep sea."
+                    },
+                    {
+                        "district": "East Medinipur and Digha",
+                        "state": "West Bengal",
+                        "threat_level": "ADVISORY (YELLOW)",
+                        "badge_bg": "bg-blue-950 text-blue-300 border-blue-700",
+                        "est_surge_m": round(surge_m * 0.35, 1),
+                        "port_signal": "Local Cautionary Signal No. 3",
+                        "mandate": "Sea beaches closed to public and tourists; mechanized trawlers harbor bound."
+                    }
+                ]
 
             live_warning = {
                 "live_status": "ACTIVE_CYCLONE",
                 "feed_mode": pass_mode,
                 "storm_name": storm_name,
-                "basin": "Bay of Bengal (North Indian Ocean)",
+                "basin": basin_display,
                 "platform": "ISRO INSAT-3D/3DR (74.0°E Geostationary Downlink)",
                 "channel": "TIR-1 (10.8 µm Window)",
                 "timestamp_utc": pass_time,
