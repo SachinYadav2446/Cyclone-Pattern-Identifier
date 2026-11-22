@@ -124,10 +124,11 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('');
   const [failedImages, setFailedImages] = useState({});
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [hoverCoords, setHoverCoords] = useState(null);
 
   // Operational Live Downlink Mode (74.0°E IMD Geostationary All 4 Channels)
-  const [surveillanceMode, setSurveillanceMode] = useState('storm');
+  const [surveillanceMode, setSurveillanceMode] = useState('live');
 
   // Environmental NWP Layer: 'satellite' | 'humidity' | 'temperature' | 'wind' | 'pressure'
   const [environmentalLayer, setEnvironmentalLayer] = useState('satellite');
@@ -182,7 +183,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
     const activeParam = channelId === 'quad' ? 'ir1' : channelId;
     try {
       const endpoint = `${API_BASE_URL}/api/v1/live/latest-analysis?channel=${activeParam}&mode=${mode}${refresh ? '&refresh=true' : ''}`;
-      const res = await fetch(endpoint, { signal: AbortSignal.timeout(6000) });
+      const res = await fetch(endpoint, { signal: AbortSignal.timeout(45000) });
       if (res.ok) {
         const data = await res.json();
         setLiveAnalysis(data);
@@ -262,6 +263,9 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
   // Guaranteed Live Operational Downlink for all 4 channels (FastAPI Backend + Direct IMD failover)
   const getLiveImageSrc = (channel) => {
     const status = failedImages[channel.id];
+    if (status === 'fallback') {
+      return channel.fallbackUrl;
+    }
     if (status === 'direct') {
       return `${channel.liveUrl}?t=${cacheBuster}`;
     }
@@ -270,9 +274,11 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
   };
 
   const handleImageError = (channelId) => {
+    setIsImageLoaded(false);
     setFailedImages((prev) => {
-      // If backend proxy encounters network timeout, failover to direct IMD geostationary feed
-      if (!prev[channelId]) return { ...prev, [channelId]: 'direct' };
+      const current = prev[channelId];
+      if (!current) return { ...prev, [channelId]: 'direct' };
+      if (current === 'direct') return { ...prev, [channelId]: 'fallback' };
       return prev;
     });
   };
@@ -370,19 +376,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
 
     // 1. Fetch real-time Point Atmospheric Sounding (Zoom Earth style)
     fetchAtmosphericPoint(lat, lon, clickX, clickY);
-
-    // 2. Set analyst manual eye coordinate for fine-tuning
-    setManualEyeFix({
-      pixel_x_percent: clickX,
-      pixel_y_percent: clickY,
-      latitude: lat,
-      longitude: lon,
-      subpixel_offset: { dx: 0.0, dy: 0.0 },
-      eye_diameter_km: eyeFix?.eye_diameter_km || 22.4,
-      delta_t_k: eyeFix?.delta_t_k || 87.3,
-      confidence: 4.0,
-      isManual: true
-    });
+    // Note: Do not overwrite the AI-detected cyclone eye on generic map sounding clicks
   };
 
   if (!isOpen) return null;
@@ -397,8 +391,8 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
     effectiveEyeFix?.has_eye !== false
   );
 
-  const reticleX = effectiveEyeFix?.pixel_x_percent ?? (hasActiveSystems ? 64.5 : null);
-  const reticleY = effectiveEyeFix?.pixel_y_percent ?? (hasActiveSystems ? 63.2 : null);
+  const reticleX = (hasActiveSystems && effectiveEyeFix?.pixel_x_percent != null) ? effectiveEyeFix.pixel_x_percent : null;
+  const reticleY = (hasActiveSystems && effectiveEyeFix?.pixel_y_percent != null) ? effectiveEyeFix.pixel_y_percent : null;
   const eyeLat = effectiveEyeFix?.latitude ?? 17.50;
   const eyeLon = effectiveEyeFix?.longitude ?? 86.50;
 
@@ -556,6 +550,15 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
               </h1>
               <span className="text-[10px] text-slate-400 font-mono border-l border-[#64104E]/50 pl-2">
                 INSAT-3D · 74.0°E
+              </span>
+              <span className={`text-[9.5px] px-2 py-0.5 rounded font-bold border ${
+                isLoadingAnalysis 
+                  ? 'bg-amber-950/80 border-amber-600 text-amber-300 animate-pulse'
+                  : isBackendConnected
+                  ? 'bg-emerald-950/80 border-emerald-600 text-emerald-300'
+                  : 'bg-purple-950/80 border-purple-600 text-purple-300'
+              }`}>
+                {isLoadingAnalysis ? 'SCANNING SAT PASS...' : isBackendConnected ? 'LIVE AI ACTIVE' : 'CLIENT ENGINE'}
               </span>
             </div>
           </div>
@@ -745,7 +748,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                 ) : (
                   <span className="text-slate-500 hidden sm:inline flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#120a1c]/60 border border-[#64104E]/50">
                     <Crosshair className="w-3 h-3 text-slate-500" />
-                    <span>CLICK VIEWPORT TO FINE-TUNE EYE</span>
+                    <span>CLICK MAP TO INSPECT ATMOSPHERIC SOUNDING</span>
                   </span>
                 )}
               </div>
@@ -768,7 +771,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                       loading="eager"
                       referrerPolicy="no-referrer"
                       onError={() => handleImageError(ch.id)}
-                      className="w-full h-full object-cover filter contrast-105 group-hover:scale-[1.02] transition-transform duration-300"
+                      className="w-full h-full object-fill filter contrast-105 group-hover:scale-[1.02] transition-transform duration-300"
                     />
 
                     {/* Top-Left Channel Tag */}
@@ -795,7 +798,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                     </div>
 
                     {/* CenterNet Circular Eye Reticle Overlay in Quad View */}
-                    {hasActiveSystems && reticleX !== null && reticleY !== null && (
+                    {hasActiveSystems && isImageLoaded && reticleX !== null && reticleY !== null && (
                       <div 
                         className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none select-none"
                         style={{ left: `${reticleX}%`, top: `${reticleY}%` }}
@@ -833,8 +836,9 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                   alt={activeChannel.name}
                   loading="eager"
                   referrerPolicy="no-referrer"
+                  onLoad={() => setIsImageLoaded(true)}
                   onError={() => handleImageError(activeChannel.id)}
-                  className="w-full h-full object-cover filter contrast-105"
+                  className="w-full h-full object-fill filter contrast-105"
                 />
 
                 {/* Ambient Grid Vignette */}
@@ -937,7 +941,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                 </div>
 
                 {/* Active CenterNet Vortex Eye Reticle Overlay */}
-                {hasActiveSystems && reticleX !== null && reticleY !== null && (
+                {hasActiveSystems && isImageLoaded && reticleX !== null && reticleY !== null && (
                   <div 
                     className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none select-none"
                     style={{ left: `${reticleX}%`, top: `${reticleY}%` }}
@@ -971,7 +975,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                 )}
 
                 {/* 10x High-Resolution Eyewall Zoom Loupe (Picture-in-Picture) */}
-                {showZoomLoupe && hasActiveSystems && reticleX !== null && reticleY !== null && (
+                {showZoomLoupe && hasActiveSystems && isImageLoaded && reticleX !== null && reticleY !== null && (
                   <div className="absolute bottom-4 left-4 z-30 w-48 h-48 bg-black/95 border-2 border-[#B43067]/40 rounded-xl shadow-2xl overflow-hidden flex flex-col font-mono text-[9px] backdrop-blur-md pointer-events-none">
                     <div className="px-2 py-1.5 bg-[#120a1c]/90 border-b border-[#64104E]/50 flex items-center justify-between text-slate-300">
                       <span className="font-bold flex items-center gap-1.5 text-white">
