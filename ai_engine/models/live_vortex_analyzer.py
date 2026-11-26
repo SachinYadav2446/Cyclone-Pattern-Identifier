@@ -243,9 +243,10 @@ class LiveVortexAnalyzer:
         sizes = [np.sum(labeled == i) for i in range(1, num_clusters + 1)]
         max_size = max(sizes) if sizes else 0
 
-        # Minimum cluster size for tropical convective cloud system (~2,500 px)
-        if max_size < 2500:
-            return None, f"Calm {basin_name} (Dispersed Convective Clouds < 2500 px)"
+        # Minimum cluster size: stricter in live mode (6,000 px) so daily monsoon/ITCZ clouds do not trigger false fixes
+        min_cluster_px = 6000 if enforce_ocean_bounds else 2500
+        if max_size < min_cluster_px:
+            return None, f"Calm {basin_name} (Dispersed Convective Clouds < {min_cluster_px} px)"
 
         largest_idx = np.argmax(sizes) + 1
         y_idx, x_idx = np.where(labeled == largest_idx)
@@ -275,11 +276,15 @@ class LiveVortexAnalyzer:
         eye_result = eye_detector.localize_image_array(patch_bytes)
         pred_eye = eye_result.get("predicted_eye") or {}
         confidence = float(pred_eye.get("confidence", 0.0))
-        has_cyclone = (
-            eye_result.get("has_cyclone") is True
-            or confidence >= 0.35
-            or (max_size >= 7500 and peak_brightness >= 160)
-        )
+        if enforce_ocean_bounds:
+            # Strict operational gate: daily convective clouds without real vortex structure/confidence are ignored
+            has_cyclone = (eye_result.get("has_cyclone") is True) and (confidence >= 0.60)
+        else:
+            has_cyclone = (
+                eye_result.get("has_cyclone") is True
+                or confidence >= 0.35
+                or (max_size >= 7500 and peak_brightness >= 160)
+            )
 
         if not has_cyclone:
             return None, f"Calm {basin_name} (Harmless Non-Cyclonic Convection, Conf={confidence:.2f})"
@@ -312,6 +317,9 @@ class LiveVortexAnalyzer:
 
         metrics = intensity_raw.get("intensity_metrics", {})
         msw_kts = float(metrics.get("msw_knots", max(35.0, 30.0 + (peak_brightness - 150.0) * 0.45)))
+        # Operational WMO/IMD threshold: below 34 kts is non-cyclonic ambient weather (no eye fix)
+        if enforce_ocean_bounds and msw_kts < 34.0:
+            return None, f"Calm {basin_name} (Sub-Cyclonic Marine Clouds, MSW={round(msw_kts, 1)} kts < 34 kts)"
         central_p = float(metrics.get("central_pressure_hpa", atkinson_holliday_pressure(msw_kts)))
         dvorak_t = float(metrics.get("dvorak_t_number", knots_to_dvorak_t(msw_kts)))
         msw_kmh = knots_to_kmh(msw_kts)
