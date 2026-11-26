@@ -716,27 +716,34 @@ export function getInBrowserShowcaseAnalysis(filename) {
   else if (msw >= 45) dvorakT = 3.0;
   else if (msw >= 30) dvorakT = 2.0;
 
-  // Asymmetric quadrant wind radii scaled by intensity
-  const scale = Math.min(1.0, msw / 100.0);
+  // Asymmetric quadrant wind radii scaled physically (strictly enforces R64 < R50 < R34)
+  const r34Base = msw >= 34 ? Math.max(20, (msw - 25.0) * 1.5) : 0;
+  const r50Base = msw >= 50 ? Math.max(15, (msw - 45.0) * 1.1) : 0;
+  const r64Base = msw >= 64 ? Math.max(10, (msw - 60.0) * 0.7) : 0;
+
+  const r34_knots_nm = {
+    ne: Math.round(r34Base * 1.15),
+    se: Math.round(r34Base * 1.05),
+    sw: Math.round(r34Base * 0.75),
+    nw: Math.round(r34Base * 0.90)
+  };
+  const r50_knots_nm = {
+    ne: msw >= 50 ? Math.min(Math.round(r50Base * 1.15), Math.max(0, r34_knots_nm.ne - 10)) : 0,
+    se: msw >= 50 ? Math.min(Math.round(r50Base * 1.00), Math.max(0, r34_knots_nm.se - 10)) : 0,
+    sw: msw >= 50 ? Math.min(Math.round(r50Base * 0.70), Math.max(0, r34_knots_nm.sw - 10)) : 0,
+    nw: msw >= 50 ? Math.min(Math.round(r50Base * 0.85), Math.max(0, r34_knots_nm.nw - 10)) : 0
+  };
+  const r64_knots_nm = {
+    ne: msw >= 64 ? Math.min(Math.round(r64Base * 1.15), Math.max(0, r50_knots_nm.ne - 10)) : 0,
+    se: msw >= 64 ? Math.min(Math.round(r64Base * 1.00), Math.max(0, r50_knots_nm.se - 10)) : 0,
+    sw: msw >= 64 ? Math.min(Math.round(r64Base * 0.65), Math.max(0, r50_knots_nm.sw - 10)) : 0,
+    nw: msw >= 64 ? Math.min(Math.round(r64Base * 0.80), Math.max(0, r50_knots_nm.nw - 10)) : 0
+  };
+
   const quadrantRadii = {
-    r34_knots_nm: {
-      ne: Math.round(145 * scale),
-      se: Math.round(130 * scale),
-      sw: Math.round(95 * scale),
-      nw: Math.round(120 * scale)
-    },
-    r50_knots_nm: {
-      ne: Math.round(80 * Math.max(0, (msw - 34) / 60)),
-      se: Math.round(70 * Math.max(0, (msw - 34) / 60)),
-      sw: Math.round(50 * Math.max(0, (msw - 34) / 60)),
-      nw: Math.round(65 * Math.max(0, (msw - 34) / 60))
-    },
-    r64_knots_nm: {
-      ne: Math.round(40 * Math.max(0, (msw - 50) / 60)),
-      se: Math.round(35 * Math.max(0, (msw - 50) / 60)),
-      sw: Math.round(25 * Math.max(0, (msw - 50) / 60)),
-      nw: Math.round(30 * Math.max(0, (msw - 50) / 60))
-    }
+    r34_knots_nm,
+    r50_knots_nm,
+    r64_knots_nm
   };
 
   // Convert to km

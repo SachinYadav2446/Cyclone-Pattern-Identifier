@@ -279,29 +279,33 @@ def calculate_quadrant_radii(knots: float) -> Dict[str, Any]:
     in Nautical Miles (NM) and Kilometers (KM). Reflects rotational coriolis asymmetry in North Indian Ocean.
     """
     k = float(knots)
-    r34_base = max(0.0, (k - 25.0) * 1.5)
-    r50_base = max(0.0, (k - 45.0) * 1.1)
-    r64_base = max(0.0, (k - 60.0) * 0.7)
+    r34_base = max(20.0, (k - 25.0) * 1.5) if k >= 34.0 else 0.0
+    r50_base = max(15.0, (k - 45.0) * 1.1) if k >= 50.0 else 0.0
+    r64_base = max(10.0, (k - 60.0) * 0.7) if k >= 64.0 else 0.0
+
+    r34 = {
+        "ne": int(round(r34_base * 1.15)),
+        "se": int(round(r34_base * 1.05)),
+        "sw": int(round(r34_base * 0.75)),
+        "nw": int(round(r34_base * 0.90)),
+    }
+    r50 = {
+        "ne": min(int(round(r50_base * 1.15)), max(0, r34["ne"] - 10)) if k >= 50.0 else 0,
+        "se": min(int(round(r50_base * 1.00)), max(0, r34["se"] - 10)) if k >= 50.0 else 0,
+        "sw": min(int(round(r50_base * 0.70)), max(0, r34["sw"] - 10)) if k >= 50.0 else 0,
+        "nw": min(int(round(r50_base * 0.85)), max(0, r34["nw"] - 10)) if k >= 50.0 else 0,
+    }
+    r64 = {
+        "ne": min(int(round(r64_base * 1.15)), max(0, r50["ne"] - 10)) if k >= 64.0 else 0,
+        "se": min(int(round(r64_base * 1.00)), max(0, r50["se"] - 10)) if k >= 64.0 else 0,
+        "sw": min(int(round(r64_base * 0.65)), max(0, r50["sw"] - 10)) if k >= 64.0 else 0,
+        "nw": min(int(round(r64_base * 0.80)), max(0, r50["nw"] - 10)) if k >= 64.0 else 0,
+    }
 
     nm_radii = {
-        "r34_knots_nm": {
-            "ne": int(round(r34_base * 1.15)),
-            "se": int(round(r34_base * 1.05)),
-            "sw": int(round(r34_base * 0.75)),
-            "nw": int(round(r34_base * 0.90)),
-        },
-        "r50_knots_nm": {
-            "ne": int(round(r50_base * 1.15)),
-            "se": int(round(r50_base * 1.00)),
-            "sw": int(round(r50_base * 0.70)),
-            "nw": int(round(r50_base * 0.85)),
-        },
-        "r64_knots_nm": {
-            "ne": int(round(r64_base * 1.15)),
-            "se": int(round(r64_base * 1.00)),
-            "sw": int(round(r64_base * 0.65)),
-            "nw": int(round(r64_base * 0.80)),
-        }
+        "r34_knots_nm": r34,
+        "r50_knots_nm": r50,
+        "r64_knots_nm": r64,
     }
 
     km_radii = {
