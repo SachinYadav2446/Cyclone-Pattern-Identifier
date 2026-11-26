@@ -13,7 +13,6 @@ import GISConsoleModal from './components/GISConsoleModal';
 import CycloneBulletinModal from './components/CycloneBulletinModal';
 import NotificationCenterModal from './components/NotificationCenterModal';
 import SatelliteTimelapsePlayer from './components/SatelliteTimelapsePlayer';
-import SatelliteObservatorySection from './components/SatelliteObservatorySection';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -162,10 +161,7 @@ export default function App() {
             onOpenDemo={() => setIsDemoOpen(true)}
           />
 
-          {/* Satellite Research & Genesis Observatory Section */}
-          <div id="observatory">
-            <SatelliteObservatorySection onOpenObservatory={handleOpenTimelapse} />
-          </div>
+
 
           {/* 4. The 4-Step Operational Feature Cards Pipeline */}
           <div id="pipeline">

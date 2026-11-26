@@ -4,7 +4,6 @@ import { Menu, X, Radio, Bell, Satellite } from 'lucide-react';
 const navItems = [
   { id: 'novelty', label: 'Novelties' },
   { id: 'models', label: 'Architecture' },
-  { id: 'observatory', label: 'Observatory' },
   { id: 'pipeline', label: 'Pipeline' },
   { id: 'dataset', label: 'Dataset' },
 ];
