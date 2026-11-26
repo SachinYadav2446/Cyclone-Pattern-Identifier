@@ -99,14 +99,14 @@ TIMELAPSE_CATALOG = [
         "basin": "Bay of Bengal & Arabian Sea",
         "sensor": "ISRO INSAT-3D/3DR (74.0°E Geostationary Orbit)",
         "primary_band": "TIR-1 (10.8 µm Thermal Window)",
-        "duration_hours": 48,
+        "duration_hours": 96,
         "cadence_minutes": 120,
         "is_live": True,
         "total_frames": 24,
         "description": "Continuous multi-spectral geostationary passes (TIR-1, WV, VIS) over South Asia. Supports ambient marine environment observation and live cyclogenesis tracking.",
         "default_speed_fps": 1.5,
         "available_bands": ["ir1", "vis", "wv"],
-        "available_hours": [6, 12, 24, 48]
+        "available_hours": [6, 12, 24, 48, 96]
     }
 ]
 
@@ -137,6 +137,20 @@ class SatelliteTimelapseService:
         active_mode = mode or self._current_feed_mode
         active_hours = hours or 48
 
+        # Use real 96h Vultr satellite archive when observing live/archive mode
+        if active_mode in ("live", "archive"):
+            from ai_engine.services.archive_service import archive_service
+            archived_frames = archive_service.get_archived_frames(hours=active_hours, band=band)
+            if archived_frames:
+                return {
+                    **meta,
+                    "duration_hours": active_hours,
+                    "active_band": band,
+                    "feed_mode": "live_archive",
+                    "total_frames": len(archived_frames),
+                    "frames": archived_frames
+                }
+
         is_storm = (active_mode == "storm")
         if active_hours <= 6:
             num_frames = 6
@@ -147,9 +161,12 @@ class SatelliteTimelapseService:
         elif active_hours <= 24:
             num_frames = 16
             step_hours = 1.5
-        else:
+        elif active_hours <= 48:
             num_frames = 24
             step_hours = 2.0
+        else:
+            num_frames = 32
+            step_hours = 3.0
 
         # Physical eye coordinates in source images
         w_img, h_img = 1378, 1141

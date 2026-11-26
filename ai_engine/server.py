@@ -1,4 +1,5 @@
 from ai_engine.services.timelapse_service import timelapse_service
+from ai_engine.services.archive_service import archive_service
 from ai_engine.models.atmospheric_service import get_point_atmospheric_data, get_all_stations_atmospheric_data
 """
 DeepCyclone Live Inference FastAPI Server
@@ -32,6 +33,19 @@ async def _run_pipeline_scan():
     try:
         result = notification_service.get_notifications(mode="live")
         event = notification_store.push_scan_result(result)
+        # Archive live INSAT-3D frames (IR1, VIS, WV) for 96-hour Observatory playback
+        try:
+            live_pass = vortex_analyzer.analyze_latest_pass(channel="ir1", mode="live")
+            band_bytes = {}
+            for b in ("ir1", "vis", "wv"):
+                b_data = vortex_analyzer.get_cached_image_bytes(channel=b, mode="live")
+                if b_data:
+                    band_bytes[b] = b_data
+            archived = archive_service.capture_pass(live_pass, band_bytes)
+            if archived:
+                print(f"[ArchiveService] Captured pass {archived['frame_id']} ({len(archived['files'])} bands)")
+        except Exception as arch_exc:
+            print(f"[ArchiveService] Capture error: {arch_exc}")
         if event:
             status = event.get("status_code", "UNKNOWN")
             ts = event.get("timestamp_utc", "")
@@ -542,6 +556,21 @@ def get_timelapse_frame_image(sequence_id: str, frame_idx: int, band: Optional[s
         content=img_bytes,
         media_type=media_type,
         headers={"Cache-Control": "public, max-age=3600"}
+    )
+
+
+
+@app.get("/api/v1/satellite/archive-frame/{frame_id}")
+def get_archived_satellite_frame(frame_id: str, band: Optional[str] = "ir1", palette: Optional[str] = "raw"):
+    """Serves real archived INSAT-3D/3DR satellite pass bytes from the 96-hour archive."""
+    res = archive_service.get_frame_bytes(frame_id=frame_id, band=band or "ir1", palette=palette or "raw")
+    if not res:
+        return Response(status_code=404, content=b"Archived frame not found")
+    img_bytes, media_type = res
+    return Response(
+        content=img_bytes,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=86400"}
     )
 
 

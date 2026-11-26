@@ -28,7 +28,7 @@ export default function SatelliteTimelapsePlayer({
   const [selectedBand, setSelectedBand] = useState('ir1');
   const [paletteMode, setPaletteMode] = useState('enhanced'); // 'enhanced' | 'raw'
   const [selectedHours, setSelectedHours] = useState(48); // 12, 24, 48
-  const [researchMode] = useState('storm'); // Default directly to real cyclone tracking pass
+  const [researchMode, setResearchMode] = useState('live'); // 'live' (96h Real Archive) | 'storm' (Cyclone Evolution)
   const [sequenceData, setSequenceData] = useState(null);
   const [currentFrameIdx, setCurrentFrameIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -574,13 +574,37 @@ export default function SatelliteTimelapsePlayer({
               </button>
             </div>
 
+            {/* Archive vs Storm Mode Toggle */}
+            <div className="flex items-center gap-1 bg-black/60 p-0.5 sm:p-1 rounded-lg border border-zinc-800">
+              <button
+                onClick={() => setResearchMode('live')}
+                className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                  researchMode === 'live'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Live Archive
+              </button>
+              <button
+                onClick={() => setResearchMode('storm')}
+                className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                  researchMode === 'storm'
+                    ? 'bg-[#E04A31] text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Storm Replay
+              </button>
+            </div>
+
             {/* Time Depth Range */}
             <div className="flex items-center gap-1 bg-black/60 p-0.5 sm:p-1 rounded-lg border border-zinc-800">
               <span className="text-[10px] text-zinc-500 px-1 font-semibold hidden xs:flex items-center gap-1">
                 <Clock className="w-3 h-3 text-amber-400" />
                 RANGE:
               </span>
-              {[12, 24, 48].map((hr) => (
+              {[12, 24, 48, 96].map((hr) => (
                 <button
                   key={hr}
                   onClick={() => setSelectedHours(hr)}
@@ -590,7 +614,7 @@ export default function SatelliteTimelapsePlayer({
                       : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  {hr === 48 ? '48h' : (hr === 24 ? '24h' : `${hr}h`)}
+                  {`${hr}h`}
                 </button>
               ))}
             </div>
