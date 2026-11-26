@@ -615,68 +615,6 @@ export default function EyeLocalizationWorkbench({
     }
   };
 
-  const handleCanvasClick = (e) => {
-    if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(5, Math.min(95, ((e.clientY - rect.top) / rect.height) * 100));
-    const roundX = Math.round(x * 10) / 10;
-    const roundY = Math.round(y * 10) / 10;
-
-    const lat = Math.round((20.0 - ((roundY - 57.0) / 25.0) * 10.0) * 100) / 100;
-    const lon = Math.round((80.0 + ((roundX - 54.0) / 16.0) * 10.0) * 100) / 100;
-
-    if (!autoEyeRef.current && apiData?.predicted_eye) {
-      autoEyeRef.current = apiData.predicted_eye;
-    }
-    setIsManuallyAdjusted(true);
-
-    setApiData(prev => ({
-      ...prev,
-      has_cyclone: true,
-      predicted_eye: {
-        ...(prev?.predicted_eye || {}),
-        pixel_x_percent: roundX,
-        pixel_y_percent: roundY,
-        latitude: lat,
-        longitude: lon,
-        detection_mode: 'Interactive Reticle Refinement (Sub-Pixel Precision)'
-      }
-    }));
-
-    if (customImage) {
-      fetch(`${API_BASE_URL}/api/v1/models/estimate-intensity`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_base64: customImage,
-          eye_x_pct: roundX,
-          eye_y_pct: roundY,
-          has_cyclone: true
-        })
-      }).then(r => r.json()).then(intData => {
-        setIntensityData(intData);
-        const msw = intData?.intensity_metrics?.msw_knots || mswKnots || 65.0;
-        const pressure = intData?.intensity_metrics?.central_pressure_hpa || centralPressure || 980.0;
-        fetch(`${API_BASE_URL}/api/v1/models/forecast-trajectory`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            current_lat: lat,
-            current_lon: lon,
-            msw_knots: msw,
-            central_pressure_hpa: pressure,
-            pixel_x_pct: roundX,
-            pixel_y_pct: roundY,
-            has_cyclone: true
-          })
-        }).then(tr => tr.json()).then(traj => {
-          setTrajectoryData(traj);
-        }).catch(() => {});
-      }).catch(() => {});
-    }
-  };
-
   const handleResetToAutoEye = (e) => {
     e?.stopPropagation();
     if (autoEyeRef.current) {
@@ -1369,7 +1307,6 @@ export default function EyeLocalizationWorkbench({
             {/* Viewport Canvas with CenterNet Eye Reticle + Overlays */}
             <div
               ref={canvasRef}
-              onClick={handleCanvasClick}
               onMouseMove={handleMouseMove}
               onMouseLeave={() => setMouseCoords(null)}
               className="relative w-full aspect-[4/3] min-h-[260px] sm:min-h-[420px] md:min-h-[560px] lg:min-h-[640px] bg-black overflow-hidden flex items-center justify-center cursor-crosshair select-none"
