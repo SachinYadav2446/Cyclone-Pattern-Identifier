@@ -888,31 +888,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                     <span>Humidity</span>
                   </button>
 
-                  <button
-                    onClick={() => setEnvironmentalLayer('wind')}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                      environmentalLayer === 'wind'
-                        ? 'bg-sky-950 text-sky-200 font-semibold border border-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.35)]'
-                        : 'text-slate-400 hover:text-sky-300 hover:bg-white/5 border border-transparent'
-                    }`}
-                    title="Wind Vector Field & Isotachs"
-                  >
-                    <Wind className="w-3 h-3 text-sky-400" />
-                    <span>Wind Field</span>
-                  </button>
 
-                  <button
-                    onClick={() => setEnvironmentalLayer('pressure')}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                      environmentalLayer === 'pressure'
-                        ? 'bg-purple-950 text-purple-200 font-semibold border border-purple-400 shadow-[0_0_8px_rgba(168,85,247,0.35)]'
-                        : 'text-slate-400 hover:text-purple-300 hover:bg-white/5 border border-transparent'
-                    }`}
-                    title="Mean Sea Level Pressure (MSLP) Isobars"
-                  >
-                    <Gauge className="w-3 h-3 text-purple-400" />
-                    <span>Pressure</span>
-                  </button>
 
                   {/* Hairline Divider */}
                   <div className="w-px h-4 bg-[#64104E]/60 mx-0.5" />
@@ -1187,7 +1163,7 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                 )}
 
                 {/* 3. DYNAMIC ADVANCED SYNOPTIC WIND STREAMLINES & ROTATING VECTOR FIELD */}
-                {(environmentalLayer === 'wind' || showWindStreamlines) && (
+                {showWindStreamlines && (
                   <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full opacity-70 pointer-events-none">
                       {/* Subtropical Westerly Jet Streams (Northern Subcontinent) */}
@@ -1215,77 +1191,9 @@ export default function GISConsoleModal({ isOpen, onClose, onOpenInWorkbench, on
                     </svg>
 
                     {/* Direction-Aware Real Wind Vector Stations */}
-                    {environmentalLayer === 'wind' && (
-                      <>
-                        {liveStations.map((st) => {
-                          const px = st.pixelX !== undefined ? st.pixelX : ((st.lon - 45.0) / 60.0) * 100;
-                          const py = st.pixelY !== undefined ? st.pixelY : (4.8 + ((40.0 - st.lat) / 40.0) * 87.8);
-                          if (px < 4 || px > 96 || py < 4 || py > 96) return null;
-                          const windKts = st.wind_knots || parseFloat(st.wind) || 8;
-                          const windDeg = st.wind_deg !== undefined ? st.wind_deg : 45;
-                          const isHigh = windKts >= 15;
-                          return (
-                            <div 
-                              key={`wind-${st.id}`} 
-                              onClick={(e) => { e.stopPropagation(); fetchAtmosphericPoint(st.lat, st.lon, px, py); }}
-                              className={`absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto cursor-pointer flex items-center gap-1 bg-black/90 border px-1.5 py-0.5 rounded-md text-[8.5px] font-mono shadow-md transition-transform hover:scale-110 ${
-                                isHigh 
-                                  ? 'border-amber-500/80 text-amber-200 shadow-amber-500/20' 
-                                  : 'border-sky-600/70 text-sky-200 shadow-sky-500/20'
-                              }`}
-                              style={{ left: `${px}%`, top: `${py}%` }}
-                              title={`${st.name}: ${st.wind} (${windDeg}°)`}
-                            >
-                              {/* Truly Direction-Rotated Wind Compass Arrow */}
-                              <Navigation 
-                                className={`w-2.5 h-2.5 shrink-0 ${isHigh ? 'text-amber-400' : 'text-sky-400'}`} 
-                                style={{ transform: `rotate(${windDeg}deg)` }} 
-                              />
-                              <span className="font-bold">{st.wind}</span>
-                            </div>
-                          );
-                        })}
-
-                        {/* Advanced Wind Scale Legend */}
-                        <div className="absolute bottom-3 left-4 z-20 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-sky-800/70 text-[10px] font-mono shadow-xl flex items-center gap-3">
-                          <span className="font-bold text-sky-300 flex items-center gap-1">
-                            <Wind className="w-3 h-3" /> KTS (NWP GFS)
-                          </span>
-                          <div className="w-32 h-2 rounded-full bg-gradient-to-r from-sky-700 via-cyan-400 to-amber-400 shadow-inner" />
-                          <div className="flex gap-2 text-[9px] text-slate-400">
-                            <span>0</span><span>10</span><span>15</span><span>25</span><span>35+</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
                   </div>
                 )}
 
-                {/* 4. MEAN SEA LEVEL PRESSURE (MSLP) OVERLAY */}
-                {environmentalLayer === 'pressure' && (
-                  <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full opacity-50">
-                      {/* Smooth Synoptic Isobar Contours */}
-                      <ellipse cx="65" cy="50" rx="22" ry="16" fill="none" stroke="#c084fc" strokeWidth="0.4" strokeDasharray="3 1" />
-                      <ellipse cx="65" cy="50" rx="14" ry="10" fill="none" stroke="#c084fc" strokeWidth="0.5" />
-                      <ellipse cx="65" cy="50" rx="6" ry="4" fill="none" stroke="#c084fc" strokeWidth="0.6" />
-                      <ellipse cx="35" cy="55" rx="18" ry="14" fill="none" stroke="#c084fc" strokeWidth="0.4" strokeDasharray="3 1" />
-                    </svg>
-
-                    {/* High / Low Pressure Center Markers */}
-                    <div className="absolute z-20 bg-purple-950/90 border border-purple-400 text-purple-200 px-2 py-0.5 rounded-md font-mono text-[9px] font-bold shadow" style={{ left: '65%', top: '50%' }}>
-                      L 1008 hPa
-                    </div>
-                    <div className="absolute z-20 bg-purple-950/90 border border-purple-400 text-purple-200 px-2 py-0.5 rounded-md font-mono text-[9px] font-bold shadow" style={{ left: '35%', top: '55%' }}>
-                      H 1016 hPa
-                    </div>
-
-                    <div className="absolute bottom-3 left-4 z-20 bg-black/85 backdrop-blur-md px-3 py-1.5 rounded-lg border border-purple-800/70 text-[10px] font-mono shadow-xl flex items-center gap-2 text-purple-300">
-                      <Gauge className="w-3 h-3" />
-                      <span className="font-bold">MSLP ISOBARS (hPa)</span>
-                    </div>
-                  </div>
-                )}
 
                 {/* ======================================================== */}
                 {/* INTERACTIVE CLICKED POINT BEACON & ZOOM EARTH POPUP CARD */}
