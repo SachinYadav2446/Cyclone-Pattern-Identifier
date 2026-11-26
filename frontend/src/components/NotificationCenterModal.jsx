@@ -46,7 +46,8 @@ export default function NotificationCenterModal({
   onClose, 
   onSelectStorm,
   onOpenBulletin,
-  onOpenTimelapse 
+  onOpenTimelapse,
+  onUnreadCountChange
 }) {
   const [feedEvents, setFeedEvents] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -73,7 +74,9 @@ export default function NotificationCenterModal({
       if (res.ok) {
         const data = await res.json();
         setFeedEvents(data.events || []);
-        setUnreadCount(data.unread_count || 0);
+        const nextCnt = data.unread_count || 0;
+        setUnreadCount(nextCnt);
+        if (onUnreadCountChange) onUnreadCountChange(nextCnt);
         if (data.latest_telemetry) {
           setLatestTelemetry(data.latest_telemetry);
         }
@@ -105,7 +108,11 @@ export default function NotificationCenterModal({
     try {
       await fetch(`${API_BASE_URL}/api/v1/notifications/feed/${id}/read`, { method: 'POST' });
       setFeedEvents(prev => prev.map(e => e.id === id ? { ...e, is_read: true } : e));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount(prev => {
+        const nextCnt = Math.max(0, prev - 1);
+        if (onUnreadCountChange) onUnreadCountChange(nextCnt);
+        return nextCnt;
+      });
     } catch (err) {
       console.warn('Mark read warning:', err);
     }
@@ -117,6 +124,7 @@ export default function NotificationCenterModal({
       await fetch(`${API_BASE_URL}/api/v1/notifications/feed/mark-all-read`, { method: 'POST' });
       setFeedEvents(prev => prev.map(e => ({ ...e, is_read: true })));
       setUnreadCount(0);
+      if (onUnreadCountChange) onUnreadCountChange(0);
     } catch (err) {
       console.warn('Mark all read error:', err);
     }

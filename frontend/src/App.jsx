@@ -190,6 +190,7 @@ export default function App() {
         }}
         onOpenBulletin={handleOpenBulletinForStorm}
         onOpenTimelapse={handleOpenTimelapse}
+        onUnreadCountChange={setUnreadAlertCount}
       />
 
       {/* Dedicated Interactive Cyclone Inference & Localization Demo Modal */}
