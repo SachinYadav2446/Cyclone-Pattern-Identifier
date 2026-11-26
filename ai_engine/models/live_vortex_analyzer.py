@@ -181,6 +181,30 @@ class LiveVortexAnalyzer:
                     pass
         return None
 
+    def _is_in_ocean_basin(self, lat: float, lon: float, basin_name: str) -> bool:
+        """Strictly verifies that a localized coordinate lies over open ocean (never over China, Myanmar, Tibet, or India)."""
+        if "bay of bengal" in basin_name.lower():
+            if not (6.0 <= lat <= 21.5 and 80.0 <= lon <= 93.5):
+                return False
+            # Exclude Indian east coast landmass (Andhra / Odisha / Bengal inland)
+            if lat >= 15.0 and lon < (80.2 + (lat - 15.0) * 1.15):
+                return False
+            # Exclude Myanmar / Thailand / China landmass
+            if lat >= 16.0 and lon > (94.0 - (lat - 16.0) * 0.35):
+                return False
+            return True
+        elif "arabian" in basin_name.lower():
+            if not (6.0 <= lat <= 22.5 and 57.0 <= lon <= 73.5):
+                return False
+            # Exclude Indian west coast landmass
+            if lat >= 14.0 and lon > (73.0 - (lat - 14.0) * 0.25):
+                return False
+            # Exclude Oman / Pakistan / Iran landmass
+            if lat >= 17.0 and lon < (58.0 + (lat - 17.0) * 1.2):
+                return False
+            return True
+        return True
+
     def _scan_basin_and_diagnose(
         self,
         basin_name: str,
@@ -193,7 +217,8 @@ class LiveVortexAnalyzer:
         gray: np.ndarray,
         width: int,
         height: int,
-        channel_key: str
+        channel_key: str,
+        enforce_ocean_bounds: bool = True
     ) -> Tuple[Optional[Dict[str, Any]], str]:
         """
         Cascaded Two-Stage Autonomous Inference Pipeline:
@@ -270,6 +295,8 @@ class LiveVortexAnalyzer:
             global_eye_y = macro_cy
 
         lat, lon = self.pixel_to_latlon(global_eye_x, global_eye_y, width=width, height=height)
+        if enforce_ocean_bounds and not self._is_in_ocean_basin(lat, lon, basin_name):
+            return None, f"Calm {basin_name} (Exterior Land Cloud Excluded at {lat}°N, {lon}°E)"
         global_pct_x = round((global_eye_x / width) * 100.0, 2)
         global_pct_y = round((global_eye_y / height) * 100.0, 2)
 
@@ -409,36 +436,38 @@ class LiveVortexAnalyzer:
         gray = np.mean(arr, axis=2).astype(np.float32)
         detected_systems = []
 
-        # 1. Bay of Bengal Sector (East): Lon 80°E - 96°E, Lat 5°N - 22°N
+        # 1. Bay of Bengal Sector (East): Strictly Oceanic (Lon 80.5°E - 93.0°E, Lat 6°N - 21.5°N)
         bob_sys, bob_activity = self._scan_basin_and_diagnose(
             basin_name="Bay of Bengal",
             sys_id="BOB-SYS-01",
-            x_min_pct=0.58,
-            x_max_pct=0.88,
-            y_min_pct=0.34,
-            y_max_pct=0.66,
+            x_min_pct=0.59,
+            x_max_pct=0.78,
+            y_min_pct=0.38,
+            y_max_pct=0.65,
             arr_rgb=arr,
             gray=gray,
             width=width,
             height=height,
-            channel_key=channel_key
+            channel_key=channel_key,
+            enforce_ocean_bounds=True
         )
         if bob_sys:
             detected_systems.append(bob_sys)
 
-        # 2. Arabian Sea Sector (West): Lon 58°E - 74°E, Lat 5°N - 22°N
+        # 2. Arabian Sea Sector (West): Strictly Oceanic (Lon 58°E - 73.0°E, Lat 6°N - 22°N)
         as_sys, as_activity = self._scan_basin_and_diagnose(
             basin_name="Arabian Sea",
             sys_id="ARB-SYS-01",
             x_min_pct=0.25,
-            x_max_pct=0.48,
-            y_min_pct=0.34,
-            y_max_pct=0.66,
+            x_max_pct=0.47,
+            y_min_pct=0.38,
+            y_max_pct=0.65,
             arr_rgb=arr,
             gray=gray,
             width=width,
             height=height,
-            channel_key=channel_key
+            channel_key=channel_key,
+            enforce_ocean_bounds=True
         )
         if as_sys:
             detected_systems.append(as_sys)
@@ -552,7 +581,8 @@ class LiveVortexAnalyzer:
             gray=gray,
             width=width,
             height=height,
-            channel_key=channel_key
+            channel_key=channel_key,
+            enforce_ocean_bounds=False
         )
         if bob_sys:
             detected_systems.append(bob_sys)
@@ -568,7 +598,8 @@ class LiveVortexAnalyzer:
             gray=gray,
             width=width,
             height=height,
-            channel_key=channel_key
+            channel_key=channel_key,
+            enforce_ocean_bounds=False
         )
         if as_sys:
             detected_systems.append(as_sys)
